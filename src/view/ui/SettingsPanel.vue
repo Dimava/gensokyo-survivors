@@ -115,6 +115,9 @@ label.check {
   display: flex;
   gap: 10px;
 }
+section > .btn {
+  align-self: flex-start;
+}
 .help {
   margin: 0;
   font-size: 0.85rem;

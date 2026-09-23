@@ -327,7 +327,8 @@ export class Playfield {
       q.scaleX = sc + wob;
       q.scaleY = sc - wob;
       q.rotation = ENEMIES[kind]!.shape === "orb" ? this.time * 2 + euid[i]! : 0;
-      q.x < p.body.x ? (q.scaleX = Math.abs(q.scaleX)) : (q.scaleX = -Math.abs(q.scaleX));
+      // Face the player.
+      if (q.x > p.body.x) q.scaleX = -q.scaleX;
     }
 
     // Player shots (computable: evaluated at t).

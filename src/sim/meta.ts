@@ -243,16 +243,18 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
         pulls.push({ card: card.id, rarity, outcome: "new", level: 1, refund: 0, pity: pityCard });
         return;
       }
-      const cur = ctx.req(have.id, "owned").owned;
-      if (cur.level < MAX_CARD_LEVEL) {
-        Object.assign(ctx.mut(have.id, "owned"), { level: cur.level + 1, copies: cur.copies + 1, fresh: true });
-        pulls.push({ card: card.id, rarity, outcome: "level", level: cur.level + 1, refund: 0, pity: pityCard });
+      // Copy the numbers out first: after a mut in this node, req() hands back the live
+      // writable copy, so reading it after the write would see the new values (NOTES.md).
+      const { level, copies } = ctx.req(have.id, "owned").owned;
+      if (level < MAX_CARD_LEVEL) {
+        Object.assign(ctx.mut(have.id, "owned"), { level: level + 1, copies: copies + 1, fresh: true });
+        pulls.push({ card: card.id, rarity, outcome: "level", level: level + 1, refund: 0, pity: pityCard });
         return;
       }
       const refund = RARITY_INFO[rarity].refund;
-      ctx.mut(have.id, "owned").copies = cur.copies + 1;
+      ctx.mut(have.id, "owned").copies = copies + 1;
       ctx.mut(ctx.derived("wallet"), "wallet").coins += refund;
-      pulls.push({ card: card.id, rarity, outcome: "refund", level: cur.level, refund, pity: pityCard });
+      pulls.push({ card: card.id, rarity, outcome: "refund", level, refund, pity: pityCard });
     });
     const path = ctx.open("pack");
     ctx.send(path, Pack, "pack:show", { pack: pack.id, pulls });

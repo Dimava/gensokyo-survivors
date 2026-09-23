@@ -201,6 +201,10 @@ export class Presenter {
       case "boss:approach":
         this.sfx("warning");
         break;
+      case "boss:dialogue":
+        // The dialogue takes the stage: clear the banners behind it.
+        if (!this.quiet) ui.banners.splice(0);
+        break;
       case "spell:start": {
         const boss = v?.derived("boss");
         if (boss) {

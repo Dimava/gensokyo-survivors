@@ -13,6 +13,6 @@ export default defineConfig({
       zod: fileURLToPath(new URL("../gamebones/node_modules/zod/index.js", import.meta.url)),
     },
   },
-  server: { port: 5190, strictPort: false, fs: { allow: [".."] } },
+  server: { port: 5190, strictPort: false, fs: { allow: [".."] }, watch: { ignored: ["**/.tmp/**", "**/.shots/**", "**/test/**", "**/scripts/**"] } },
   build: { target: "es2023", chunkSizeWarningLimit: 2000 },
 });

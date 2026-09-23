@@ -59,6 +59,7 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 .deck {
+  white-space: nowrap;
   padding: 0.4em 0.9em;
   border-radius: 999px;
   border: 1px solid var(--line);

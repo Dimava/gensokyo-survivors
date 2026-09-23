@@ -122,6 +122,114 @@ async function run(p: Page): Promise<void> {
       await shot("paused");
       break;
     }
+    case "tour": {
+      // A guided tour through every screen with a rich profile (scripts/richsave.ts).
+      const saveText = (await Bun.file(".tmp/save-rich.json").text()).replaceAll("\\", "\\\\").replaceAll("`", "\`");
+      await page.addInitScript(`if (!sessionStorage.getItem("seeded")) { localStorage.setItem("gensokyo-survivors/save", \`${saveText}\`); localStorage.removeItem("gensokyo-survivors/prefs"); sessionStorage.setItem("seeded", "1"); }`);
+      await page.goto(base + "?screen=menu&turbo=" + (process.env.TURBO ?? "3"));
+      await wait(1200);
+      await shot("menu");
+      await clickText("Start Run");
+      await wait(300);
+      await clickText("Go");
+      await page.keyboard.down("KeyD");
+      await wait(1500);
+      await shot("tip");
+      await page.keyboard.up("KeyD");
+      await gs("g.host.autoplay = true;");
+      const until = async (cond: string, ms: number): Promise<boolean> => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < ms) {
+          if (await gs<boolean>(cond)) return true;
+          await wait(150);
+        }
+        return false;
+      };
+      const phase = "const p = g.host.path(); return p ? g.host.k.view(p).q('run')[0].run";
+      await until(`${phase}.overlay === 'none' && g.host.k.view(p).now('action') > 3600 : false;`, 120000);
+      await shot("swarm");
+      await gs("g.host.autoplay = false;");
+      if (await until(`${phase}.overlay === 'levelup' : false;`, 60000)) {
+        await wait(400);
+        await shot("levelup");
+        await page.keyboard.press("Digit1");
+        await wait(300);
+      }
+      await gs("g.host.autoplay = true;");
+      await until(`${phase}.phase === 'warning' : false;`, 200000);
+      await gs("g.host.autoplay = false;");
+      await wait(300);
+      await shot("warning");
+      await until(`${phase}.overlay === 'vn' : false;`, 30000);
+      await wait(900);
+      await shot("dialogue");
+      for (let i = 0; i < 14; i++) {
+        await page.keyboard.press("Space");
+        await wait(150);
+      }
+      await gs("g.host.autoplay = true;");
+      await wait(4000);
+      await shot("boss-intro");
+      await wait(5000);
+      await shot("boss");
+      await gs("g.host.autoplay = false;");
+      await page.keyboard.press("Digit1");
+      await wait(250);
+      await shot("card");
+      await gs("g.host.autoplay = true;");
+      await wait(6000);
+      await shot("boss2");
+      await until("return g.state.screen === 'results';", 240000);
+      await wait(1500);
+      await shot("results");
+      await clickText("Shrine Upgrades");
+      await wait(500);
+      const buyable = page.locator(".node.buyable").first();
+      if (await buyable.count()) {
+        await buyable.click();
+        await wait(200);
+        await page.locator(".btn.buy").click();
+        await wait(250);
+      }
+      await shot("tree-bought");
+      await page.keyboard.press("Escape");
+      await wait(300);
+      await clickText("Card Packs");
+      await wait(400);
+      await page.locator(".btn.buy").click();
+      await wait(700);
+      await shot("pack-dealt");
+      await wait(900);
+      await shot("pack-charging");
+      await page.mouse.click(640, 100);
+      await wait(1600);
+      await shot("pack-mid");
+      await until("return !!document.querySelector('.opening .btn.primary');", 15000);
+      await wait(500);
+      await shot("pack-done");
+      await page.keyboard.press("Space");
+      await wait(500);
+      await shot("packs-after");
+      await page.keyboard.press("Escape");
+      await wait(300);
+      await clickText("Skill Cards");
+      await wait(500);
+      await shot("cards");
+      await page.keyboard.press("Escape");
+      await wait(300);
+      // Reload mid-run: the run comes back, paused.
+      await clickText("Start Run");
+      await wait(300);
+      await clickText("Go");
+      await wait(3000);
+      await page.reload();
+      await wait(1500);
+      await shot("reloaded");
+      await page.keyboard.press("Escape");
+      await wait(1500);
+      await shot("resumed");
+      break;
+    }
     case "meta": {
       await page.goto(base + "?screen=menu");
       await wait(1000);

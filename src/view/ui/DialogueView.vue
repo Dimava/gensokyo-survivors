@@ -7,6 +7,7 @@ import { Vn } from "../../sim/vn.ts";
 import { CHARACTERS } from "../../content/names.ts";
 import { script } from "../../content/dialogue.ts";
 import { hex } from "./useGame.ts";
+import Portrait from "./Portrait.vue";
 
 const scene = computed(() => {
   void state.frame;
@@ -68,11 +69,11 @@ const speakers = computed(() => {
   <div class="vn" v-if="scene && speaker" @click="advance">
     <div class="portraits">
       <div class="portrait left" :class="{ dim: !speakers.left }">
-        <div class="sil" :style="{ '--c': hex(CHARACTERS[cast.left].color) }"></div>
+        <Portrait :who="cast.left" />
         <div class="pname">{{ CHARACTERS[cast.left].short }}</div>
       </div>
       <div class="portrait right" :class="{ dim: !speakers.right }">
-        <div class="sil" :style="{ '--c': hex(CHARACTERS[cast.right].color) }"></div>
+        <Portrait :who="cast.right" flip />
         <div class="pname">{{ CHARACTERS[cast.right].short }}</div>
       </div>
     </div>

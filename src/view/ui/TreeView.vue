@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { host, state } from "../host.ts";
 import { audio } from "../audio.ts";
 import { TREE, treeNode, type TreeNode } from "../../content/tree.ts";
@@ -22,6 +22,14 @@ const size = computed(() => ({
   w: (bounds.value.maxX - bounds.value.minX + 1) * UNIT,
   h: (bounds.value.maxY - bounds.value.minY + 1) * UNIT,
 }));
+// Fit the whole board on screen (it scrolls only on very small windows).
+const vh = ref(window.innerHeight);
+const onResize = (): void => {
+  vh.value = window.innerHeight;
+};
+onMounted(() => window.addEventListener("resize", onResize));
+onBeforeUnmount(() => window.removeEventListener("resize", onResize));
+const fit = computed(() => Math.max(0.6, Math.min(1, (vh.value - 130) / size.value.h)));
 const px = (n: TreeNode): { x: number; y: number } => ({
   x: (n.x - bounds.value.minX + 0.5) * UNIT,
   y: (n.y - bounds.value.minY + 0.5) * UNIT,
@@ -96,7 +104,7 @@ function buy(): void {
     </div>
     <div class="body">
       <div class="boardwrap panel">
-        <div class="board" :style="{ width: size.w + 'px', height: size.h + 'px' }">
+        <div class="board" :style="{ width: size.w + 'px', height: size.h + 'px', zoom: fit }">
           <svg :width="size.w" :height="size.h" class="edges">
             <line v-for="e in edges" :key="e.id" :x1="e.a.x" :y1="e.a.y" :x2="e.b.x" :y2="e.b.y" :class="{ lit: e.lit }" />
           </svg>
