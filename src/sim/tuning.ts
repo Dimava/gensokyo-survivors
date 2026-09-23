@@ -23,7 +23,7 @@ export const PLAYER = {
 
 export const PICKUP = {
   /** Base magnet radius (scaled by the magnet stat). */
-  magnet: 64,
+  magnet: 80,
   /** Collected within this distance. */
   collect: 16,
   /** Pulled items start at this speed and accelerate. */
@@ -52,7 +52,7 @@ export const SWARM = {
 
 export const XP = {
   /** Experience needed for level n -> n+1. */
-  next: (level: number): number => (level < 20 ? 5 + level * 8 : 165 + (level - 20) * 14),
+  next: (level: number): number => (level < 20 ? 5 + (level - 1) * 10 : 195 + (level - 20) * 30),
 } as const;
 
 export const CARDS_TUNING = {
@@ -85,7 +85,7 @@ export const HITSTOP = { hurt: 6, spellBreak: 14 } as const;
 export const END_DELAY = 100;
 
 /** Run donations: per this many seconds survived, per this many kills. */
-export const REWARD = { perSeconds: 8, perKills: 20 } as const;
+export const REWARD = { perSeconds: 8, perKills: 50 } as const;
 
 /** Bullets further than this from the player (or the arena) are culled when checked. */
 export const BULLET_CULL = 900;

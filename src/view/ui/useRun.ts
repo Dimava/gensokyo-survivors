@@ -51,6 +51,7 @@ export const hud = computed(() => {
     timeLeft: number;
     results: readonly string[];
     intro: boolean;
+    late: boolean;
   };
   if (boss) {
     const def = bossDef(boss.boss.id);
@@ -64,6 +65,7 @@ export const hud = computed(() => {
       timeLeft: Math.max(0, (boss.boss.spellEnd - t) / 60),
       results: boss.boss.results,
       intro: t < boss.boss.invulnUntil,
+      late: boss.boss.late,
     };
   }
   const statuses: { id: string; label: string; left: number | null; color: string; help: string }[] = [];

@@ -17,98 +17,133 @@ export interface BotOptions {
   dodge?: number;
   /** Play cards when affordable. */
   cards?: boolean;
+  /** Ticks between steering decisions (a human's reaction time; 1 = every tick). */
+  reaction?: number;
 }
+
+/** Two reference players for balance: a first-timer and a practised danmaku player. */
+export const SKILL = {
+  novice: { dodge: 0.2, reaction: 14 },
+  expert: { dodge: 1, reaction: 1 },
+} as const satisfies Record<string, BotOptions>;
 
 const pos = { x: 0, y: 0 };
 
-/** The move the bot wants this tick, as the ints the `move` event takes. */
+const DIRS: [number, number][] = [[0, 0]];
+for (let i = 0; i < 16; i++) DIRS.push([Math.cos((i / 16) * Math.PI * 2), Math.sin((i / 16) * Math.PI * 2)]);
+const LOOK = [3, 6, 10, 15, 21];
+
+/**
+ * The move the bot wants this tick, as the ints the `move` event takes. It
+ * scores 17 candidate directions by looking ahead: bullets are computable, so
+ * their future positions are exact; enemies are assumed to keep chasing.
+ * Danger dominates; then it drifts toward gems (or its spot below the boss).
+ */
 export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: number; y: number } {
   const v = runView(k, path);
   const run = v.derived("state").run;
   const p = v.derived("player");
+  const stats = v.derived("stats");
   const t = v.now("action");
+  const td = v.now("danmaku");
   const px = p.body.x;
   const py = p.body.y;
-  let vx = 0;
-  let vy = 0;
-  // Enemies: repelled by the ones close by.
+  const speed = 2.4 * stats.speed;
+  const dodge = opts.dodge ?? 1;
+  // Nearby threats, gathered once.
   const e = v.packed("enemies");
   const ex = e.col("x");
   const ey = e.col("y");
+  const near: number[] = [];
   for (let i = 0; i < e.count; i++) {
     const dx = ex[i]! - px;
     const dy = ey[i]! - py;
-    const d2 = dx * dx + dy * dy;
-    if (d2 > 200 * 200 || d2 < 1) continue;
-    const r = ENEMIES[e.col("kind")[i]!]!.radius + 30;
-    const w = (r * r) / d2;
-    vx -= dx * w * 0.02;
-    vy -= dy * w * 0.02;
+    if (dx * dx + dy * dy < 170 * 170) near.push(i);
   }
-  // Bullets: strongly repelled by the near ones, looking a few ticks ahead.
-  const dodge = opts.dodge ?? 1;
   const b = v.packed("bullets");
-  const td = v.now("danmaku");
+  const bnear: number[] = [];
   for (let i = 0; i < b.count; i++) {
-    if (!b.pos(i, td + 6, pos)) continue;
+    if (!b.pos(i, td, pos)) continue;
     const dx = pos.x - px;
     const dy = pos.y - py;
-    const d2 = dx * dx + dy * dy;
-    if (d2 > 70 * 70 || d2 < 0.01) continue;
-    const r = BULLET_STYLES[b.col("style")[i]!]!.radius + 12;
-    const w = ((r * r) / d2) * dodge;
-    vx -= dx * w * 0.35;
-    vy -= dy * w * 0.35;
+    if (dx * dx + dy * dy < 150 * 150) bnear.push(i);
   }
-  // Gems: drift toward the nearest one when nothing presses.
-  const d = v.packed("drops");
-  let best = 400 * 400;
-  let gx = 0;
-  let gy = 0;
-  for (let i = 0; i < d.count; i++) {
-    const dx = d.col("x")[i]! - px;
-    const dy = d.col("y")[i]! - py;
-    const d2 = dx * dx + dy * dy;
-    if (d2 < best) {
-      best = d2;
-      gx = dx;
-      gy = dy;
-    }
-  }
-  if (best < 400 * 400) {
-    const dd = Math.sqrt(best) || 1;
-    vx += (gx / dd) * 0.6;
-    vy += (gy / dd) * 0.6;
-  }
-  // Boss: hold a spot below it; stay inside the arena.
+  // Goal: the boss spot, else the nearest gem, else a slow circle.
+  let gx = Math.cos(t / 240);
+  let gy = Math.sin(t / 240);
   const boss = v.derived("boss");
   if (boss) {
     bossPos(boss, t, pos);
-    const tx = pos.x;
-    const ty = pos.y + 220;
-    vx += (tx - px) * 0.01;
-    vy += (ty - py) * 0.01;
-  }
-  if (run.arena) {
-    const dx = px - run.ax;
-    const dy = py - run.ay;
-    const dd = Math.sqrt(dx * dx + dy * dy);
-    if (dd > BOSS.arena - 60) {
-      vx -= (dx / dd) * 1.5;
-      vy -= (dy / dd) * 1.5;
+    gx = pos.x - px;
+    gy = pos.y + 170 - py;
+  } else {
+    const d = v.packed("drops");
+    let best = 450 * 450;
+    for (let i = 0; i < d.count; i++) {
+      const dx = d.col("x")[i]! - px;
+      const dy = d.col("y")[i]! - py;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < best) {
+        best = d2;
+        gx = dx;
+        gy = dy;
+      }
     }
-  } else if (Math.abs(vx) + Math.abs(vy) < 0.15) {
-    // Nothing to do: circle slowly so the swarm follows and gems come into reach.
-    vx += Math.cos(t / 240);
-    vy += Math.sin(t / 240);
   }
-  const len = Math.sqrt(vx * vx + vy * vy);
-  if (len < 0.05) return { x: 0, y: 0 };
-  // Eight directions, like a keyboard: keeps the log small and the bot honest.
-  const ax = Math.abs(vx / len) > 0.38 ? Math.sign(vx) : 0;
-  const ay = Math.abs(vy / len) > 0.38 ? Math.sign(vy) : 0;
-  const n = Math.sqrt(ax * ax + ay * ay) || 1;
-  return { x: Math.round((ax / n) * 100), y: Math.round((ay / n) * 100) };
+  const gl = Math.sqrt(gx * gx + gy * gy) || 1;
+  gx /= gl;
+  gy /= gl;
+  let bestScore = Infinity;
+  let bx = 0;
+  let by = 0;
+  for (const [dx, dy] of DIRS) {
+    let danger = 0;
+    for (const k2 of LOOK) {
+      let qx = px + dx * speed * k2;
+      let qy = py + dy * speed * k2;
+      if (run.arena) {
+        const ax = qx - run.ax;
+        const ay = qy - run.ay;
+        const ad = Math.sqrt(ax * ax + ay * ay);
+        if (ad > BOSS.arena - 20) danger += (ad - BOSS.arena + 20) * 2;
+        if (ad > BOSS.arena - 8) {
+          qx = run.ax + (ax / ad) * (BOSS.arena - 8);
+          qy = run.ay + (ay / ad) * (BOSS.arena - 8);
+        }
+      }
+      const w = 1 / (1 + k2 * 0.08);
+      for (const i of near) {
+        const def = ENEMIES[e.col("kind")[i]!]!;
+        // Enemies close in on where the player is now.
+        let ox = ex[i]! - px;
+        let oy = ey[i]! - py;
+        const od = Math.sqrt(ox * ox + oy * oy) || 1;
+        const step = Math.min(od, def.speed * k2);
+        ox = ex[i]! - (ox / od) * step - qx;
+        oy = ey[i]! - (oy / od) * step - qy;
+        const dd = Math.sqrt(ox * ox + oy * oy);
+        const r = def.radius + 11 + 8;
+        if (dd < r + 20) danger += ((r + 20 - dd) / (r + 20)) * 30 * w;
+      }
+      for (const i of bnear) {
+        if (!b.pos(i, td + k2, pos)) continue;
+        const ox = pos.x - qx;
+        const oy = pos.y - qy;
+        const dd = Math.sqrt(ox * ox + oy * oy);
+        const r = BULLET_STYLES[b.col("style")[i]!]!.radius + 3 + 6 * (1 - dodge);
+        if (dd < r) danger += 400 * w * dodge;
+        else if (dd < r + 14) danger += ((r + 14 - dd) / 14) * 12 * w * dodge;
+      }
+    }
+    const score = danger - (dx * gx + dy * gy) * 3 + (dx === 0 && dy === 0 ? 0.5 : 0);
+    if (score < bestScore) {
+      bestScore = score;
+      bx = dx;
+      by = dy;
+    }
+  }
+  if (!bx && !by) return { x: 0, y: 0 };
+  return { x: Math.round(bx * 100), y: Math.round(by * 100) };
 }
 
 /** Which level-up choice to take: grow weapons first, then new weapons, then passives. */
@@ -188,7 +223,7 @@ export function playRun(k: Game, opts: BotOptions & { maxTicks?: number; onTick?
     } else if (overlay === "vn") {
       k.dispatch(`${p}/vn` as "/run:1/vn", "vn:next", {});
     } else {
-      const m = botMove(k, path, opts);
+      const m = i % (opts.reaction ?? 1) === 0 ? botMove(k, path, opts) : last;
       if (m.x !== last.x || m.y !== last.y) {
         k.queue(p, "move", m);
         last = m;

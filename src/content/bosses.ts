@@ -36,21 +36,21 @@ export const BOSSES: readonly BossDef[] = [
     spells: [
       {
         name: "Ice Sign “Icicle Fall”",
-        hp: 2400,
+        hp: 2800,
         time: 40,
         move: "sway",
-        bonus: 60,
+        bonus: 30,
         emitters: [
-          { pattern: "rain", every: 5, params: { n: 1, speedMin: 1.6, speedMax: 2.6, width: 320, height: 330, drift: 0, style: "ice" } },
-          { pattern: "aimed", every: 70, params: { n: 5, spread: 0.7, speed: 2.4, style: "big" } },
+          { pattern: "rain", every: 4, params: { n: 2, speedMin: 1.7, speedMax: 2.8, width: 320, height: 330, drift: 0, style: "ice" } },
+          { pattern: "aimed", every: 55, params: { n: 5, spread: 0.6, speed: 2.6, style: "big" } },
         ],
       },
       {
         name: "Freeze Sign “Perfect Freeze”",
-        hp: 3000,
+        hp: 3400,
         time: 45,
         move: "wander",
-        bonus: 80,
+        bonus: 40,
         emitters: [
           {
             pattern: "freeze",
@@ -62,12 +62,12 @@ export const BOSSES: readonly BossDef[] = [
       },
       {
         name: "Snow Sign “Diamond Blizzard”",
-        hp: 3600,
+        hp: 4000,
         time: 50,
         move: "still",
-        bonus: 100,
+        bonus: 50,
         emitters: [
-          { pattern: "burst", every: 5, params: { n: 3, speedMin: 1.4, speedMax: 3.6, style: "ice" } },
+          { pattern: "burst", every: 4, params: { n: 3, speedMin: 1.4, speedMax: 3.6, style: "ice" } },
           { pattern: "ring", every: 80, params: { n: 20, speed: 1.6, accel: 0.02, vEnd: 3, spin: 0.2, style: "star" } },
         ],
       },

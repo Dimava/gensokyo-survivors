@@ -35,6 +35,8 @@ export interface StageDef {
   setPieces: readonly SetPiece[];
   /** While the boss is up the director keeps a thin trickle going. */
   bossWave: WaveDef;
+  /** Enemy HP grows by this fraction per minute of run time. */
+  hpPerMinute: number;
   /** Donations for clearing the stage. */
   clearBonus: number;
   /** Background colours for the renderer. */
@@ -50,17 +52,18 @@ export const STAGES: readonly StageDef[] = [
     bossAt: 240,
     boss: "cirno",
     dialogue: "cirno-pre",
-    clearBonus: 250,
+    clearBonus: 150,
+    hpPerMinute: 0.6,
     ground: 0x1d2b3a,
     grid: 0x2a3d52,
     waves: [
-      { from: 0, to: 25, every: 50, count: 3, cap: 30, kinds: { kedama: 1 } },
-      { from: 25, to: 55, every: 40, count: 4, cap: 60, kinds: { kedama: 3, fairy: 2 } },
-      { from: 55, to: 90, every: 34, count: 5, cap: 110, kinds: { kedama: 3, fairy: 3, sunflower: 1 } },
-      { from: 90, to: 130, every: 30, count: 6, cap: 170, kinds: { fairy: 3, phantom: 2, sunflower: 1, kedama: 2 } },
-      { from: 130, to: 170, every: 26, count: 7, cap: 240, kinds: { fairy: 2, phantom: 3, sunflower: 2, yinyang: 1 } },
-      { from: 170, to: 205, every: 22, count: 8, cap: 320, kinds: { phantom: 3, sunflower: 2, yinyang: 1, kedama: 3 } },
-      { from: 205, to: 232, every: 18, count: 9, cap: 400, kinds: { phantom: 3, fairy: 3, yinyang: 2, sunflower: 2 } },
+      { from: 0, to: 25, every: 35, count: 6, cap: 75, kinds: { kedama: 1 } },
+      { from: 25, to: 55, every: 28, count: 8, cap: 150, kinds: { kedama: 3, fairy: 2 } },
+      { from: 55, to: 90, every: 23, count: 10, cap: 275, kinds: { kedama: 3, fairy: 3, sunflower: 1 } },
+      { from: 90, to: 130, every: 21, count: 12, cap: 425, kinds: { fairy: 3, phantom: 2, sunflower: 1, kedama: 2 } },
+      { from: 130, to: 170, every: 18, count: 14, cap: 600, kinds: { fairy: 2, phantom: 3, sunflower: 2, yinyang: 1 } },
+      { from: 170, to: 205, every: 15, count: 16, cap: 800, kinds: { phantom: 3, sunflower: 2, yinyang: 1, kedama: 3 } },
+      { from: 205, to: 232, every: 12, count: 18, cap: 1000, kinds: { phantom: 3, fairy: 3, yinyang: 2, sunflower: 2 } },
     ],
     setPieces: [
       { at: 45, kind: "ring", enemy: "kedama", n: 28, radius: 520, banner: "Surrounded!" },

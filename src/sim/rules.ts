@@ -26,8 +26,8 @@ import type { RunSummary } from "./schemas.ts";
 
 type C = Ctx<RS0>;
 
-/** Enemy bullets hurt this much (armor applies). */
-export const BULLET_DMG = 14;
+/** Bullets hurt this much (armor applies): the swarm's stray shots, and the boss's danmaku. */
+export const BULLET_DMG = { swarm: 10, boss: 18 } as const;
 
 const bp = { x: 0, y: 0 };
 
@@ -204,7 +204,8 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     const stats = ctx.derived("stats");
     const res = stepBullets(ctx, stats.graze, playerSpeedBound(ctx));
     if (res.hit && ctx.derived("state").run.phase !== "over") {
-      ctx.emit("player:hurt", { player: p.id, dmg: BULLET_DMG, cause: "bullet" });
+      const boss = ctx.derived("state").run.phase === "boss";
+      ctx.emit("player:hurt", { player: p.id, dmg: boss ? BULLET_DMG.boss : BULLET_DMG.swarm, cause: "bullet" });
       ctx.emit("bullets:erase", { x: p.body.x, y: p.body.y, radius: PLAYER.mercyRadius, gems: false });
     }
     if (res.grazes) ctx.emit("graze", { player: p.id, n: res.grazes, x: r1(p.body.x), y: r1(p.body.y) });
@@ -443,6 +444,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
           t0: t,
           t1: t + 60,
           sway: false,
+          late: false,
           results: [],
         },
       },
@@ -475,6 +477,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
       t0: t,
       t1: t + 50,
       sway: spell.move === "sway",
+      late: false,
     });
   }),
   r.on("boss:hit").as("between spells").modify((ev, ctx) => {
@@ -489,8 +492,12 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("boss:hit").react((_, ctx) => {
     const boss = ctx.derived("boss");
     if (boss && boss.boss.hp <= 0 && boss.boss.results.length === boss.boss.spell) {
-      ctx.emit("spell:break", { index: boss.boss.spell, timeout: false });
+      ctx.emit("spell:break", { index: boss.boss.spell, timeout: boss.boss.late });
     }
+  }),
+  r.on("spell:late", (ev, ctx) => {
+    const boss = ctx.derived("boss");
+    if (boss && boss.boss.spell === ev.index) ctx.mut(boss, "boss").late = true;
   }),
   r.on("spell:break").check((ev, ctx) => {
     const boss = ctx.derived("boss");

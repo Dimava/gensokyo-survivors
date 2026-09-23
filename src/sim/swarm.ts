@@ -10,6 +10,7 @@ import type { RS0 } from "./run.ts";
 import { Grid } from "./spatial.ts";
 import { CAP, SWARM } from "./tuning.ts";
 import { emitPattern } from "./danmaku.ts";
+import { stageDef } from "../content/stages.ts";
 
 export type EnemyCols = Columns<"x" | "y" | "hp" | "kind" | "uid" | "hitAt" | "orbAt" | "fireAt" | "kx" | "ky" | "volley">;
 
@@ -33,10 +34,11 @@ export function spawnEnemy(ctx: C, kind: number, x: number, y: number): void {
   const uid = run.run.nextUid;
   ctx.mut(run, "run").nextUid = uid + 1;
   const t = ctx.now("action");
+  const scale = 1 + stageDef(run.run.stage).hpPerMinute * (t / 3600);
   e.add({
     x,
     y,
-    hp: def.hp,
+    hp: Math.round(def.hp * scale),
     kind,
     uid,
     hitAt: -100,

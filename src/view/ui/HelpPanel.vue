@@ -27,7 +27,7 @@ const spells = bossDef(first.boss).spells.length;
       <ul>
         <li>Your weapons fire on their own. You only move.</li>
         <li>Defeated enemies drop <b style="color: #4da3ff">point items</b> (experience). A full EXP bar is a level-up: pick one of three upgrades.</li>
-        <li>At {{ fmtTime(first.bossAt) }} the stage boss arrives. She has {{ spells }} <b>spell cards</b>, each with its own HP bar and timer. Break them by damage for a bonus; take no hits during one to <b>capture</b> it for double.</li>
+        <li>At {{ fmtTime(first.bossAt) }} the stage boss arrives. She has {{ spells }} <b>spell cards</b>, each with its own HP bar and timer. Break each by damage before its timer runs out for a bonus (after that it must still be broken, without bonus); take no hits during one to <b>capture</b> it for double.</li>
         <li>Clearing the stage, surviving, kills and coins pay out <b>{{ CURRENCY.name }}</b> ({{ CURRENCY.icon }}) when the run ends, even if you fall.</li>
       </ul>
     </section>

@@ -91,6 +91,8 @@ const RunDecl = defineScope("run", {
       t0: int,
       t1: int,
       sway: z.boolean(),
+      /** The spell card's bonus timer ran out; breaking it now gives no bonus. */
+      late: z.boolean(),
       results: z.array(z.enum(["captured", "broken", "timeout"])),
     }),
     card: z.strictObject({ id: z.string(), level: int, effect: z.string() }),
@@ -142,6 +144,7 @@ const RunDecl = defineScope("run", {
     "vn:closed": event(),
     "boss:hit": event({ dmg: num }),
     "spell:start": event({ index: int }),
+    "spell:late": event({ index: int }),
     "spell:break": event({ index: int, timeout: z.boolean() }),
     "boss:defeated": event(),
     "run:over": event({ outcome: z.enum(OUTCOMES) }),

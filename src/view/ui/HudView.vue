@@ -71,10 +71,11 @@ function pause(): void {
     <div class="boss" v-else>
       <div class="bossrow">
         <span class="bname">{{ h.boss.name }}</span>
-        <span class="pips" title="Spell cards: captured (gold), broken (blue), timed out (grey), current (outlined)">
+        <span class="pips" title="Spell cards: captured (gold), broken (blue), broken after the timer (grey), current (outlined)">
           <i v-for="i in h.boss.total" :key="i" :class="h.boss.results[i - 1] ?? (i - 1 === h.boss.index ? 'now' : 'todo')"></i>
         </span>
-        <span class="btime" :class="{ hurry: h.boss.timeLeft < 10 }" title="Time left on this spell card">{{ h.boss.timeLeft.toFixed(1) }}s</span>
+        <span v-if="h.boss.late" class="btime hurry" title="The bonus timer ran out: break the card to go on">Bonus failed</span>
+        <span v-else class="btime" :class="{ hurry: h.boss.timeLeft < 10 }" title="Bonus time left on this spell card">{{ h.boss.timeLeft.toFixed(1) }}s</span>
       </div>
       <div class="bbar" :title="`Spell card HP: ${h.boss.hp}`">
         <div class="bfill" :style="{ width: h.boss.frac * 100 + '%' }"></div>

@@ -21,6 +21,7 @@ type BossEntity = EntityOf<RS0> & {
     readonly invulnUntil: number;
     readonly spell: number;
     readonly results: readonly string[];
+    readonly late: boolean;
   };
 };
 
@@ -63,23 +64,22 @@ export function spellProcess(process: ProcessHelper) {
           p.locals.volley = spell.emitters.map(() => 0);
           p.locals.moveAt = t;
         }
-        if (t >= boss.boss.spellEnd) {
-          ctx.emit("spell:break", { index: p.locals.index, timeout: true });
-          return done();
-        }
+        // The bonus timer ran out: the card goes on (it must still be broken), without its bonus.
+        if (t >= boss.boss.spellEnd && !boss.boss.late) ctx.emit("spell:late", { index: p.locals.index });
         bossPos(boss, t, bp);
         spell.emitters.forEach((em, k) => {
           while (p.locals.next[k]! <= t) {
             emitPattern(ctx, em, bp.x, bp.y, p.locals.volley[k]!);
             p.locals.volley[k]! += 1;
-            p.locals.next[k]! += em.every;
+            // Past the bonus timer the boss grows desperate: every emitter fires a third faster.
+            p.locals.next[k]! += boss.boss.late ? Math.max(1, Math.round(em.every * 0.66)) : em.every;
           }
         });
         if (spell.move === "wander" && t >= p.locals.moveAt) {
           wander(ctx, boss, t);
           p.locals.moveAt = t + 160;
         }
-        let wake = boss.boss.spellEnd;
+        let wake = boss.boss.late || t >= boss.boss.spellEnd ? Infinity : boss.boss.spellEnd;
         for (const n of p.locals.next) wake = Math.min(wake, n);
         if (spell.move === "wander") wake = Math.min(wake, p.locals.moveAt);
         return wait(Math.max(1, wake - t));

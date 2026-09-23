@@ -218,13 +218,17 @@ export class Presenter {
         if (!this.quiet) {
           if (res === "captured") banner("Spell Card Captured!", "good", "Bonus doubled: no hits taken");
           else if (res === "broken") banner("Spell Card Bonus!", "good");
-          else banner("Bonus Failed", "bad", "The spell card timed out");
+          else banner("Spell Card Broken", "info", "Too late for the bonus");
         }
-        this.sfx(res === "timeout" ? "back" : "spellBreak");
+        this.sfx("spellBreak");
         f.flash(0xffffff, 0.5);
         f.shake(12);
         break;
       }
+      case "spell:late":
+        if (!this.quiet) banner("Bonus Failed", "bad", "Time is up: break the spell card anyway to go on");
+        this.sfx("back");
+        break;
       case "boss:defeated":
         f.flash(0xffffff, 0.9);
         f.shake(22);
