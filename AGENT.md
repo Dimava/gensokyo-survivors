@@ -6,6 +6,33 @@ you find hard is as valuable as what you ship. Work from this brief, the
 design logs and the kernel's README; nobody will answer questions
 mid-task, so make reasonable calls, write them down, and keep going.
 
+## The bar, from the owner
+
+> Don't cut corners. The game may be not large, but it should be whole and
+> feel complete: not missing a thing, but able to grow.
+
+Small and finished beats big and broken. Concretely, "whole" means:
+
+- A title screen, a main menu, a pause menu, settings (volume, reduced
+  motion, speed of animations), a results screen, and restart. No dead
+  buttons, no "coming soon" screens, no placeholder text left in the UI.
+- The player is never lost: the first run teaches its controls in-game,
+  every resource and number on screen says what it is, and every choice
+  (upgrade, card, node, pack) shows what it will do before you commit.
+- Every action has feedback: hits, pickups, level-ups, card plays,
+  purchases and pulls each get motion and sound. Without audio assets,
+  synthesize short sounds with WebAudio.
+- Balance is tuned by playing and by bot runs: a first run lasts a few
+  minutes, the boss is beatable after a few meta upgrades, and progression
+  never stalls.
+- Progress survives a reload, and nothing throws in the console during a
+  full playthrough.
+- Room to grow: content (enemies, weapons, cards, nodes, bosses) lives in
+  data tables, so adding one is adding a row, not new code paths.
+
+Finish fewer milestones completely rather than more of them partly. A
+milestone is not done until it meets this bar.
+
 ## Precondition
 
 The kernel must exist first: `D:\bag\repos\games\gamebones`, branch `v2`,
@@ -56,8 +83,9 @@ README.md is written. If it is not there yet, stop and say so.
 
 ## Milestones, in order
 
-Finish each (playable, tested, committed) before starting the next. Later
-milestones are worth less than a polished earlier one.
+Finish each (playable, tested, committed, and meeting "The bar") before
+starting the next. Later milestones are worth less than a polished earlier
+one. M1 to M4 together are the whole game; M5 grows it.
 
 **M1. The survivors run.** Player movement at 60 Hz, auto-firing weapons,
 enemies as a packed store (columns) chasing the player, experience gems as
