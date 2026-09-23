@@ -98,9 +98,9 @@ export const CARDS: readonly CardDef[] = [
     rarity: "R",
     cost: 2,
     effect: "grazeHeal",
-    params: { hp: 1, time: 30 },
-    scales: ["hp"],
-    text: "For {time}s, every bullet you graze restores {hp} HP.",
+    params: { hp: 1, spirit: 0.05, time: 30 },
+    scales: ["hp", "spirit"],
+    text: "For {time}s, every bullet you graze restores {hp} HP and {spirit} Spirit.",
   },
   {
     id: "vengeance",

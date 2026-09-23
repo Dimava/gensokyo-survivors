@@ -101,6 +101,27 @@ async function run(p: Page): Promise<void> {
       await shot("results");
       break;
     }
+    case "record": {
+      // A Chrome session's log for the cross-engine replay test: the bot plays about a minute.
+      await page.goto(base + "?screen=menu&bot=1&turbo=2");
+      await wait(1000);
+      await clickText("Start Run");
+      await wait(300);
+      await clickText("Go");
+      for (;;) {
+        await wait(2000);
+        const t = await gs<number>("const p = g.host.path(); return p ? g.host.k.view(p).now('fixed') : -1;");
+        if (t < 0 || t > 60 * 60) break;
+      }
+      await page.keyboard.press("Escape");
+      await wait(300);
+      const log = await gs<string>("return JSON.stringify(g.host.k.log());");
+      mkdirSync("test/fixtures", { recursive: true });
+      writeFileSync("test/fixtures/chrome-run.json", log);
+      console.log(`log: ${log.length} bytes, engine ${JSON.parse(log).engine}, ${JSON.parse(log).records.length} records`);
+      await shot("paused");
+      break;
+    }
     case "meta": {
       await page.goto(base + "?screen=menu");
       await wait(1000);

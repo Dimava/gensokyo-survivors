@@ -1,0 +1,115 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`M3 skill cards scripted playthrough: refused play, Power Charm (modify), Graze Ribbon (trigger), graze draws 1`] = `
+"== initial
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+== play / run:start stage=lake
+run:start stage=lake
+  . +/run:1.scope "run" (apply run:start)
+  . profile#2.profile runs 0 -> 1, activeRun  -> /run:1, nextRun 1 -> 2 (apply run:start)
+  run:begin stage=lake bonuses={} unlocked=[] deck=[{"id":"power-charm","level":1},{"id":"graze-ribbon","level":1}] @/run:1
+    . +loadout#1 {loadout} (apply run:begin)
+    . +run#2 {run} (apply run:begin)
+    . +player#3 {body, ctrl, life, progress, spirit, meter} (apply run:begin)
+    . +weapon#4 {weapon} (apply run:begin)
+    . +deck#5 {pile} (apply run:begin)
+    . +hand#6 {pile} (apply run:begin)
+    . +discard#7 {pile} (apply run:begin)
+    . +card#8 {card, in} (apply run:begin)
+    . ... 1 more changes
+    process:director pid=director#10 state=swarm [enemies: count=6]
+      . run#2.run nextUid 1 -> 7 (process:director.swarm)
+    card:draw
+      . card#8.in of deck#5 -> hand#6 (apply card:draw)
+      card:drawn card=card#8
+    banner text=Misty Lake tone=info
+meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+lake swarm t=0:00 fixed=0 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
+weapons: amulet1 | passives: -
+enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
+cards: spirit 1.00/3 meter 0 grazes 0 | hand: graze-ribbon
+== play /run:1 card:play card=card#8
+!! card:play card=card#8: needs 2 Spirit (you have 1) (check card:play)
+-- refused: needs 2 Spirit (you have 1)
+meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+lake swarm t=0:00 fixed=0 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
+weapons: amulet1 | passives: -
+enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
+cards: spirit 1.00/3 meter 0 grazes 0 | hand: graze-ribbon
+== play /run:1 card:play card=card#9
+!! card:play card=card#9: Power Charm is not in your hand (check card:play)
+-- refused: Power Charm is not in your hand
+meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+lake swarm t=0:00 fixed=0 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
+weapons: amulet1 | passives: -
+enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
+cards: spirit 1.00/3 meter 0 grazes 0 | hand: graze-ribbon
+== tick /run:1 fixed x240
+meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+lake swarm t=0:04 fixed=240 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
+weapons: amulet1 | passives: -
+enemies 42 [kedama 42] | drops 0 | shots 2 | bullets 0
+cards: spirit 2.00/3 meter 0 grazes 0 | hand: graze-ribbon
+-- the graze meter drew the second card after 12 grazes
+== play /run:1 card:play card=card#9
+card:play card=card#9
+  . player#3.spirit t0 0 -> 4865 (pay and discard)
+  . player#3.progress cardsPlayed 0 -> 1 (pay and discard)
+  . card#9.in of hand#6 -> discard#7, at 1 -> 0 (pay and discard)
+  card:played card=card#9 x=289.5927619533532 y=1481.2317231115871 fx=1 fy=0
+    . +player#3.empowered {"pct":50,"until":5465,"pid":"after#14"} (Power Charm)
+meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+lake swarm t=1:21 fixed=4865 | hp 100/100 lv 8 xp 60/75 kills 338 | pos 290,1481
+weapons: amulet3 border1 needle3 | passives: clock1
+enemies 275 [fairy 116, kedama 126, sunflower 33] | drops 36 | shots 6 | bullets 136
+cards: spirit 1.00/3 meter 8 grazes 12 | hand: graze-ribbon
+-- weapon:fire after Power Charm: {"weapon":"weapon#4","dmg":18} (might 1, +50%)
+== play /run:1 card:play card=card#8
+card:play card=card#8
+  . player#3.spirit base 1 -> 0, t0 4865 -> 5105 (pay and discard)
+  . player#3.progress cardsPlayed 1 -> 2 (pay and discard)
+  . card#8.in of hand#6 -> discard#7, at 0 -> 1 (pay and discard)
+  card:played card=card#8 x=558.8766752981757 y=1459.830060760672 fx=0.924261426490025 fy=-0.3817601544197929
+    . +player#3.triggers [{"on":"graze","rule":"grazeHeal","params":{"hp":1,"spirit":0.05}}] (Graze Ribbon)
+    . +run#2.timed {"pids":{"grazeHeal":"after#15"}} (Graze Ribbon)
+meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+lake swarm t=1:25 fixed=5105 | hp 100/100 lv 8 xp 74/75 kills 355 | pos 559,1460
+weapons: amulet3 border1 needle3 | passives: clock1
+enemies 275 [fairy 117, kedama 120, sunflower 38] | drops 39 | shots 6 | bullets 171
+cards: spirit 0.00/3 meter 35 grazes 15 | hand: -
+-- a graze under Graze Ribbon ran the trigger row's rule:
+-- graze player=player#3 n=1 x=668.2 y=1719
+  . player#3.progress grazes 15 -> 16 (apply graze)
+  . player#3.meter graze 35 -> 44 (apply graze)
+  . player#3.spirit base 0 -> 0.9833333333333334, t0 5105 -> 5329 (grazeHeal)
+-- meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
+last run: -
+lake swarm t=2:03 fixed=7429 | hp 105/120 lv 10 xp 46/95 kills 488 | pos 2651,3941
+weapons: amulet3 border1 needle4 | passives: clock1 heart1
+enemies 425 [fairy 168, kedama 131, sunflower 64, phantom 62] | drops 77 | shots 5 | bullets 309
+cards: spirit 3.00/3 meter 69 grazes 41 | hand: graze-ribbon, power-charm
+"
+`;

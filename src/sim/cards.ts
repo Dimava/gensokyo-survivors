@@ -153,7 +153,7 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
     }),
     r.on("card:played").when({ card: { card: { effect: "grazeHeal" } } }).as("Graze Ribbon").apply((ev, ctx) => {
       const p = params(ctx, ev.card);
-      addTrigger(ctx, trigger("graze", "grazeHeal", { hp: p.hp! }));
+      addTrigger(ctx, trigger("graze", "grazeHeal", { hp: p.hp!, spirit: p.spirit! }));
       timed(ctx, "grazeHeal", ticksFor(ctx, p.time!));
     }),
     r.on("card:played").when({ card: { card: { effect: "vengeance" } } }).as("Vengeful Amulet").apply((ev, ctx) => {
@@ -211,10 +211,13 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
     }),
 
     // Rules that run only through triggers rows on the player (D19).
-    r.named("grazeHeal", z.object({ hp: z.number() })).on("graze").apply((ev, ctx, self) => {
+    r.named("grazeHeal", z.object({ hp: z.number(), spirit: z.number() })).on("graze").apply((ev, ctx, self) => {
       const pl = ctx.req(self.id, "life");
-      const max = ctx.derived("stats").maxHp;
-      ctx.mut(self.id, "life").hp = Math.min(max, pl.life.hp + self.params.hp * ev.n);
+      const stats = ctx.derived("stats");
+      const t = ctx.now("action");
+      const spirit = Math.min(stats.spiritMax, spiritAt(ctx, t) + self.params.spirit * ev.n);
+      ctx.mut(self.id, "life").hp = Math.min(stats.maxHp, pl.life.hp + self.params.hp * ev.n);
+      Object.assign(ctx.mut(self.id, "spirit"), { base: spirit, t0: t });
     }),
     r.named("vengeance", z.object({ dmg: z.number(), radius: z.number() })).on("player:hurt").react((_, ctx, self) => {
       const { body } = ctx.derived("player");
