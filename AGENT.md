@@ -13,9 +13,10 @@ mid-task, so make reasonable calls, write them down, and keep going.
 
 Small and finished beats big and broken. Concretely, "whole" means:
 
-- A title screen, a main menu, a pause menu, settings (volume, reduced
-  motion, speed of animations), a results screen, and restart. No dead
-  buttons, no "coming soon" screens, no placeholder text left in the UI.
+- A title screen, a main menu, a pause menu, settings (volume, speed of
+  animations), a results screen, and restart. No dead buttons, no "coming
+  soon" screens, no placeholder text left in the UI. No reduced-motion
+  setting: the owner bans it in unreleased titles.
 - The player is never lost: the first run teaches its controls in-game,
   every resource and number on screen says what it is, and every choice
   (upgrade, card, node, pack) shows what it will do before you commit.
