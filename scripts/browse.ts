@@ -12,7 +12,12 @@ const base = process.argv[3] ?? "http://localhost:5190/";
 const CHROME = process.env.CHROME ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
 
 mkdirSync(".shots", { recursive: true });
-const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"] });
+const gpu = process.env.GPU === "1";
+const browser = await chromium.launch({
+  executablePath: CHROME,
+  headless: process.env.HEADED !== "1",
+  args: gpu ? ["--enable-gpu", "--use-angle=d3d11", "--ignore-gpu-blocklist"] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"],
+});
 const page = await browser.newPage({ viewport: { width: 1280, height: 760 } });
 const errors: string[] = [];
 page.on("console", (m) => {
@@ -228,6 +233,30 @@ async function run(p: Page): Promise<void> {
       await page.keyboard.press("Escape");
       await wait(1500);
       await shot("resumed");
+      break;
+    }
+    case "fps": {
+      // Frame rate at the milestone loads (?stress=enemies,bullets). Headless Chrome; GPU flags below.
+      for (const load of ["1500,0", "1500,3000"]) {
+        await page.goto(base + `?screen=menu&stress=${load}`);
+        await wait(1000);
+        await gs("g.prefs.fps = true; g.prefs.hints = false;");
+        await clickText("Start Run");
+        await wait(300);
+        await clickText("Go");
+        await wait(1500);
+        const samples: number[] = [];
+        const ticks: number[] = [];
+        for (let i = 0; i < 6; i++) {
+          await wait(500);
+          samples.push(await gs<number>("return g.state.fps;"));
+          ticks.push(await gs<number>("return g.state.msPerTick;"));
+        }
+        await shot(`load-${load.replace(",", "-")}`);
+        console.log(`load ${load}: fps ${samples.join(" ")} | ms/tick ${ticks.join(" ")}`);
+        await gs("g.host.meta('run:abandon', {});");
+        await wait(500);
+      }
       break;
     }
     case "meta": {

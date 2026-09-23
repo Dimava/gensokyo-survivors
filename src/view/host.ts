@@ -8,6 +8,7 @@ import type { DispatchResult } from "gamebones";
 import { activeRun, newGame, runView, type Game, type RunPath } from "../sim/game.ts";
 import { botCard, botMove, botPick } from "../sim/bot.ts";
 import { handCards } from "../sim/cards.ts";
+import { stress } from "../sim/stress.ts";
 import { audio, type Track } from "./audio.ts";
 import { input, type Action } from "./input.ts";
 import { eraseSave, freshGame, loadOrCreate, save } from "./persist.ts";
@@ -282,6 +283,13 @@ class Host {
     state.paused = false;
     state.pausePage = "main";
     state.screen = "run";
+    // Debug: ?stress=<enemies>,<bullets> loads the field for frame-rate measurements (not replayable).
+    const stressArg = params.get("stress");
+    const path = this.path();
+    if (stressArg && path) {
+      const [e, b] = stressArg.split(",").map(Number);
+      stress(this.k, path, e ?? 0, b ?? 0);
+    }
   }
 
   abandonRun(): void {
