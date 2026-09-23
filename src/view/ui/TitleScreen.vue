@@ -1,0 +1,82 @@
+<script setup lang="ts">
+import { host } from "../host.ts";
+import { GAME_SUBTITLE, GAME_TITLE } from "../../content/names.ts";
+</script>
+
+<template>
+  <div class="screen title" @click="host.go('menu')">
+    <div class="logo">
+      <div class="yy"></div>
+      <h1>{{ GAME_TITLE }}</h1>
+      <p class="sub">{{ GAME_SUBTITLE }}</p>
+    </div>
+    <p class="press">Press any key or click to begin</p>
+    <p class="foot muted">A Touhou Project fan game · placeholder art · all sound synthesized</p>
+  </div>
+</template>
+
+<style scoped>
+.title {
+  justify-content: center;
+  cursor: pointer;
+}
+.logo {
+  text-align: center;
+  animation: rise calc(0.9s * var(--anim)) cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+.yy {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 25%, #fff 0 9%, transparent 10%),
+    radial-gradient(circle at 50% 75%, #e0314b 0 9%, transparent 10%),
+    radial-gradient(circle at 50% 25%, #e0314b 0 25%, transparent 26%),
+    radial-gradient(circle at 50% 75%, #fff 0 25%, transparent 26%),
+    linear-gradient(90deg, #fff 50%, #e0314b 50%);
+  box-shadow: 0 0 40px rgba(224, 49, 75, 0.6);
+  animation: spin calc(6s * var(--anim)) linear infinite;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  letter-spacing: 0.06em;
+  text-shadow:
+    0 0 24px rgba(224, 49, 75, 0.7),
+    0 4px 0 #6a0f1f;
+}
+.sub {
+  margin: 8px 0 0;
+  color: #d8def5;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+}
+.press {
+  margin-top: 48px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  animation: blink calc(1.6s * var(--anim)) ease-in-out infinite;
+}
+.foot {
+  position: absolute;
+  bottom: 14px;
+  font-size: 0.85rem;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+}
+</style>
