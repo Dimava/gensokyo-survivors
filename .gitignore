@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.tsbuildinfo
 .tmp/
+
+# Local, copyrighted reference images (never committed)
+refs/
