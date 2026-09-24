@@ -6,6 +6,7 @@ import { CARDS, RARITIES, RARITY_INFO, MAX_CARD_LEVEL } from "../../content/card
 import { CURRENCY } from "../../content/names.ts";
 import { gacha, owned, wallet } from "./useGame.ts";
 import PackOpening from "./PackOpening.vue";
+import CardBack from "./CardBack.vue";
 import NavHints from "./NavHints.vue";
 
 const open = computed(() => {
@@ -53,9 +54,12 @@ function buy(id: string): void {
     </div>
     <div class="shop">
       <div v-for="p in PACKS" :key="p.id" class="panel pack">
-        <div class="packart">
-          <div class="yy"></div>
-          <span>{{ p.cards }} cards</span>
+        <div class="packart" aria-hidden="true">
+          <CardBack class="under" />
+          <CardBack />
+          <div class="band"><span>御神</span><span>籤</span></div>
+          <div class="seal">封</div>
+          <span class="count">{{ p.cards }} cards</span>
         </div>
         <div class="info">
           <h2>{{ p.name }}</h2>
@@ -91,7 +95,7 @@ function buy(id: string): void {
       </div>
     </div>
     <Transition name="fade">
-      <PackOpening v-if="open" />
+      <PackOpening v-if="open" :key="gacha.opened" />
     </Transition>
     <NavHints v-if="!open" />
   </div>
@@ -117,33 +121,58 @@ function buy(id: string): void {
   flex-wrap: wrap;
 }
 .packart {
-  width: 180px;
+  /* The sealed bundle the opening breaks: lacquer card backs under a paper band and a vermilion seal. */
+  position: relative;
+  width: 170px;
   height: 250px;
-  border-radius: 14px;
-  border: 2px solid #c9b3ff;
-  background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 8px, transparent 8px 16px),
-    linear-gradient(160deg, #6a2fb8, #22103f);
-  box-shadow: 0 0 30px rgba(197, 107, 255, 0.4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: safe center;
-  gap: 14px;
-  font-weight: 800;
+  margin: 4px 6px 12px 4px;
   animation: bob calc(3s * var(--anim)) ease-in-out infinite;
 }
-.yy {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 3px solid #fff;
+.packart > * {
+  position: absolute;
+  inset: 0;
+}
+.packart .under {
+  transform: translate(6px, 6px) rotate(3deg);
+  filter: brightness(0.6);
+}
+.band {
+  inset: 100px -8px auto;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
   background:
-    radial-gradient(circle at 50% 25%, #fff 0 9%, transparent 10%),
-    radial-gradient(circle at 50% 75%, #e0314b 0 9%, transparent 10%),
-    radial-gradient(circle at 50% 25%, #e0314b 0 25%, transparent 26%),
-    radial-gradient(circle at 50% 75%, #fff 0 25%, transparent 26%),
-    linear-gradient(90deg, #fff 50%, #e0314b 50%);
+    repeating-linear-gradient(90deg, rgba(150, 128, 90, 0.1) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #fbf6ea, #f4ecd8 55%, #e3d5b4);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 0 rgba(120, 90, 50, 0.4),
+    0 3px 8px rgba(0, 0, 0, 0.6);
+  font: 900 17px/1 "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif;
+  color: #1b1512;
+}
+.seal {
+  inset: 96px auto auto 56px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 40% 35%, #f0604a, #b01e1a 60%, #6a0c0a);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 190, 160, 0.35),
+    inset 0 0 0 6px #a31a16,
+    inset 0 0 0 7px rgba(255, 210, 180, 0.5),
+    0 3px 6px rgba(0, 0, 0, 0.6);
+  font: 900 26px/1 "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif;
+  color: #ffe4d4;
+}
+.count {
+  inset: auto 0 -26px;
+  text-align: center;
+  font-weight: 800;
 }
 .info {
   flex: 1 1 400px;
