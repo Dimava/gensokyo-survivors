@@ -5,7 +5,7 @@ import { PACKS } from "../../content/gacha.ts";
 import { CARDS, RARITIES, RARITY_INFO, MAX_CARD_LEVEL } from "../../content/cards.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { gacha, owned, wallet } from "./useGame.ts";
-import PackOpening from "./PackOpening.vue";
+import PackOpening, { buyPacks, demo, fakePacks } from "./PackOpening.vue";
 import CardBack from "./CardBack.vue";
 import NavHints from "./NavHints.vue";
 
@@ -34,8 +34,14 @@ function odds(packId: string) {
   });
 }
 
-function buy(id: string): void {
-  host.meta("pack:buy", { pack: id });
+/** One pack, or ten in a row (a ×10 pull, shown as one opening). Alt+click pretends: free, nothing saved. */
+function buy(id: string, count = 1, e?: MouseEvent): void {
+  if (e?.altKey) fakePacks(id, count);
+  else buyPacks(id, count);
+}
+/** Alt+click on the pack art pretends too (Alt+Shift: ×10), whatever the wallet says. */
+function artClick(id: string, e: MouseEvent): void {
+  if (e.altKey && !open.value && !demo.value) fakePacks(id, e.shiftKey ? 10 : 1);
 }
 </script>
 
@@ -54,7 +60,7 @@ function buy(id: string): void {
     </div>
     <div class="shop">
       <div v-for="p in PACKS" :key="p.id" class="panel pack">
-        <div class="packart" aria-hidden="true">
+        <div class="packart" aria-hidden="true" @click="artClick(p.id, $event)">
           <CardBack class="under" />
           <CardBack />
           <div class="band"><span>御神</span><span>籤</span></div>
@@ -87,7 +93,10 @@ function buy(id: string): void {
             <b>Packs since your last one: {{ gacha.sinceHigh }}</b> (guaranteed within {{ Math.max(1, p.pity.every - gacha.sinceHigh) }}).
           </p>
           <p class="muted small">Cards already at level {{ MAX_CARD_LEVEL }} refund {{ CURRENCY.name }} instead: {{ RARITIES.map((r) => `${r} ${RARITY_INFO[r].refund}`).join(", ") }}.</p>
-          <button class="btn gold buy" :disabled="wallet.coins < p.cost || inRun || open" @click="buy(p.id)">Open for {{ CURRENCY.icon }} {{ p.cost }}</button>
+          <div class="buys">
+            <button class="btn gold buy" :disabled="wallet.coins < p.cost || inRun || open" @click="buy(p.id, 1, $event)">Open for {{ CURRENCY.icon }} {{ p.cost }}</button>
+            <button class="btn gold buy" :disabled="wallet.coins < p.cost * 10 || inRun || open" @click="buy(p.id, 10, $event)">Open ×10 for {{ CURRENCY.icon }} {{ p.cost * 10 }}</button>
+          </div>
           <p v-if="inRun" class="muted small">Finish your run in progress first.</p>
           <p v-else-if="wallet.coins < p.cost" class="muted small">You need {{ CURRENCY.icon }} {{ p.cost - wallet.coins }} more. Runs pay out {{ CURRENCY.name }}.</p>
           <p class="muted small">Packs opened: {{ gacha.opened }}</p>
@@ -95,9 +104,9 @@ function buy(id: string): void {
       </div>
     </div>
     <Transition name="fade">
-      <PackOpening v-if="open" :key="gacha.opened" />
+      <PackOpening v-if="open || demo" :key="demo ? `demo${demo.id}` : gacha.opened" />
     </Transition>
-    <NavHints v-if="!open" />
+    <NavHints v-if="!open && !demo" />
   </div>
 </template>
 
@@ -206,9 +215,14 @@ td {
   font-size: 0.85rem;
   margin: 6px 0;
 }
+.buys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
 .buy {
   font-size: 1.1rem;
-  margin-top: 6px;
 }
 @keyframes bob {
   50% {
