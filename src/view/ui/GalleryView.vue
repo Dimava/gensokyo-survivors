@@ -3,7 +3,8 @@
 // field sprites. They all look at the cursor: each drawing is re-rendered
 // with a look from its own centre toward the pointer. The style switch shows
 // the drawn set, the rigged Live2D-style set (src/art-l2d), or both side by side.
-// Below them, the items and weapons at every level, as their level-up cards show them.
+// Below them, the items and weapons at every level, as their level-up cards
+// show them; the items in any of their looks, the chosen one used by the cards.
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { prefs } from "../prefs.ts";
 import { livePortrait } from "../art-set.ts";
@@ -20,6 +21,7 @@ import { WEAPONS } from "../../content/weapons.ts";
 import { hex } from "./useGame.ts";
 import ItemPreview from "./ItemPreview.vue";
 import WeaponPreview from "./WeaponPreview.vue";
+import { ITEM_LOOKS } from "./items/index.ts";
 
 interface Item {
   key: string;
@@ -156,12 +158,18 @@ function draw(d: Drawing, key: string, px: number): string {
           <div class="sub muted">{{ e.sub }}</div>
         </div>
       </div>
-      <h3>Items</h3>
+      <div class="section-head">
+        <h3>Items</h3>
+        <div class="styles">
+          <button v-for="l in ITEM_LOOKS" :key="l.id" class="btn small" :class="{ primary: prefs.itemArt === l.id }" :title="l.blurb" @click="prefs.itemArt = l.id">{{ l.label }}</button>
+        </div>
+      </div>
+      <p class="muted look-note">{{ ITEM_LOOKS.find((l) => l.id === prefs.itemArt)?.blurb }}. The level-up cards use the look picked here.</p>
       <div class="rows">
         <div v-for="p in PASSIVES" :key="p.id" class="item row" tabindex="0">
           <div class="levels">
             <div v-for="l in p.max" :key="l" class="lv">
-              <ItemPreview :id="p.id" :color="hex(p.color)" :level="l" :max="p.max" active />
+              <ItemPreview :id="p.id" :color="hex(p.color)" :level="l" :max="p.max" :look="prefs.itemArt" active />
               <span class="muted">Lv {{ l }}</span>
             </div>
           </div>
@@ -248,6 +256,20 @@ function draw(d: Drawing, key: string, px: number): string {
 .sub {
   font-size: 12px;
   margin-top: 2px;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.section-head .styles {
+  margin-left: auto;
+  margin-right: 0;
+}
+.look-note {
+  margin: 4px 0 10px;
+  font-size: 13px;
 }
 .rows {
   display: flex;
