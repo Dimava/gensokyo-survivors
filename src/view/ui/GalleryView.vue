@@ -133,7 +133,7 @@ function draw(d: Drawing, key: string, px: number): string {
 </script>
 
 <template>
-  <div v-keynav="{ pointer: true }" class="screen">
+  <div v-keynav="{ pointer: true }" class="screen gallery">
     <div class="screen-head">
       <h1>Gallery</h1>
       <div class="tabs">
@@ -146,7 +146,7 @@ function draw(d: Drawing, key: string, px: number): string {
       </div>
       <button class="btn back" @click="host.go('menu')">Back</button>
     </div>
-    <div class="panel body">
+    <div class="panel body" :class="{ music: tab === 'music' }">
       <MusicRoom v-if="tab === 'music'" />
       <template v-if="tab === 'characters'">
       <h3>Characters</h3>
@@ -239,9 +239,25 @@ function draw(d: Drawing, key: string, px: number): string {
 </template>
 
 <style scoped>
+/* Full screen: the head stays put, the body fills the rest and scrolls inside itself (the music room scrolls its own list). */
+.gallery {
+  overflow: hidden;
+}
+.gallery .screen-head {
+  width: min(1600px, 96vw);
+  flex: none;
+}
 .body {
-  width: min(1100px, 94vw);
-  margin-bottom: 24px;
+  width: min(1600px, 96vw);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.body.music {
+  overflow: hidden;
 }
 .grid {
   display: grid;

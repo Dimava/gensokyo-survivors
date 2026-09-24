@@ -1,20 +1,30 @@
 <script setup lang="ts">
-// The music room, Touhou style: the soundtrack as a list with play and stop,
-// each track's composer comment, and a now-playing view: the section and key,
-// the previous, current and next chords as cards, and a piano roll of the
-// whole track (coloured per voice) with a playhead. Songs carry their own
-// chords (music.ts compileSong), so nothing is analysed.
+// The music room, Touhou style: the soundtrack as a list with play and stop
+// (and, below it, earlier versions to compare, songs-legacy.ts), each track's
+// composer comment, and a now-playing view: the section and key, the
+// previous, current and next chords as cards, and a piano roll of the whole
+// track (coloured per voice) with a playhead; clicking the roll seeks. Songs
+// carry their own chords (music.ts compileSong), so nothing is analysed. The
+// list scrolls in its own column; the roll fills the space beside it.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { audio } from "../audio.ts";
 import { compileSong, songLength, type Voice } from "../music.ts";
-import { TRACKS } from "../songs.ts";
+import { TRACKS, type TrackInfo } from "../songs.ts";
+import { LEGACY_TRACKS } from "../songs-legacy.ts";
+
+const ALL: readonly TrackInfo[] = [...TRACKS, ...LEGACY_TRACKS];
+const GROUPS: { label: string; tracks: readonly TrackInfo[] }[] = [
+  { label: "Soundtrack", tracks: TRACKS },
+  { label: "Earlier versions", tracks: LEGACY_TRACKS },
+];
 
 const playing = ref<string | null>(audio.listening);
 const selId = ref<string>(playing.value ?? TRACKS[0]!.id);
-const sel = computed(() => TRACKS.find((t) => t.id === selId.value) ?? TRACKS[0]!);
+const sel = computed(() => ALL.find((t) => t.id === selId.value) ?? TRACKS[0]!);
 const compiled = computed(() => compileSong(sel.value.song));
 const bar = ref(-1);
 const roll = ref<HTMLCanvasElement | null>(null);
+const rollBox = ref<HTMLElement | null>(null);
 
 const COLORS: Record<Voice, string> = {
   lead: "#ff6b6b",
@@ -33,11 +43,7 @@ function mmss(s: number): string {
   return `${m}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
 
-function length(id: string): string {
-  const t = TRACKS.find((x) => x.id === id)!;
-  const l = songLength(t.song);
-  return mmss(l.total);
-}
+const lengths = new Map(ALL.map((t) => [t.id, mmss(songLength(t.song).total)]));
 
 function play(id: string): void {
   audio.unlock();
@@ -51,7 +57,7 @@ function stop(): void {
   playing.value = null;
 }
 
-/** Clicking the roll plays the track from there. */
+/** Clicking the roll plays the track from there (by the roll's displayed width). */
 function seek(e: MouseEvent): void {
   const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
   const b = ((e.clientX - r.left) / r.width) * compiled.value.bars;
@@ -74,17 +80,17 @@ const elapsed = computed(() => (bar.value < 0 ? "0:00" : mmss((bar.value * 240) 
 
 // ---------- the piano roll ----------
 
+/** The roll's size in CSS pixels (from its box), and the notes drawn once per track and size. */
+let W = 0;
+let H = 0;
 let bg: HTMLCanvasElement | null = null;
-const W = 880;
-const H = 190;
 
-function drawBackground(): void {
+function drawBackground(dpr: number): HTMLCanvasElement {
   const c = compiled.value;
-  const dpr = window.devicePixelRatio || 1;
-  bg = document.createElement("canvas");
-  bg.width = W * dpr;
-  bg.height = H * dpr;
-  const g = bg.getContext("2d")!;
+  const out = document.createElement("canvas");
+  out.width = Math.round(W * dpr);
+  out.height = Math.round(H * dpr);
+  const g = out.getContext("2d")!;
   g.scale(dpr, dpr);
   g.fillStyle = "rgba(10,12,24,0.85)";
   g.fillRect(0, 0, W, H);
@@ -126,28 +132,41 @@ function drawBackground(): void {
     const row = e.drum === "k" ? 0 : e.drum === "s" || e.drum === "x" ? 1 : 2;
     g.fillRect(x(e.t), H - drumH + row * 5, 1, 4);
   }
+  return out;
 }
 
 function paint(): void {
   const cv = roll.value;
-  if (!cv) return;
+  if (!cv || W < 2 || H < 2) return;
   const dpr = window.devicePixelRatio || 1;
-  if (cv.width !== W * dpr) {
-    cv.width = W * dpr;
-    cv.height = H * dpr;
+  const pw = Math.round(W * dpr);
+  const ph = Math.round(H * dpr);
+  if (cv.width !== pw || cv.height !== ph) {
+    cv.width = pw;
+    cv.height = ph;
+    bg = null;
   }
   const g = cv.getContext("2d")!;
   g.setTransform(1, 0, 0, 1, 0, 0);
-  if (!bg) drawBackground();
-  g.drawImage(bg!, 0, 0);
+  bg ??= drawBackground(dpr);
+  g.drawImage(bg, 0, 0);
   if (bar.value >= 0) {
-    const px = (bar.value / compiled.value.bars) * W * dpr;
+    const px = (bar.value / compiled.value.bars) * pw;
     g.fillStyle = "rgba(255,255,255,0.9)";
-    g.fillRect(px, 0, 2 * dpr, H * dpr);
+    g.fillRect(px, 0, 2 * dpr, ph);
   }
 }
 
 watch(selId, () => {
+  bg = null;
+  paint();
+});
+
+const resize = new ResizeObserver(([entry]) => {
+  const r = entry!.contentRect;
+  if (Math.round(r.width) === W && Math.round(r.height) === H) return;
+  W = Math.round(r.width);
+  H = Math.round(r.height);
   bg = null;
   paint();
 });
@@ -164,10 +183,11 @@ function frame(): void {
 }
 
 onMounted(() => {
-  paint();
+  if (rollBox.value) resize.observe(rollBox.value);
   raf = requestAnimationFrame(frame);
 });
 onBeforeUnmount(() => {
+  resize.disconnect();
   cancelAnimationFrame(raf);
   // Leaving the room hands the music back to the game.
   audio.listen(null);
@@ -177,19 +197,21 @@ onBeforeUnmount(() => {
 <template>
   <div class="music-room">
     <div class="tracks">
-      <button
-        v-for="(t, i) in TRACKS"
-        :key="t.id"
-        class="track"
-        :class="{ on: playing === t.id, picked: selId === t.id }"
-        @click="playing === t.id ? stop() : play(t.id)"
-      >
-        <span class="no">{{ String(i + 1).padStart(2, "0") }}</span>
-        <span class="state">{{ playing === t.id ? "■" : "▶" }}</span>
-        <span class="title">{{ t.title }}</span>
-        <span class="where muted">{{ t.where }}</span>
-        <span class="len muted">{{ length(t.id) }}</span>
-      </button>
+      <template v-for="grp in GROUPS" :key="grp.label">
+        <div class="group">{{ grp.label }}</div>
+        <button
+          v-for="(t, i) in grp.tracks"
+          :key="t.id"
+          class="track"
+          :class="{ on: playing === t.id, picked: selId === t.id }"
+          @click="playing === t.id ? stop() : play(t.id)"
+        >
+          <span class="no">{{ String(i + 1).padStart(2, "0") }}</span>
+          <span class="state">{{ playing === t.id ? "■" : "▶" }}</span>
+          <span class="title">{{ t.title }}<small class="muted">{{ t.where }}</small></span>
+          <span class="len muted">{{ lengths.get(t.id) }}</span>
+        </button>
+      </template>
     </div>
     <div class="now panel">
       <div class="head">
@@ -201,7 +223,7 @@ onBeforeUnmount(() => {
           <span class="tag">{{ sel.song.bpm }} BPM</span>
           <span v-if="now.key" class="tag">{{ now.key }}</span>
           <span class="tag">{{ now.section }}</span>
-          <span class="tag mono">{{ elapsed }} / {{ length(sel.id) }}</span>
+          <span class="tag mono">{{ elapsed }} / {{ lengths.get(sel.id) }}</span>
         </div>
       </div>
       <p class="comment">{{ sel.comment }}</p>
@@ -210,7 +232,9 @@ onBeforeUnmount(() => {
         <div class="chord cur">{{ now.cur || "·" }}</div>
         <div class="chord dim">{{ now.next || "·" }}</div>
       </div>
-      <canvas ref="roll" class="roll" :style="{ width: W + 'px', height: H + 'px' }" @click="seek"></canvas>
+      <div ref="rollBox" class="roll-box">
+        <canvas ref="roll" class="roll" @click="seek"></canvas>
+      </div>
       <div class="legend">
         <span v-for="v in LEGEND" :key="v"><i :style="{ background: COLORS[v] }"></i>{{ v }}</span>
       </div>
@@ -220,21 +244,36 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .music-room {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
   gap: 14px;
+  height: 100%;
+  min-height: 0;
 }
 .tracks {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.group {
+  margin: 10px 2px 4px;
+  font-size: 0.8em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.group:first-child {
+  margin-top: 0;
 }
 .track {
   display: grid;
-  grid-template-columns: 2.2em 1.6em 1fr auto 3.5em;
+  grid-template-columns: 2em 1.2em 1fr 3em;
   align-items: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 6px 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.03);
@@ -242,6 +281,7 @@ onBeforeUnmount(() => {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  scroll-margin: 8px;
 }
 .track:hover,
 .track.picked {
@@ -257,12 +297,23 @@ onBeforeUnmount(() => {
 }
 .track .title {
   font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.track .title small {
+  font-weight: 400;
+  font-size: 0.8em;
 }
 .track .len {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .now {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
   padding: 14px 16px;
 }
 .head {
@@ -295,7 +346,6 @@ onBeforeUnmount(() => {
 }
 .comment {
   margin: 8px 0 10px;
-  max-width: 880px;
 }
 .chords {
   display: flex;
@@ -321,14 +371,22 @@ onBeforeUnmount(() => {
   border-color: #ffd166;
   box-shadow: 0 0 12px rgba(255, 209, 102, 0.25);
 }
+.roll-box {
+  position: relative;
+  flex: 1;
+  min-height: 140px;
+}
 .roll {
-  display: block;
-  cursor: pointer;
-  max-width: 100%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   border-radius: 6px;
+  cursor: pointer;
 }
 .legend {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 6px;
   font-size: 0.8em;
