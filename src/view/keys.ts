@@ -10,6 +10,10 @@
 import { Kds, type KdsEvent, type KdsMapper } from "./kds/kds";
 import { MoveAxes, StateKeys } from "./kds/game-state";
 
+// One per page: a second (a hot update re-ran the game) reloads the page.
+if ((window as any).__gsKeys) location.reload();
+(window as any).__gsKeys = true;
+
 declare module "./kds/kds" {
   interface KdsEvent {
     /** A keynav scope is on top: arrows and Enter/Space/Z navigate it. */

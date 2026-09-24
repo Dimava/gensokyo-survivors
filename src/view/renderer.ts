@@ -217,6 +217,9 @@ export class Playfield {
   }
 
   async init(host: HTMLElement): Promise<void> {
+    // One per page: a second (a hot update re-ran the game) reloads the page.
+    if ((window as any).__gsPixi) return location.reload();
+    (window as any).__gsPixi = true;
     await this.app.init({
       background: "#0b1020",
       resizeTo: host,
