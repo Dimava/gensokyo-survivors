@@ -85,6 +85,21 @@ function pick(id: string): void {
   audio.play("ui", { vol: 0.5, pitch: 1.2 });
 }
 
+/** The node that was selected when the last touch went down (a tap focuses, and so selects, before its click). */
+let selectedAtTouch = "";
+function touchNode(e: PointerEvent): void {
+  if (e.pointerType === "touch") selectedAtTouch = selected.value;
+}
+/** A mouse selects by hovering, so its click buys; a touch has no hover, so its first tap selects and the next one buys. */
+function clickNode(id: string, e: MouseEvent): void {
+  if ((e as PointerEvent).pointerType === "touch" && selectedAtTouch !== id) {
+    pick(id);
+    return;
+  }
+  if (selected.value !== id) pick(id);
+  buy();
+}
+
 function buy(): void {
   const id = selected.value;
   const res = host.meta("tree:buy", { node: id });
@@ -118,7 +133,8 @@ function buy(): void {
             :style="{ left: px(n).x + 'px', top: px(n).y + 'px' }"
             :title="n.name"
             :data-autofocus="selected === n.id || undefined"
-            @click="selected !== n.id && pick(n.id)"
+            @pointerdown="touchNode"
+            @click="clickNode(n.id, $event)"
             @focus="selected !== n.id && pick(n.id)"
             @navactivate.prevent="buy()"
           >
