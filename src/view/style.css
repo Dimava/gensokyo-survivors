@@ -40,9 +40,6 @@ button {
   cursor: pointer;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
 /* Gradient stops as typed colours, so a red or gold button's lightening glides too. */
 @property --g1 {
   syntax: "<color>";
@@ -59,6 +56,9 @@ button {
   --glide: calc(0.28s * var(--anim)) ease-out;
 }
 
+.btn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
   gap: 0.5em;
   padding: 0.6em 1.2em;
@@ -83,12 +83,12 @@ button {
   border-color: rgba(255, 255, 255, 0.45);
   outline: none;
 }
-.btn:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
-}
 /* Only the mouse lifts a button; the keyboard selection never moves it. */
 .btn:hover:not(:disabled):not(:focus-visible):not([data-nav-sel]) {
   transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
 }
 .btn:disabled {
   opacity: 0.45;
@@ -120,9 +120,6 @@ button {
   font-size: 0.9em;
 }
 
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
 /*
  * The keyboard selection (keynav.ts marks the selected control with
  * data-nav-sel; the mouse moves it too) lightens the control in its own
@@ -169,6 +166,9 @@ label:has(> [data-nav-sel]) {
   outline: none;
 }
 
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
 }

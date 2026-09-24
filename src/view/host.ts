@@ -37,13 +37,13 @@ export const state = reactive({
   resultsFor: 0,
 });
 
+// Key events carry the screen, so rules can match on it (keys.ts).
+addStamp(() => ({ screen: state.screen }));
+
 const params = new URLSearchParams(location.search);
 const CLOCK_KEY = "gensokyo-survivors/clock";
 
 class Host {
-// Key events carry the screen, so rules can match on it (keys.ts).
-addStamp(() => ({ screen: state.screen }));
-
   k: Game;
   field = markRaw(new Playfield());
   presenter = markRaw(new Presenter(this.field));
