@@ -83,14 +83,14 @@ const RECORD_LABEL: Record<string, string> = { time: "Longest survival", kills: 
       </table>
       <p class="muted balance">You now have {{ CURRENCY.icon }} {{ wallet.coins }}.<span v-if="affordableNodes"> You can afford {{ affordableNodes }} shrine upgrade{{ affordableNodes > 1 ? "s" : "" }}.</span></p>
       <div class="buttons">
+        <button class="btn back" @click="host.go('menu')">Main Menu</button>
         <button class="btn primary" @click="host.startRun(r.stage)">Play again</button>
         <button class="btn" :class="{ gold: affordableNodes > 0 }" @click="host.go('tree')">Shrine Upgrades</button>
-        <button class="btn" @click="host.go('menu')">Main Menu</button>
       </div>
     </div>
     <div v-else class="panel box">
       <h1>No results yet</h1>
-      <button class="btn" @click="host.go('menu')">Main Menu</button>
+      <button class="btn back" @click="host.go('menu')">Main Menu</button>
     </div>
     <NavHints back="main menu" />
   </div>

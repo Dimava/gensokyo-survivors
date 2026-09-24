@@ -63,8 +63,8 @@ function quit(): void {
       <h2>Quit this run?</h2>
       <p>You keep the {{ CURRENCY.name }} earned so far (time, kills and coins). The run counts as retreated.</p>
       <div class="menu row2">
+        <button class="btn back" data-autofocus @click="page('main')">Keep playing</button>
         <button class="btn primary" @click="quit">Quit run</button>
-        <button class="btn" data-autofocus @click="page('main')">Keep playing</button>
       </div>
     </div>
     <NavHints :back="state.pausePage === 'main' ? 'resume' : 'back'" />
