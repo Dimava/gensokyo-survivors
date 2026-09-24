@@ -1,6 +1,14 @@
 <script setup lang="ts">
+import { onBeforeUnmount } from "vue";
 import { host } from "../host.ts";
+import { kds } from "../keys.ts";
 import { GAME_SUBTITLE, GAME_TITLE } from "../../content/names.ts";
+
+// Any key at all (a physical key press, not a release or a virtual code) opens the menu.
+const off = kds.on({ screen: "title", mods: undefined, event: { type: "keydown", repeat: false } }, (e) => {
+  if (e.code === (e.event as KeyboardEvent).code) host.go("menu");
+});
+onBeforeUnmount(off);
 </script>
 
 <template>

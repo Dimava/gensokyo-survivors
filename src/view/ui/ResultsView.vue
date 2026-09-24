@@ -7,6 +7,7 @@ import { CURRENCY } from "../../content/names.ts";
 import { stageDef } from "../../content/stages.ts";
 import { REWARD } from "../../sim/tuning.ts";
 import { affordableNodes, fmtTime, lastRun, wallet } from "./useGame.ts";
+import NavHints from "./NavHints.vue";
 
 const r = computed(() => lastRun.value?.summary ?? null);
 const title = computed(() => (r.value?.outcome === "clear" ? "Stage Clear!" : r.value?.outcome === "quit" ? "Run Abandoned" : "Defeated"));
@@ -48,7 +49,7 @@ const RECORD_LABEL: Record<string, string> = { time: "Longest survival", kills: 
 </script>
 
 <template>
-  <div class="screen results">
+  <div v-keynav class="screen results">
     <div v-if="r" class="panel box" :class="r.outcome">
       <h1>{{ title }}</h1>
       <p class="muted">{{ stageDef(r.stage).name }}</p>
@@ -91,6 +92,7 @@ const RECORD_LABEL: Record<string, string> = { time: "Longest survival", kills: 
       <h1>No results yet</h1>
       <button class="btn" @click="host.go('menu')">Main Menu</button>
     </div>
+    <NavHints back="main menu" />
   </div>
 </template>
 

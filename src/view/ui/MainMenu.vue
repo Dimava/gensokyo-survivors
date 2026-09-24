@@ -8,6 +8,8 @@ import { DECK_MIN } from "../../content/gacha.ts";
 import { affordableNodes, fmtTime, owned, profile, stages, wallet } from "./useGame.ts";
 import { stageDef, type StageDef } from "../../content/stages.ts";
 import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
+import Keys from "./Keys.vue";
+import NavHints from "./NavHints.vue";
 
 const midbossName = (s: StageDef): string => {
   const mid = s.script.find((b) => b.form === "midboss");
@@ -42,7 +44,7 @@ function hover(): void {
 </script>
 
 <template>
-  <div class="screen menu">
+  <div v-keynav="{ id: 'menu' }" class="screen menu">
     <div class="wrap">
       <div class="left">
         <h1 class="logo">{{ GAME_TITLE }}</h1>
@@ -92,7 +94,7 @@ function hover(): void {
     </div>
 
     <Transition name="pop">
-      <div v-if="picking" class="modal-wrap" @click.self="picking = false">
+      <div v-if="picking" v-keynav="{ back: () => (picking = false) }" class="modal-wrap" @click.self="picking = false">
         <div class="panel stagepick">
           <h2>Choose a stage</h2>
           <div v-for="s in stages" :key="s.id" class="stage" :class="{ locked: locked(s) }">
@@ -109,10 +111,11 @@ function hover(): void {
             <button v-if="!locked(s)" class="btn primary" @click="start(s.id)">Go</button>
             <span v-else class="lockmsg">Clear {{ stageDef(s.requires!).name }} to open</span>
           </div>
-          <button class="btn ghost" @click="picking = false">Back</button>
+          <button class="btn ghost" @click="picking = false">Back <Keys for="Back" /></button>
         </div>
       </div>
     </Transition>
+    <NavHints :back="picking ? 'close' : false" />
   </div>
 </template>
 

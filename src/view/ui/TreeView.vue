@@ -8,6 +8,8 @@ import { weaponDef } from "../../content/weapons.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { nodeState, type NodeState } from "../../sim/meta.ts";
 import { treeLevels, wallet } from "./useGame.ts";
+import Keys from "./Keys.vue";
+import NavHints from "./NavHints.vue";
 
 const UNIT = 104;
 const selected = ref<string>("core");
@@ -91,7 +93,7 @@ function buy(): void {
 </script>
 
 <template>
-  <div class="screen tree">
+  <div v-keynav="{ id: 'tree' }" class="screen tree">
     <div class="screen-head">
       <div>
         <h1>Shrine Upgrades</h1>
@@ -99,7 +101,7 @@ function buy(): void {
       </div>
       <div class="headr">
         <div class="coins"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
-        <button class="btn" @click="host.go('menu')">Back <span class="key">Esc</span></button>
+        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
       </div>
     </div>
     <div class="body">
@@ -115,7 +117,10 @@ function buy(): void {
             :class="[states[n.id], { sel: selected === n.id, owned: level(n.id) > 0, justbought: bought?.id === n.id, unlock: n.effect.kind === 'unlock' }]"
             :style="{ left: px(n).x + 'px', top: px(n).y + 'px' }"
             :title="n.name"
-            @click="pick(n.id)"
+            :data-autofocus="selected === n.id || undefined"
+            @click="selected !== n.id && pick(n.id)"
+            @focus="selected !== n.id && pick(n.id)"
+            @navactivate.prevent="buy()"
           >
             <span class="nname">{{ n.name }}</span>
             <span class="pips">
@@ -140,6 +145,7 @@ function buy(): void {
         <p v-if="sel.st === 'maxed'" class="maxed">Fully upgraded</p>
       </div>
     </div>
+    <NavHints confirm="buy" />
   </div>
 </template>
 
@@ -194,7 +200,9 @@ function buy(): void {
   padding: 6px;
   transition:
     transform calc(0.12s * var(--anim)),
-    box-shadow calc(0.2s * var(--anim));
+    box-shadow calc(0.2s * var(--anim)),
+    filter var(--glide),
+    border-color var(--glide);
 }
 .node:hover {
   transform: scale(1.08);

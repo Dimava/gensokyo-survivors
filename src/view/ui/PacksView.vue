@@ -6,6 +6,8 @@ import { CARDS, RARITIES, RARITY_INFO, MAX_CARD_LEVEL } from "../../content/card
 import { CURRENCY } from "../../content/names.ts";
 import { gacha, owned, wallet } from "./useGame.ts";
 import PackOpening from "./PackOpening.vue";
+import Keys from "./Keys.vue";
+import NavHints from "./NavHints.vue";
 
 const open = computed(() => {
   void state.meta;
@@ -38,7 +40,7 @@ function buy(id: string): void {
 </script>
 
 <template>
-  <div class="screen packs">
+  <div v-keynav="{ id: 'packs' }" class="screen packs">
     <div class="screen-head">
       <div>
         <h1>Card Packs</h1>
@@ -47,7 +49,7 @@ function buy(id: string): void {
       <div class="headr">
         <div class="coins"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
         <button class="btn" @click="host.go('cards')">Skill Cards</button>
-        <button class="btn" @click="host.go('menu')">Back <span class="key">Esc</span></button>
+        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
       </div>
     </div>
     <div class="shop">
@@ -92,6 +94,7 @@ function buy(id: string): void {
     <Transition name="fade">
       <PackOpening v-if="open" />
     </Transition>
+    <NavHints v-if="!open" />
   </div>
 </template>
 

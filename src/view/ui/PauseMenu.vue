@@ -8,6 +8,8 @@ import { hud } from "./useRun.ts";
 import { fmtTime } from "./useGame.ts";
 import SettingsPanel from "./SettingsPanel.vue";
 import HelpPanel from "./HelpPanel.vue";
+import Keys from "./Keys.vue";
+import NavHints from "./NavHints.vue";
 
 const h = computed(() => hud.value);
 
@@ -27,11 +29,11 @@ function quit(): void {
 
 <template>
   <div class="pause">
-    <div v-if="state.pausePage === 'main'" class="panel box">
+    <div v-if="state.pausePage === 'main'" v-keynav="{ id: 'pause' }" class="panel box">
       <h2>Paused</h2>
       <div class="cols">
         <div class="menu">
-          <button class="btn primary" @click="resume">Resume <span class="key">Esc</span></button>
+          <button class="btn primary" @click="resume">Resume <Keys for="Action:pause" /></button>
           <button class="btn" @click="page('settings')">Settings</button>
           <button class="btn" @click="page('help')">How to Play</button>
           <button class="btn" @click="page('quit')">Quit run…</button>
@@ -48,24 +50,25 @@ function quit(): void {
         </div>
       </div>
     </div>
-    <div v-else-if="state.pausePage === 'settings'" class="panel box wide">
+    <div v-else-if="state.pausePage === 'settings'" v-keynav class="panel box wide">
       <h2>Settings</h2>
       <SettingsPanel in-run />
-      <button class="btn back" @click="page('main')">Back <span class="key">Esc</span></button>
+      <button class="btn back" @click="page('main')">Back <Keys for="Back" /></button>
     </div>
-    <div v-else-if="state.pausePage === 'help'" class="panel box wide scroll">
+    <div v-else-if="state.pausePage === 'help'" v-keynav class="panel box wide scroll">
       <h2>How to Play</h2>
       <HelpPanel />
-      <button class="btn back" @click="page('main')">Back <span class="key">Esc</span></button>
+      <button class="btn back" @click="page('main')">Back <Keys for="Back" /></button>
     </div>
-    <div v-else class="panel box">
+    <div v-else v-keynav class="panel box">
       <h2>Quit this run?</h2>
       <p>You keep the {{ CURRENCY.name }} earned so far (time, kills and coins). The run counts as retreated.</p>
       <div class="menu row2">
         <button class="btn primary" @click="quit">Quit run</button>
-        <button class="btn" @click="page('main')">Keep playing</button>
+        <button class="btn" data-autofocus @click="page('main')">Keep playing</button>
       </div>
     </div>
+    <NavHints :back="state.pausePage === 'main' ? 'resume' : 'back'" />
   </div>
 </template>
 

@@ -6,6 +6,8 @@ import { audio } from "../audio.ts";
 import { CHARACTERS, CURRENCY, type CharacterId } from "../../content/names.ts";
 import { DESTINATIONS, MAX_EXPEDITIONS, destination } from "../../content/expeditions.ts";
 import { hex, wallet } from "./useGame.ts";
+import Keys from "./Keys.vue";
+import NavHints from "./NavHints.vue";
 
 const picked = ref<string>("");
 const confirmRecall = ref("");
@@ -77,7 +79,7 @@ function recall(trip: string): void {
 </script>
 
 <template>
-  <div class="screen">
+  <div v-keynav="{ id: 'expeditions' }" class="screen">
     <div class="screen-head">
       <div>
         <h1>Expeditions</h1>
@@ -87,7 +89,7 @@ function recall(trip: string): void {
       </div>
       <div class="headr">
         <div class="coins"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
-        <button class="btn" @click="host.go('menu')">Back <span class="key">Esc</span></button>
+        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
       </div>
     </div>
     <div class="body">
@@ -137,13 +139,14 @@ function recall(trip: string): void {
               <span v-else class="confirm">
                 No reward if called back.
                 <button class="btn small primary" @click="recall(t.id)">Call back</button>
-                <button class="btn small" @click="confirmRecall = ''">Let them go on</button>
+                <button class="btn small" data-autofocus @click="confirmRecall = ''">Let them go on</button>
               </span>
             </template>
           </div>
         </TransitionGroup>
       </section>
     </div>
+    <NavHints />
   </div>
 </template>
 

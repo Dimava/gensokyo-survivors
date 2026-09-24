@@ -12,6 +12,7 @@ import { RARITY_INFO, cardDef, type Rarity } from "../../content/cards.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { packDef } from "../../content/gacha.ts";
 import CardFace from "./CardFace.vue";
+import Keys from "./Keys.vue";
 
 const opening = computed(() => {
   void state.meta;
@@ -78,24 +79,18 @@ onMounted(() => {
   audio.play("whoosh");
   last = performance.now();
   raf = requestAnimationFrame(frame);
-  window.addEventListener("keydown", onKey);
 });
-onBeforeUnmount(() => {
-  cancelAnimationFrame(raf);
-  window.removeEventListener("keydown", onKey);
-});
+onBeforeUnmount(() => cancelAnimationFrame(raf));
 
 function tap(): void {
   if (phase.value === "done") return;
   speed.value = Math.min(8, speed.value * 2);
   audio.play("ui", { pitch: 1 + speed.value / 8 });
 }
-function onKey(e: KeyboardEvent): void {
-  if (e.code === "Space" || e.code === "Enter") {
-    e.preventDefault();
-    if (phase.value === "done") close();
-    else tap();
-  }
+/** Confirm (Enter/Space/Z, through keynav) speeds the reveal up, then closes it. */
+function onConfirm(): void {
+  if (phase.value === "done") close();
+  else tap();
 }
 function close(): void {
   audio.play("ui");
@@ -110,10 +105,12 @@ const labels = computed(() =>
 </script>
 
 <template>
-  <div v-if="opening" class="opening" @click="tap">
+  <div v-if="opening" v-keynav="{ confirm: onConfirm, autofocus: false }" class="opening" @click="tap">
     <h2>{{ packDef(opening.pack).name }}</h2>
     <p class="muted">
-      {{ phase === "done" ? "All revealed." : speed > 1 ? `Faster ×${speed}` : "Click or press Space to speed up" }}
+      <template v-if="phase === 'done'">All revealed.</template>
+      <template v-else-if="speed > 1">Faster ×{{ speed }}</template>
+      <template v-else>Click or press <Keys for="Confirm" :max="2" /> to speed up</template>
     </p>
     <div class="row">
       <div
@@ -143,7 +140,7 @@ const labels = computed(() =>
       </div>
     </div>
     <div class="foot">
-      <button v-if="phase === 'done'" class="btn primary" @click.stop="close">Continue <span class="key">Space</span></button>
+      <button v-if="phase === 'done'" class="btn primary" @click.stop="close">Continue <Keys for="Confirm" :max="2" /></button>
     </div>
     <p v-if="phase === 'done'" class="muted small">
       New cards join your deck while it has room ({{ opening.pulls.filter((p) => p.outcome === "new").map((p) => cardDef(p.card).name).join(", ") || "none new this time" }}).

@@ -6,6 +6,8 @@ import { TREE } from "../../content/tree.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { STAGES, stageDef } from "../../content/stages.ts";
 import { fmtTime, gacha, lastRun, owned, profile, treeLevels, wallet } from "./useGame.ts";
+import Keys from "./Keys.vue";
+import NavHints from "./NavHints.vue";
 
 const nodes = computed(() => {
   const total = TREE.reduce((s, n) => s + n.costs.length, 0);
@@ -16,10 +18,10 @@ const last = computed(() => lastRun.value?.summary ?? null);
 </script>
 
 <template>
-  <div class="screen">
+  <div v-keynav class="screen">
     <div class="screen-head">
       <h1>Records</h1>
-      <button class="btn" @click="host.go('menu')">Back <span class="key">Esc</span></button>
+      <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
     </div>
     <div class="panel body">
       <div class="grid">
@@ -42,6 +44,7 @@ const last = computed(() => lastRun.value?.summary ?? null);
       </p>
       <p v-else class="muted">No runs yet.</p>
     </div>
+    <NavHints />
   </div>
 </template>
 

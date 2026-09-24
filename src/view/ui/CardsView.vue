@@ -5,6 +5,8 @@ import { CARDS, RARITIES } from "../../content/cards.ts";
 import { DECK_MAX, DECK_MIN } from "../../content/gacha.ts";
 import { owned } from "./useGame.ts";
 import CardFace from "./CardFace.vue";
+import Keys from "./Keys.vue";
+import NavHints from "./NavHints.vue";
 
 const byId = computed(() => new Map(owned.value.map((o) => [o.card, o])));
 const deckSize = computed(() => owned.value.filter((o) => o.inDeck).length);
@@ -21,16 +23,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="screen cards">
+  <div v-keynav="{ id: 'cards' }" class="screen cards">
     <div class="screen-head">
       <div>
         <h1>Skill Cards &amp; Deck</h1>
-        <div class="sub">Click a card you own to put it in or take it out of your deck. Each run shuffles your deck; grazing draws from it.</div>
+        <div class="sub">Pick a card you own (click, or select it and confirm) to put it in or take it out of your deck. Each run shuffles your deck; grazing draws from it.</div>
       </div>
       <div class="headr">
         <div class="deck" :class="{ full: deckSize >= DECK_MAX }">Deck {{ deckSize }} / {{ DECK_MAX }}</div>
         <button class="btn" @click="host.go('packs')">Card Packs</button>
-        <button class="btn" @click="host.go('menu')">Back <span class="key">Esc</span></button>
+        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
       </div>
     </div>
     <p class="muted count">Collected {{ owned.length }} of {{ CARDS.length }} cards. A deck needs at least {{ DECK_MIN }} card.</p>
@@ -49,6 +51,7 @@ onBeforeUnmount(() => {
         <span v-if="byId.has(c.id)" class="copies muted">Copies found: {{ byId.get(c.id)?.copies }}</span>
       </button>
     </div>
+    <NavHints confirm="put in or take out" />
   </div>
 </template>
 
@@ -90,7 +93,10 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  transition: transform calc(0.12s * var(--anim));
+  transition:
+    transform calc(0.12s * var(--anim)),
+    filter var(--glide),
+    box-shadow var(--glide);
 }
 .slot:hover:not(:disabled) {
   transform: translateY(-4px);

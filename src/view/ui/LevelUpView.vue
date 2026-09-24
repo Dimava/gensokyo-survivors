@@ -123,7 +123,7 @@ function hover(): void {
   <Transition name="lvlbg">
     <div v-if="open && offer" class="lvlbg"></div>
   </Transition>
-  <div v-for="L in layers" :key="L.id" class="lvl" :class="[L.mode, { chained: L.chained }]">
+  <div v-for="L in layers" :key="L.id" v-keynav="L.mode === 'live' && { autofocus: false }" class="lvl" :class="[L.mode, { chained: L.chained }]">
     <div class="head">
       <h2>Level {{ L.level }}!</h2>
       <p class="muted">
