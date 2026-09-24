@@ -10,6 +10,7 @@ import { botCard, botMove, botPick } from "../sim/bot.ts";
 import { handCards } from "../sim/cards.ts";
 import { audio, type Track } from "./audio.ts";
 import { input, type Action } from "./input.ts";
+import { addStamp } from "./keys.ts";
 import { eraseSave, freshGame, loadOrCreate, save } from "./persist.ts";
 import { Presenter, toast } from "./presenter.ts";
 import { Playfield } from "./renderer.ts";
@@ -40,6 +41,9 @@ const params = new URLSearchParams(location.search);
 const CLOCK_KEY = "gensokyo-survivors/clock";
 
 class Host {
+// Key events carry the screen, so rules can match on it (keys.ts).
+addStamp(() => ({ screen: state.screen }));
+
   k: Game;
   field = markRaw(new Playfield());
   presenter = markRaw(new Presenter(this.field));
