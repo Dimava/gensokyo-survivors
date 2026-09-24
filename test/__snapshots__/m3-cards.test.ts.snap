@@ -115,6 +115,6 @@ last run: -
 lake swarm t=0:57 fixed=3483 | hp 113/120 lv 10 xp 22/95 kills 242 | pos 532,-385
 weapons: amulet3 border1 needle4 | passives: clock1 heart1
 enemies 158 [kedama 110, fairy 43, sunflower 5] | drops 48 | shots 8 | bullets 175
-cards: spirit 3.00/3 meter 71 grazes 119 | hand: graze-ribbon, power-charm
+cards: spirit 3.00/3 meter 26 grazes 114 | hand: graze-ribbon, power-charm
 "
 `;

@@ -120,7 +120,12 @@ export interface DanmakuResult {
   checked: number;
 }
 
-/** Checks due bullets against the player; culls far and expired ones. Grazes flag the bullet so each grazes once. */
+/**
+ * Checks due bullets against the player; culls far and expired ones. Grazes
+ * flag the bullet so each grazes once. No grazing while invulnerable (after a
+ * hit, or from a card), as in Touhou: else taking a hit would let her sit in
+ * the thickest bullets and fill the meter.
+ */
 export function stepBullets(ctx: C, playerSpeed: number): DanmakuResult {
   const b = ctx.packed("bullets");
   const t = ctx.now("danmaku");
@@ -154,7 +159,7 @@ export function stepBullets(ctx: C, playerSpeed: number): DanmakuResult {
       continue;
     }
     if (d < grazeR + br) {
-      if (!grazed[i]) {
+      if (vulnerable && !grazed[i]) {
         grazed[i] = 1;
         grazes++;
       }
