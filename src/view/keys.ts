@@ -24,6 +24,21 @@ declare module "./kds/kds" {
 /** Game preset (PRD D30): the rule ignores modifiers entirely (Shift is focus, Ctrl a skip key). */
 const ANY = undefined;
 
+/**
+ * A key the host swallows before any rule sees it (a death being skipped):
+ * listening ahead of kds, which attaches below.
+ */
+export const keyGate: { fn: ((e: KeyboardEvent) => boolean) | null } = { fn: null };
+window.addEventListener(
+  "keydown",
+  (e) => {
+    if (!keyGate.fn?.(e)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  },
+  { capture: true },
+);
+
 // Keydown, keyup (`Up:<code>`) and blur, each stamped with the state below.
 // The vendored Keydown steps aside for StateKeys, as in the prototype.
 export const kds = new Kds().use(MoveAxes).use(StateKeys);

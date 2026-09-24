@@ -10,7 +10,7 @@ import { botCard, botMove, botPick } from "../sim/bot.ts";
 import { handSlots } from "../sim/cards.ts";
 import { audio, type Track } from "./audio.ts";
 import { input, type Action } from "./input.ts";
-import { addStamp } from "./keys.ts";
+import { addStamp, keyGate } from "./keys.ts";
 import { eraseSave, freshGame, loadOrCreate, save } from "./persist.ts";
 import { Presenter, toast } from "./presenter.ts";
 import { Playfield } from "./renderer.ts";
@@ -76,6 +76,32 @@ class Host {
   async start(el: HTMLElement): Promise<void> {
     await this.field.init(el);
     input.onAction((a) => this.action(a));
+    // A death plays slowly; any fresh key, click or tap skips it, and does nothing else.
+    const MODS = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "Fn"]);
+    const dying = (): boolean => state.screen === "run" && !state.paused && this.presenter.deathSkippable();
+    keyGate.fn = (e) => !e.repeat && !MODS.has(e.key) && dying() && this.skipDeath();
+    let swallowClickUntil = 0;
+    window.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (!dying() || !this.skipDeath()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        // The click that ends this press lands on the results screen: it is the skip's too.
+        swallowClickUntil = performance.now() + 1000;
+      },
+      { capture: true },
+    );
+    window.addEventListener(
+      "click",
+      (e) => {
+        if (performance.now() > swallowClickUntil) return;
+        swallowClickUntil = 0;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      },
+      { capture: true },
+    );
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         if (state.screen === "run" && this.path()) state.paused = true;
@@ -283,6 +309,15 @@ class Host {
       const c = botCard(this.k, path);
       if (c) this.k.queue(path, "card:play", { card: c });
     }
+  }
+
+  /** Skips a playing death: the animation jumps to its end and the run plays out its last ticks at once. */
+  private skipDeath(): boolean {
+    const path = this.path();
+    if (!path || !this.presenter.skipDeath()) return false;
+    input.clear();
+    for (let i = 0; i < 600 && this.path(); i++) this.step(path);
+    return true;
   }
 
   private runEnded(): void {

@@ -107,6 +107,16 @@ export class Presenter {
     return !!this.death && k.paths().includes(path) && this.death.holds(runView(k, path).now("fixed"));
   }
 
+  /** A death animation is playing and may be skipped. */
+  deathSkippable(): boolean {
+    return !!this.death?.skippable();
+  }
+
+  /** Jumps a playing death animation to its end; false if none was playing. */
+  skipDeath(): boolean {
+    return !!this.death?.skip();
+  }
+
   /** Where the player of the run at `path` is now (null once the run is gone). */
   private playerAt(k: Game, path: RunPath | null): () => { x: number; y: number } | null {
     return () => (path && k.paths().includes(path) ? (runView(k, path).q("body")[0]?.body ?? null) : null);
