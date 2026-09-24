@@ -128,6 +128,13 @@ export const CARDS_TUNING = {
 } as const;
 
 export const BOSS = {
+  /**
+   * Against a boss every upgrade keeps only this share of what it adds (a
+   * weapon or passive may set its own `bossMulti`): weapon levels, might,
+   * cooldown and amount for the damage she takes, max HP and armor for the
+   * damage she deals. A strong build still beats her faster, not 10x faster.
+   */
+  upgradeShare: 0.4,
   /** Radius of the boss arena around where the player stood when the boss arrived. */
   arena: 330,
   /** The boss hovers this far above the arena centre. */

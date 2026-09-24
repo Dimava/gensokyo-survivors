@@ -11,10 +11,10 @@
 
 import { z } from "zod";
 import { columns, defineScope, event, input, ref, relation, type SpecOf } from "gamebones";
-import { STAT_KEYS, baseStats, type Stats } from "../content/stats.ts";
+import { STAT_KEYS, baseStats, type StatKey, type Stats } from "../content/stats.ts";
 import { passiveDef } from "../content/passives.ts";
 import { BulletStore } from "./bullets.ts";
-import { CAP } from "./tuning.ts";
+import { BOSS, CAP } from "./tuning.ts";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { directorProcess } from "./director.ts";
@@ -181,17 +181,9 @@ const RunDecl = defineScope("run", {
   player: (v) => v.q("body", "life", "progress", "spirit", "meter", "ctrl")[0]!,
   loadout: (v) => v.q("loadout")[0]!.loadout,
   /** Final stats: base, plus shrine bonuses from the loadout, plus passives picked this run. */
-  stats: (v): Stats => {
-    const s = baseStats();
-    const bonuses = v.q("loadout")[0]?.loadout.bonuses ?? {};
-    for (const k of STAT_KEYS) s[k] += bonuses[k] ?? 0;
-    for (const p of v.q("passive")) {
-      const def = passiveDef(p.passive.id);
-      s[def.stat] += def.per * p.passive.level;
-    }
-    s.cooldown = Math.max(0.35, s.cooldown);
-    return s;
-  },
+  stats: (v): Stats => upgradedStats(v.q("loadout")[0]?.loadout.bonuses ?? {}, v.q("passive"), 1),
+  /** The stats as they count against a boss: each upgrade at its boss share (BOSS.upgradeShare). */
+  bossStats: (v): Stats => upgradedStats(v.q("loadout")[0]?.loadout.bonuses ?? {}, v.q("passive"), BOSS.upgradeShare),
   piles: (v) => {
     const out = { deck: "", hand: "", discard: "" };
     for (const p of v.q("pile")) out[p.pile.kind] = p.id;
@@ -203,6 +195,18 @@ const RunDecl = defineScope("run", {
 });
 
 export type RS0 = SpecOf<typeof RunDecl>;
+
+/** Base stats plus shrine bonuses and passives, each upgrade scaled by `share` (a passive's own bossMulti wins when share < 1). */
+function upgradedStats(bonuses: Partial<Record<StatKey, number>>, passives: readonly { passive: { id: string; level: number } }[], share: number): Stats {
+  const s = baseStats();
+  for (const k of STAT_KEYS) s[k] += (bonuses[k] ?? 0) * share;
+  for (const p of passives) {
+    const def = passiveDef(p.passive.id);
+    s[def.stat] += def.per * p.passive.level * (share < 1 ? (def.bossMulti ?? share) : 1);
+  }
+  s.cooldown = Math.max(0.35, s.cooldown);
+  return s;
+}
 
 const RunBase = RunDecl.processes((process) => ({
   director: directorProcess(process),

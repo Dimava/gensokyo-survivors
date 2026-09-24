@@ -15,7 +15,7 @@ import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
 import { collectDead, contactDamage, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
-import { applyVolley, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
+import { applyVolley, bossFactor, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, pullAll, stepDrops } from "./drops.ts";
 import { cardRules } from "./cards.ts";
@@ -39,7 +39,8 @@ function movePlayer(ctx: C): void {
   if (!mx && !my) return;
   const len = Math.sqrt(mx * mx + my * my);
   const scale = Math.min(1, len / 100);
-  const v = PLAYER.speed * ctx.derived("stats").speed * scale;
+  // Focused movement is a fixed careful pace: the speed stat doesn't apply (dodging stays learnable).
+  const v = PLAYER.speed * (p.ctrl.focus ? 1 : ctx.derived("stats").speed) * scale;
   let x = p.body.x + (mx / len) * v;
   let y = p.body.y + (my / len) * v;
   const run = ctx.derived("state").run;
@@ -234,7 +235,10 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     collectDead(ctx);
   }),
   r.on("beam", (ev, ctx) => {
-    damageLine(ctx, ev.x, ev.y, ev.dx, ev.dy, ev.length, ev.width, ev.dmg, 16);
+    // A weapon's beam hits the boss at its boss share; a card's at full.
+    const w = ctx.derived("weapons").find((x) => x.weapon.id === ev.source);
+    const bossDmg = w ? ev.dmg * bossFactor(ctx, w.weapon.id, w.weapon.level) : ev.dmg;
+    damageLine(ctx, ev.x, ev.y, ev.dx, ev.dy, ev.length, ev.width, ev.dmg, 16, bossDmg);
     collectDead(ctx);
   }),
   r.on("enemies:died", (ev, ctx) => {
@@ -258,8 +262,14 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   }),
 
   // ---------- the player takes damage ----------
+  // Against a boss, max HP and armor count at their boss share (BOSS.upgradeShare): her hits
+  // are scaled up by what the extra HP would otherwise buy, and armor blocks less.
+  r.on("player:hurt").as("boss share").modify((ev, ctx) => {
+    if (ctx.derived("boss")) ev.dmg = Math.round((ev.dmg * ctx.derived("stats").maxHp) / ctx.derived("bossStats").maxHp);
+  }),
   r.on("player:hurt").as("armor").modify((ev, ctx) => {
-    ev.dmg = Math.max(1, ev.dmg - ctx.derived("stats").armor);
+    const armor = ctx.derived(ctx.derived("boss") ? "bossStats" : "stats").armor;
+    ev.dmg = Math.max(1, ev.dmg - armor);
   }),
   r.on("player:hurt").check((_, ctx) => {
     const p = ctx.derived("player");

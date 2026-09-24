@@ -42,6 +42,8 @@ export interface WeaponDef {
   /** fan: aim at the nearest enemy, along the facing direction, or in a full ring. */
   aim?: "nearest" | "facing" | "ring";
   color: number;
+  /** Share of this weapon's level-ups that counts against bosses (default BOSS.upgradeShare). */
+  bossMulti?: number;
   /** Locked weapons join the level-up pool once a tree node unlocks them. */
   locked?: boolean;
   levels: readonly WeaponStats[];

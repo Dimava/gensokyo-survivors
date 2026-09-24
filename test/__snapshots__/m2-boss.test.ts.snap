@@ -175,7 +175,7 @@ lake boss t=3:26 fixed=12393 | hp 205/205 lv 42 xp 98/855 kills 4339 | pos -107,
 weapons: amulet8 border8 needle8 orbs8 | passives: magnet1 power2 grimoire5 clock2
 enemies 0 [] | drops 0 | shots 59 | bullets 0
 cards: spirit 3.00/3 meter 24 grazes 336 | hand: healing
-boss cirno: spell 1/3 "Ice Sign “Icicle Fall”" hp 2800/2800 results []
+boss cirno: spell 1/3 "Ice Sign “Icicle Fall”" hp 1000/1000 results []
 -- spell card 1; bullets on the field: 0
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
@@ -185,10 +185,10 @@ lake boss t=3:26 fixed=12394 | hp 205/205 lv 42 xp 98/855 kills 4339 | pos -107,
 weapons: amulet8 border8 needle8 orbs8 | passives: magnet1 power2 grimoire5 clock2
 enemies 0 [] | drops 0 | shots 59 | bullets 0
 cards: spirit 3.00/3 meter 24 grazes 336 | hand: healing
-boss cirno: spell 1/3 "Ice Sign “Icicle Fall”" hp 2800/2800 results []
-{"boss":"Cirno","spell":"1/3 Ice Sign “Icicle Fall”","hp":"[====================] 2800/2800","bonusTime":41.3,"results":[]}
+boss cirno: spell 1/3 "Ice Sign “Icicle Fall”" hp 1000/1000 results []
+{"boss":"Cirno","spell":"1/3 Ice Sign “Icicle Fall”","hp":"[====================] 1000/1000","bonusTime":41.3,"results":[]}
 -- spell card 1, a few seconds in:
-{"boss":"Cirno","spell":"1/3 Ice Sign “Icicle Fall”","hp":"[=====               ] 669/2800","bonusTime":34.7,"results":[]}
+{"boss":"Cirno","spell":"1/3 Ice Sign “Icicle Fall”","hp":"[=========           ] 437/1000","bonusTime":34.7,"results":[]}
 +-------------------------------------------+
 |           -* ***#*  * -* ####*    -       |
 |  -        **##*- *   *    **#*            |
@@ -209,70 +209,70 @@ meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake boss t=3:35 fixed=12952 | hp 205/205 lv 42 xp 123/855 kills 4339 | pos -107,-47
+lake boss t=3:37 fixed=13093 | hp 205/205 lv 42 xp 115/855 kills 4339 | pos -46,-48
 weapons: amulet8 border8 needle8 orbs8 | passives: magnet1 power2 grimoire5 clock2
-enemies 0 [] | drops 60 | shots 59 | bullets 0
-cards: spirit 2.91/3 meter 4 grazes 356 | hand: healing, barrier
-boss cirno: spell 2/3 "Freeze Sign “Perfect Freeze”" hp 3400/3400 results [captured]
-{"boss":"Cirno","spell":"2/3 Freeze Sign “Perfect Freeze”","hp":"[====================] 3400/3400","bonusTime":46.3,"results":["captured"]}
+enemies 0 [] | drops 65 | shots 66 | bullets 0
+cards: spirit 2.50/3 meter 40 grazes 360 | hand: healing
+boss cirno: spell 2/3 "Freeze Sign “Perfect Freeze”" hp 1200/1200 results [captured]
+{"boss":"Cirno","spell":"2/3 Freeze Sign “Perfect Freeze”","hp":"[====================] 1200/1200","bonusTime":46.3,"results":["captured"]}
 -- spell card 2, a few seconds in:
-{"boss":"Cirno","spell":"2/3 Freeze Sign “Perfect Freeze”","hp":"[=                   ] 242/3400","bonusTime":39.7,"results":["captured"]}
+{"boss":"Cirno","spell":"2/3 Freeze Sign “Perfect Freeze”","hp":"[=========           ] 567/1200","bonusTime":39.7,"results":["captured"]}
 +-------------------------------------------+
-|                *#.*.   .   ##-.*  *       |
-|        -  *  #-**  *****. -   *# -   -    |
-|            -#*-.- * *** **  .-  -*        |
-|             #-  ****B****   .   ##-    -  |
-|            -.  -*** **** -       #        |
-|            -       **** *  *  .. #        |
-|            -#.     -@-  *   . *. #      - |
-|             ##    * * *--  ..   #         |
-|            - ## .     -  .    #.          |
-|               .###      .  ####.          |
-|              .  ..*#*.*#.##. .            |
-|                 ..     .      .           |
-|                           .  .            |
+|          #*#*.##*#**  * .*     -          |
+|       #*** * *. -   #*# .   -             |
+|      *.******* *      *#*      -  -    -  |
+|     #**** *****     B  *.--   -     -     |
+|    #* ******  *- - -** *** --  -    -     |
+|    *  ****       ***    ** -     -      - |
+|    #       *** * -* @ ** #  -   -   --    |
+|    ##       **   *      ## -              |
+|     ##      * **       ##  -   -        - |
+|      ##*             .## -          -     |
+|        ##*# *     .###        -           |
+|           #########  .  .   -     -    -  |
+|       *   *  *         . .                |
 +-------------------------------------------+
 -- spell card 3; bullets on the field: 0
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake boss t=3:43 fixed=13469 | hp 205/205 lv 42 xp 171/855 kills 4339 | pos -57,-2
+lake boss t=3:49 fixed=13847 | hp 205/205 lv 42 xp 128/855 kills 4339 | pos 64,-31
 weapons: amulet8 border8 needle8 orbs8 | passives: magnet1 power2 grimoire5 clock2
-enemies 0 [] | drops 99 | shots 66 | bullets 0
-cards: spirit 3.00/3 meter 76 grazes 364 | hand: healing
-boss cirno: spell 3/3 "Snow Sign “Diamond Blizzard”" hp 4000/4000 results [captured, captured]
-{"boss":"Cirno","spell":"3/3 Snow Sign “Diamond Blizzard”","hp":"[====================] 4000/4000","bonusTime":51.3,"results":["captured","captured"]}
+enemies 0 [] | drops 111 | shots 59 | bullets 0
+cards: spirit 2.14/3 meter 11 grazes 379 | hand: healing
+boss cirno: spell 3/3 "Snow Sign “Diamond Blizzard”" hp 1400/1400 results [captured, captured]
+{"boss":"Cirno","spell":"3/3 Snow Sign “Diamond Blizzard”","hp":"[====================] 1400/1400","bonusTime":51.3,"results":["captured","captured"]}
 -- spell card 3, a few seconds in:
-{"boss":"Cirno","spell":"3/3 Snow Sign “Diamond Blizzard”","hp":"[===                 ] 535/4000","bonusTime":44.7,"results":["captured","captured"]}
+{"boss":"Cirno","spell":"3/3 Snow Sign “Diamond Blizzard”","hp":"[=========           ] 597/1400","bonusTime":44.7,"results":["captured","captured"]}
 +-------------------------------------------+
-|*       *   ****- **** * *** ..*  -      * |
-|       *  * .- -.*.##*##.**** *   . ***    |
-|  ** *    -  .##  .* **  * **.-    *    * *|
-| *     * * *-. . .-**B*.*  . .*#           |
-| *      ** #.   -. **  * .-    *#  *  *    |
-|       ** #. . .   * **         #          |
-| *       **  -.     -@- -     . * * *      |
-|        -*# .-         --    .. #*         |
-| *        ##  -      --       .## *   *    |
-|    * * *- ##  -              .***       * |
-|             .#..- - -      #.             |
-|    *    *  .  .**##. #.##.#        *      |
-|          *     .   ###.    ..             |
+| * -*   *  *   **. ***#* *        **       |
+|     *.*   *  *-***#** **.**  *.  -*   -   |
+|       *    *#** *********.**#-*     ** .  |
+|. *        .#. ** -**B**** *  .# .    * *- |
+|    **    ##   ********   ** *.**  * *     |
+|     .*** #  *  * *  *** ***    # .  * **  |
+|     *-*  # **  ****-@ * * *   *# *      - |
+|  *  .   *#   * -***   **   *  *#         *|
+|** *..- .  #*.      ***  *  *  #*  ***     |
+|  *  . . * *##   *          *#-#   *     * |
+|     *  - .  ##*  *.*   * -#-#    *  * .*  |
+|    *    .- * .##*###**#-.*#.* .    *      |
+|                    .*         . *         |
 +-------------------------------------------+
--- most bullets on the field during the fight: 292
+-- most bullets on the field during the fight: 337
 -- cleared
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake over(clear) t=3:53 fixed=14068 | hp 205/205 lv 42 xp 377/855 kills 4339 | pos -105,-12
+lake over(clear) t=4:02 fixed=14635 | hp 205/205 lv 42 xp 365/855 kills 4339 | pos -160,-111
 weapons: amulet8 border8 needle8 orbs8 | passives: magnet1 power2 grimoire5 clock2
-enemies 0 [] | drops 0 | shots 59 | bullets 0
-cards: spirit 2.56/3 meter 38 grazes 382 | hand: healing
--- meta: coins 720 (lifetime 720) | runs 1 clears 1 [lake] best 233s/4339 kills | active -
+enemies 0 [] | drops 0 | shots 66 | bullets 0
+cards: spirit 3.00/3 meter 63 grazes 407 | hand: healing
+-- meta: coins 721 (lifetime 721) | runs 1 clears 1 [lake] best 242s/4339 kills | active -
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
-last run: lake clear at 233s, lv 42, 4339 kills, +720 coins (new: time, kills, level, first clear)
+last run: lake clear at 242s, lv 42, 4339 kills, +721 coins (new: time, kills, level, first clear)
 "
 `;

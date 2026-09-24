@@ -10,6 +10,8 @@ export interface PassiveDef {
   per: number;
   max: number;
   color: number;
+  /** Share of this passive's bonus that counts against bosses (default BOSS.upgradeShare). */
+  bossMulti?: number;
 }
 
 export const PASSIVES: readonly PassiveDef[] = [
