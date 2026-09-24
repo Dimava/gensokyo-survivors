@@ -177,6 +177,18 @@ export class Playfield {
   playerScreen = { x: 0, y: 0 };
   /** The player's alpha while fx-death.ts plays (null: the renderer's own). */
   playerAlpha: number | null = null;
+  /**
+   * Death and revive on the Live2D player (fx-death.ts): `down` 0..1 knocks
+   * her over (the rig's slack pose, the whole rig tipping about her feet),
+   * `recoil` 0..1 is the flinch of the hit. Null: standing as usual.
+   */
+  playerKO: { down: number; recoil: number } | null = null;
+  /** Which way she falls (+1 to her right), picked when she goes down. */
+  private koSide = 1;
+  /** The player is a live rig (it can act a death instead of vanishing). */
+  get livePlayer(): boolean {
+    return !!this.live.reimu;
+  }
   /** What fx-death.ts dresses: the field (ground, world) and the player (sprite, live rig). */
   get fxNodes(): { world: Container; scene: Container[]; player: Container[] } {
     return { world: this.world, scene: [this.ground, this.world], player: [this.player, this.playerLive] };
@@ -358,6 +370,31 @@ export class Playfield {
    * Step a live rig toward a look and place it with its cell anchor at (x, y).
    * `move` is its motion (length = speed fraction; zero: standing), `slow` a careful walk.
    */
+  /**
+   * Down: the rig tips over about her feet onto her side (about 83 degrees)
+   * and jolts on the recoil; standing: upright.
+   */
+  private tipOver(l: LiveSprite, ko: { down: number; recoil: number } | null): void {
+    const h = l.holder;
+    if (!ko || (ko.down <= 0 && ko.recoil <= 0)) {
+      if (h.rotation !== 0 || h.pivot.x !== 0 || h.pivot.y !== 0) {
+        h.rotation = 0;
+        h.pivot.set(0, 0);
+      }
+      return;
+    }
+    // The feet (model space, chibis are 200x200 with feet at y 188) stay put.
+    const s = l.view.scale.x;
+    const fx = 100 * s;
+    const fy = 188 * s;
+    h.position.set(h.position.x + fx, h.position.y + fy);
+    h.pivot.set(fx, fy);
+    const d = ko.down;
+    h.rotation = this.koSide * (d * 1.45 - ko.recoil * 0.12);
+    // The hit lifts her a little off her feet.
+    h.position.y -= ko.recoil * 24 * s;
+  }
+
   private drawLive(l: LiveSprite, x: number, y: number, lx: number, ly: number, ax: number, ay: number, dt: number, move = { x: 0, y: 0 }, slow = false, pin?: string): void {
     const len = Math.hypot(lx, ly);
     const k = len > 1 ? 1 / len : 1;
@@ -607,7 +644,14 @@ export class Playfield {
     const liveReimu = this.live.reimu;
     this.player.visible = !liveReimu;
     // Standing, walking, or walking slowly with focus held: the rig blends between them.
-    if (liveReimu) this.drawLive(liveReimu, p.body.x, p.body.y, p.ctrl.mx, p.ctrl.my, 0.5, 0.55, fdt, { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 }, p.ctrl.focus, HITBOX_PART);
+    if (liveReimu) {
+      const ko = this.playerKO;
+      if (!ko) this.koSide = p.ctrl.mx < 0 ? -1 : 1;
+      liveReimu.anim.down = ko?.down ?? 0;
+      liveReimu.anim.recoil = ko?.recoil ?? 0;
+      this.drawLive(liveReimu, p.body.x, p.body.y, p.ctrl.mx, p.ctrl.my, 0.5, 0.55, fdt, { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 }, p.ctrl.focus && !ko, HITBOX_PART);
+      this.tipOver(liveReimu, ko);
+    }
     else if (reimu) {
       this.player.texture = lookTexture(reimu, p.ctrl.mx, p.ctrl.my);
       this.player.scale.set(1, 1);

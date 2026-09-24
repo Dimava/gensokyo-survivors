@@ -27,6 +27,14 @@ export class Animator {
    */
   move: Look = { x: 0, y: 0 };
   slow = false;
+  /**
+   * Knocked out (0..1): eyes shut, head drooping, the body sinking, arms and
+   * hair hanging slack. `recoil` (0..1) is the flinch of being hit: eyes
+   * squeezed, head snapped back, mouth open. The field tips the whole rig over
+   * itself (renderer.ts); the springs keep swinging with the fall.
+   */
+  down = 0;
+  recoil = 0;
   /** Blend weights of walking and slow walking (standing is the rest), and the eased move direction. */
   private walkW = 0;
   private slowW = 0;
@@ -62,7 +70,7 @@ export class Animator {
     this.eyes.y += (this.target.y - this.eyes.y) * eye;
     // Gait weights and direction ease in and out, never snapping.
     const speed = Math.min(1, Math.hypot(this.move.x, this.move.y));
-    const moving = speed > 0.05;
+    const moving = speed > 0.05 && this.down < 0.05;
     const ease = 1 - Math.exp(-dt * RATE.gaitBlend);
     this.walkW += ((moving && !this.slow ? speed : 0) - this.walkW) * ease;
     this.slowW += ((moving && this.slow ? speed : 0) - this.slowW) * ease;
@@ -72,8 +80,9 @@ export class Animator {
     const stand = Math.max(0, 1 - this.walkW - this.slowW);
     // Strides per second: brisk walking, a deliberate slow walk, or the idle cycle.
     this.phase += dt * (stand * this.rate + this.walkW * RATE.walk + this.slowW * RATE.slowWalk);
+    const hurt = Math.max(this.down, this.recoil);
     const talk = this.talking ? 0.5 + 0.5 * Math.sin(this.t * RATE.talkA) * Math.sin(this.t * RATE.talkB) : 0;
-    this.mouth += (Math.max(0, talk) - this.mouth) * (1 - Math.exp(-dt * 20));
+    this.mouth += (Math.max(0, talk, this.recoil * 0.9, this.down * 0.25) - this.mouth) * (1 - Math.exp(-dt * (hurt > 0 ? 30 : 20)));
     this.apply(dt);
   }
 
@@ -100,6 +109,8 @@ export class Animator {
       const s = this.t - this.blinkAt;
       open = s < BLINK.close ? 1 - s / BLINK.close : s < BLINK.close + BLINK.open ? (s - BLINK.close) / BLINK.open : 1;
     }
+    // Hurt: the eyes squeeze shut and stay shut while she is down.
+    open = Math.min(open, 1 - Math.min(1, Math.max(this.recoil * 1.6, this.down * 1.4)));
     r.set("EyeLOpen", open);
     r.set("EyeROpen", open);
     const walk = this.walkW;
@@ -116,6 +127,17 @@ export class Animator {
     const lean = this.dir.x;
     r.set("AngleZ", (r.params.AngleZ ?? 0) - lean * (12 * walk + 5 * slow));
     r.set("BodyAngleX", lx * BODY + lean * (7 * walk + 3 * slow));
+    const down = this.down;
+    const recoil = this.recoil;
+    if (down > 0 || recoil > 0) {
+      // The head snaps back on the hit, then droops; the body sinks and goes still.
+      r.set("AngleY", (r.params.AngleY ?? 0) * (1 - down) + recoil * ANGLE * 0.9 - down * ANGLE * 0.8);
+      r.set("AngleZ", (r.params.AngleZ ?? 0) * (1 - down) + down * 14 - recoil * 6);
+      r.set("BodyAngleX", (r.params.BodyAngleX ?? 0) * (1 - down));
+      r.set("Bob", (r.params.Bob ?? 0) * (1 - down) - down + recoil * 0.6);
+      r.set("Step", (r.params.Step ?? 0) * (1 - down));
+      r.set("Breath", (r.params.Breath ?? 0) * (1 - down * 0.8));
+    }
     if (dt > 0) r.step(dt);
     // Hair, ribbons and sleeves trail opposite the motion, swinging with the stride.
     const trail = -lean * (0.75 * walk + 0.3 * slow);
@@ -126,6 +148,13 @@ export class Animator {
     add("HairFront", trail * 0.4);
     add("Ribbon", trail * 1.1 + swing(0.25, 1.1));
     r.set("Sleeve", trail * 0.9 + swing(0.35, 0.9));
+    // Down: sleeves, ribbon and hair hang slack toward the ground she fell to.
+    if (down > 0) {
+      add("Sleeve", down * 0.7 - (r.params.Sleeve ?? 0) * down * 0.5);
+      add("Ribbon", down * 0.5);
+      add("HairSide", down * 0.45);
+      add("HairBack", down * 0.3);
+    }
   }
 }
 

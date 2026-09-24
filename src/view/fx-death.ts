@@ -9,7 +9,9 @@
 // and the field drains to grey and darkens toward the edges while a soft
 // afterglow lingers where she stood, before the results.
 // Revive: the same burst, smaller, then she rises back in a golden glow.
-// A death plays slowly, in slow motion; any fresh key, click or tap skips it
+// A Live2D Reimu never vanishes: she flinches, falls over and lies still with
+// her eyes shut (renderer.ts playerKO, the animator's down pose), and on a
+// revive gets back up. A death plays slowly, in slow motion; any fresh key, click or tap skips it
 // to its end (host.ts).
 
 import { ColorMatrixFilter, Container, Graphics, Rectangle, type Ticker } from "pixi.js";
@@ -46,6 +48,34 @@ const REVIVE = { burst: 0.14, back: 0.4, dur: 1.15 };
 
 const RED = 0xe8203a;
 const GOLD = 0xffe08a;
+
+/**
+ * A body toppling over, 0..1 over k 0..1: slow to start, gathering speed
+ * (gravity), then a small bounce back up where it hits the ground.
+ */
+function topple(k: number): number {
+  const t = Math.max(0, Math.min(1, k));
+  if (t < 0.7) return (t / 0.7) ** 2;
+  return 1 - 0.1 * Math.sin((Math.PI * (t - 0.7)) / 0.3);
+}
+
+/** Smoothstep of k, clamped to 0..1. */
+function smooth(k: number): number {
+  const t = Math.max(0, Math.min(1, k));
+  return t * t * (3 - 2 * t);
+}
+
+/** The flinch of a hit over seconds `s` since it: a sharp rise, a slower release. */
+function flinch(s: number, len: number): number {
+  if (s < 0) return 0;
+  const up = len * 0.2;
+  return s < up ? s / up : Math.max(0, 1 - (s - up) / (len - up));
+}
+
+/** A live rig's death: the flinch before the burst, the fall after it (seconds). */
+const FALL = { flinch: 0.5, dur: 0.9 };
+/** A live rig's revive: knocked down in the burst, then up again. */
+const RISE = { fall: 0.3 };
 
 function mat(f: ColorMatrixFilter, m: number[]): void {
   f.matrix = m as ColorMatrixFilter["matrix"];
@@ -100,7 +130,7 @@ export class DeathFx {
     p.echoes = 2;
     p.age = DEATH.dur;
     this.pieces = [];
-    this.field.playerAlpha = 0;
+    this.gone(1);
     this.setPlayerWhite(0);
     this.setGrey(0.85);
     return true;
@@ -165,8 +195,20 @@ export class DeathFx {
     this.pieces = [];
     this.g.clear();
     this.field.playerAlpha = null;
+    this.field.playerKO = null;
     this.setPlayerWhite(0);
     this.setGrey(0);
+  }
+
+  /**
+   * She is struck out: a drawn sprite vanishes, a live rig stays and lies
+   * `down` (0..1) instead, flinching by `recoil`.
+   */
+  private gone(down: number, recoil = 0): void {
+    if (this.field.livePlayer) {
+      this.field.playerAlpha = 1;
+      this.field.playerKO = { down, recoil };
+    } else this.field.playerAlpha = 0;
   }
 
   private burst(x: number, y: number, death: boolean): void {
@@ -228,18 +270,23 @@ export class DeathFx {
   private stepDeath(p: NonNullable<DeathFx["play"]>): void {
     if (!p.burst) {
       // A frozen beat, then she whitens and swells a little before bursting.
+      // A live rig flinches through it, whitening only part way so her face shows.
       const k = p.age / DEATH.burst;
-      this.setPlayerWhite(Math.min(1, k * 2.5));
+      const live = this.field.livePlayer;
+      this.setPlayerWhite(Math.min(live ? 0.55 : 1, k * 2.5));
       this.field.playerAlpha = 1;
+      if (live) this.field.playerKO = { down: 0, recoil: flinch(p.age, FALL.flinch) };
       if (p.age >= DEATH.burst) {
         p.burst = true;
         this.setPlayerWhite(0);
-        this.field.playerAlpha = 0;
+        this.gone(0, flinch(p.age, FALL.flinch));
         this.burst(p.x, p.y, true);
       }
       return;
     }
-    this.field.playerAlpha = 0;
+    // Then she topples over and lies still (a live rig), or is simply gone.
+    const fell = p.age - DEATH.burst;
+    this.gone(topple(fell / FALL.dur), flinch(p.age, FALL.flinch) * (1 - smooth(fell / 0.3)));
     if (!p.sounded && p.age >= DEATH.sound) {
       p.sounded = true;
       audio.play("death");
@@ -287,21 +334,28 @@ export class DeathFx {
   private stepRevive(p: NonNullable<DeathFx["play"]>): void {
     const g = this.g;
     if (!p.burst) {
-      this.setPlayerWhite(Math.min(1, p.age / REVIVE.burst));
+      const live = this.field.livePlayer;
+      this.setPlayerWhite(Math.min(live ? 0.5 : 1, p.age / REVIVE.burst));
+      if (live) this.field.playerKO = { down: 0, recoil: flinch(p.age, REVIVE.burst * 2) };
       if (p.age >= REVIVE.burst) {
         p.burst = true;
         this.burst(p.x, p.y, false);
-        this.field.playerAlpha = 0;
+        this.gone(0, 1);
       }
       return;
     }
     if (p.age < REVIVE.back) {
-      this.field.playerAlpha = 0;
+      // Knocked down by the burst (a live rig; a drawn one is just gone).
+      const s = p.age - REVIVE.burst;
+      this.gone(topple(s / RISE.fall), flinch(p.age, REVIVE.burst * 2));
       return;
     }
-    // Rising back: she fades in from white inside a pillar of light.
+    // Rising back: she fades in from white inside a pillar of light; a live rig gets back up.
     const k = Math.min(1, (p.age - REVIVE.back) / (REVIVE.dur - REVIVE.back));
-    this.field.playerAlpha = Math.min(1, k * 3);
+    if (this.field.livePlayer) {
+      this.field.playerAlpha = 1;
+      this.field.playerKO = { down: 1 - smooth(k * 1.25), recoil: 0 };
+    } else this.field.playerAlpha = Math.min(1, k * 3);
     this.setPlayerWhite(1 - k);
     const a = Math.sin(Math.PI * k);
     for (let i = 0; i < 4; i++) {
@@ -317,6 +371,7 @@ export class DeathFx {
     if (p.age >= REVIVE.dur) {
       this.play = null;
       this.field.playerAlpha = null;
+      this.field.playerKO = null;
       this.setPlayerWhite(0);
     }
   }
