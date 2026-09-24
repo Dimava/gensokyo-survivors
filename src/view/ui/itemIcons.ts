@@ -82,6 +82,18 @@ export const ITEM_ICONS: Readonly<Record<string, string>> = {
     `<rect x="2.5" y="5" width="12" height="16" rx="1.2" opacity="0.6"/>` +
     `<rect x="9" y="2.5" width="12.5" height="17" rx="1.2"/>` +
     `<path d="M15.2 7.5v7M11.7 11h7" ${HOLE_LINE} stroke-width="2"/>`,
+
+  // Level-up fallbacks, once everything is maxed.
+  // An onigiri: a rounded triangle of rice with its nori band.
+  onigiri:
+    `<path d="M12 2.5c1.8 0 3 1.2 4 2.8l5.2 9.4c1.6 3-.2 6.8-3.7 6.8H6.5c-3.5 0-5.3-3.8-3.7-6.8L8 5.3c1-1.6 2.2-2.8 4-2.8z"/>` +
+    `<rect x="8" y="14" width="8" height="7.5" rx="0.6" ${HOLE}/>` +
+    `<circle cx="10" cy="9" r="0.8" ${HOLE}/><circle cx="14.2" cy="10.4" r="0.8" ${HOLE}/>`,
+  // An offering: a mon coin with its square hole, and the rim stamped in.
+  offering:
+    `<circle cx="12" cy="12" r="10"/>` +
+    `<circle cx="12" cy="12" r="7.6" ${HOLE_LINE} stroke-width="1.2"/>` +
+    `<rect x="9.3" y="9.3" width="5.4" height="5.4" ${HOLE}/>`,
 };
 
 /** The inner SVG markup (24x24 viewBox) of an item's icon, or a plain dot for an item without one. */

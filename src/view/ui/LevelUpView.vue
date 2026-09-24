@@ -15,6 +15,7 @@ import { hex } from "./useGame.ts";
 import { keyLabels } from "../keys.ts";
 import Keys from "./Keys.vue";
 import WeaponPreview from "./WeaponPreview.vue";
+import ItemPreview from "./ItemPreview.vue";
 
 const offer = computed(() => {
   void state.frame;
@@ -41,6 +42,7 @@ const choices = computed(() =>
         lines: weaponLevelDelta(def, c.level - 1),
         from: `from ${def.from}`,
         weapon: { id: c.id, level: c.level },
+        item: undefined,
       };
     }
     if (c.kind === "passive") {
@@ -53,10 +55,11 @@ const choices = computed(() =>
         lines: [formatBonus(def.stat, def.per), `Total after: ${formatBonus(def.stat, def.per * c.level)}`],
         from: def.desc,
         weapon: undefined,
+        item: { id: c.id, level: c.level, max: def.max },
       };
     }
-    if (c.kind === "heal") return { kind: "Recovery", name: "Onigiri", color: "#ff7aa2", tag: "", lines: [`Restore ${HEAL_FRACTION * 100}% of your max HP`], from: "Everything is maxed out", weapon: undefined };
-    return { kind: "Donation", name: "Offering", color: "#ffc94d", tag: "", lines: [`+${COIN_OFFER} ${CURRENCY.name}`], from: "Everything is maxed out", weapon: undefined };
+    if (c.kind === "heal") return { kind: "Recovery", name: "Onigiri", color: "#ff7aa2", tag: "", lines: [`Restore ${HEAL_FRACTION * 100}% of your max HP`], from: "Everything is maxed out", weapon: undefined, item: { id: "onigiri", level: undefined, max: undefined } };
+    return { kind: "Donation", name: "Offering", color: "#ffc94d", tag: "", lines: [`+${COIN_OFFER} ${CURRENCY.name}`], from: "Everything is maxed out", weapon: undefined, item: { id: "offering", level: undefined, max: undefined } };
   }),
 );
 
@@ -151,7 +154,7 @@ function hover(): void {
       >
         <span class="key num">{{ keyLabels(`Action:pick${i + 1}`, 1)[0] }}</span>
         <WeaponPreview v-if="c.weapon" :id="c.weapon.id" :level="c.weapon.level" :active="L.mode === 'live'" />
-        <span v-else class="icon"></span>
+        <ItemPreview v-else-if="c.item" :id="c.item.id" :color="c.item.id === 'onigiri' ? '#fbf6ec' : c.color" :level="c.item.level" :max="c.item.max" :active="L.mode === 'live'" />
         <span class="kind">{{ c.kind }}</span>
         <span class="name">{{ c.name }}</span>
         <span v-if="c.tag" class="tag" :class="{ new: c.tag === 'NEW' }">{{ c.tag }}</span>
@@ -267,15 +270,6 @@ h2 {
   left: -10px;
   background: #111;
   font-size: 1rem;
-}
-.icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--c);
-  box-shadow: 0 0 18px var(--c);
-  align-self: center;
-  margin-bottom: 6px;
 }
 .kind {
   font-size: 0.75rem;
