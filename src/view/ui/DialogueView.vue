@@ -8,6 +8,7 @@ import { CHARACTERS } from "../../content/names.ts";
 import { script } from "../../content/dialogue.ts";
 import { hex } from "./useGame.ts";
 import Portrait from "./Portrait.vue";
+import Keys from "./Keys.vue";
 import type { Look } from "../../art/drawing.ts";
 
 /** The two speakers look at each other, toward the screen centre (a look is in screen space, mirrored portraits too). */
@@ -89,8 +90,7 @@ const speakers = computed(() => {
       <p class="text">{{ text.slice(0, shown) }}<span class="caret" v-if="!typing">▶</span></p>
       <div class="foot">
         <span class="muted">{{ scene.index + 1 }} / {{ scene.total }}</span>
-        <span class="muted"><span class="key">Space</span> / click: {{ typing ? "show all" : "next" }}</span>
-        <button class="btn small ghost" @click.stop="host.vnNext(true)">Skip dialogue <span class="key">X</span></button>
+        <button class="btn small ghost" @click.stop="host.vnNext(true)">Skip dialogue <Keys for="Action:skip" :max="1" /></button>
       </div>
     </div>
   </div>

@@ -304,11 +304,7 @@ const newNames = pulls.filter((p) => p.outcome === "new").map((p) => cardDef(p.c
     <div ref="stage" class="stage">
       <header>
         <h2>{{ pack.name }}</h2>
-        <p class="hint">
-          <template v-if="phase === 'pack'">Click or <Keys for="Confirm" :max="2" /> to break the seal</template>
-          <template v-else-if="phase !== 'done'">Click or <Keys for="Confirm" :max="2" /> flips the next card</template>
-          <template v-else>{{ summary }}</template>
-        </p>
+        <p class="hint">{{ phase === "done" ? summary : "" }}</p>
       </header>
 
       <div class="table">
@@ -371,7 +367,7 @@ const newNames = pulls.filter((p) => p.outcome === "new").map((p) => cardDef(p.c
       <div class="foot" @click.stop>
         <template v-if="phase === 'done'">
           <button class="btn again" :disabled="!canAgain" @click="again">Open another {{ CURRENCY.icon }} {{ pack.cost }}</button>
-          <button class="btn primary" @click="close">Continue <Keys for="Confirm" :max="2" /></button>
+          <button class="btn primary" @click="close">Continue</button>
         </template>
         <button v-else class="btn skip" @click="revealAll">Reveal all <Keys for="Action:skip" :max="1" /></button>
       </div>
