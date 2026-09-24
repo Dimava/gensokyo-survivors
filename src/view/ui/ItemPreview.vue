@@ -1,8 +1,10 @@
 <script setup lang="ts">
-// A level-up card's picture of an item at the offered level: its HUD icon
-// (itemIcons.ts) drawn big in the item's colour, as many times as the level
-// (one charm at Lv 1, five at Lv 5), with a glow that grows with the level and
-// a calm wave bobbing through them. The onigiri and the offering: one icon.
+// A level-up card's picture of an item: its HUD icon (itemIcons.ts), one, big,
+// in the item's colour, dressed up as a better tier at each level:
+//   1 plain · 2 a silver medallion rim · 3 a gold rim on a plate, the icon
+//   gilded · 4 gems set in the rim · 5 (max) a crown and slowly turning rays.
+// Items with fewer levels spread the same tiers (the Duplex Tome: 1 and 5).
+// Pips under it count the levels. The onigiri and the offering: the icon alone.
 import { computed } from "vue";
 import { itemIcon } from "./itemIcons.ts";
 
@@ -16,74 +18,104 @@ const props = defineProps<{
   active: boolean;
 }>();
 
-const W = 196;
-const H = 90;
-const n = computed(() => Math.max(1, props.level ?? 1));
-/** Each copy's size: one big icon, shrinking as more share the row. */
-const size = computed(() => Math.min(66, (W - 8 - (n.value - 1) * 6) / n.value));
-/** 0..1: how far up its levels the item is (a lone icon counts as full). */
-const power = computed(() => (props.level && props.max ? props.level / props.max : 1));
-const copies = computed(() =>
-  [...Array(n.value).keys()].map((i) => {
-    const off = i - (n.value - 1) / 2;
-    // A gentle arc: the middle one highest.
-    return { x: W / 2 + off * (size.value + 6), y: H / 2 + off * off * 2.2 - (n.value > 1 ? 3 : 0), delay: i * 0.12 };
-  }),
-);
+const S = 96;
+const C = 46;
+const R = 31;
+const SILVER = "#d6dcec";
+const GOLD = "#ffcf5a";
+const GOLD_DARK = "#a8771a";
+
+const tier = computed(() => {
+  const { level, max } = props;
+  if (!level || !max) return 0;
+  return max <= 1 ? 5 : Math.round(1 + ((level - 1) * 4) / (max - 1));
+});
+const icon = computed(() => (tier.value >= 2 ? 42 : 52));
+const gems = [45, 135, 225, 315].map((d) => ({ x: C + Math.cos((d * Math.PI) / 180) * R, y: C + Math.sin((d * Math.PI) / 180) * R }));
+const rays = [...Array(12).keys()].map((i) => {
+  const a = (i / 12) * Math.PI * 2;
+  const w = 0.13;
+  const p = (ang: number, r: number) => `${(C + Math.cos(ang) * r).toFixed(1)},${(C + Math.sin(ang) * r).toFixed(1)}`;
+  return `${p(a - w, R - 2)} ${p(a, R + 13)} ${p(a + w, R - 2)}`;
+});
+const pips = computed(() => {
+  const max = props.max ?? 0;
+  return [...Array(max).keys()].map((i) => ({ x: S / 2 + (i - (max - 1) / 2) * 9, lit: i < (props.level ?? 0) }));
+});
 </script>
 
 <template>
-  <div class="ipv" :class="{ still: !active }" :style="{ width: W + 'px', height: H + 'px', color, '--glow': `${4 + 10 * power}px`, '--glowA': `${Math.round(35 + 45 * power)}%` }">
+  <svg class="ipv" :class="[`t${tier}`, { still: !active }]" :viewBox="`0 0 ${S} ${S}`" :width="S" :height="S" :style="{ color }">
+    <defs>
+      <radialGradient :id="`plate-${id}`" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#3a4380" />
+        <stop offset="100%" stop-color="#171c3c" />
+      </radialGradient>
+    </defs>
+    <!-- 5: rays behind, turning slowly -->
+    <g v-if="tier >= 5" class="rays">
+      <polygon v-for="(r, i) in rays" :key="i" :points="r" :fill="GOLD" opacity="0.55" />
+    </g>
+    <!-- 2+: the medallion; 3+ on a plate in gold -->
+    <circle v-if="tier >= 3" :cx="C" :cy="C" :r="R" :fill="`url(#plate-${id})`" />
+    <circle v-if="tier >= 2" :cx="C" :cy="C" :r="R" fill="none" :stroke="tier >= 3 ? GOLD : SILVER" :stroke-width="tier >= 3 ? 3.2 : 2.4" />
+    <circle v-if="tier >= 3" :cx="C" :cy="C" :r="R - 3.6" fill="none" :stroke="GOLD_DARK" stroke-width="1" />
+    <!-- 4+: gems in the rim -->
+    <g v-if="tier >= 4">
+      <g v-for="(g, i) in gems" :key="i" :transform="`translate(${g.x} ${g.y}) rotate(45)`">
+        <rect x="-4" y="-4" width="8" height="8" :fill="GOLD" />
+        <rect x="-2.6" y="-2.6" width="5.2" height="5.2" fill="currentColor" />
+        <rect x="-2.6" y="-2.6" width="2" height="2" fill="#fff" opacity="0.7" />
+      </g>
+    </g>
+    <!-- 5: a crown on top -->
+    <g v-if="tier >= 5" :transform="`translate(${C} ${C - R - 1})`">
+      <path d="M-11 0 L-12 -11 L-5.5 -5 L0 -13 L5.5 -5 L12 -11 L11 0 Z" :fill="GOLD" :stroke="GOLD_DARK" stroke-width="1" stroke-linejoin="round" />
+      <circle cx="0" cy="-5" r="1.9" fill="currentColor" />
+    </g>
     <svg
-      v-for="(c, i) in copies"
-      :key="i"
-      class="copy"
+      class="icon"
+      :x="C - icon / 2"
+      :y="C - icon / 2"
+      :width="icon"
+      :height="icon"
       viewBox="0 0 24 24"
       fill="currentColor"
-      :style="{ width: size + 'px', height: size + 'px', left: c.x - size / 2 + 'px', top: c.y - size / 2 + 'px', '--d': c.delay }"
+      :style="{ '--hole': tier >= 3 ? '#2a3163' : '#252c57' }"
       v-html="itemIcon(id)"
     ></svg>
-  </div>
+    <circle v-for="(p, i) in pips" :key="'p' + i" :cx="p.x" :cy="S - 6" r="2.6" :fill="p.lit ? GOLD : 'rgba(255,255,255,0.18)'" />
+  </svg>
 </template>
 
 <style scoped>
 .ipv {
-  position: relative;
+  display: block;
   align-self: center;
-  max-width: 100%;
-  margin-bottom: 4px;
-  /* The card's colour where the icon sits: the icons' cut-outs show it. */
-  --hole: #252c57;
-}
-.copy {
-  position: absolute;
   overflow: visible;
-  filter: drop-shadow(0 0 var(--glow) color-mix(in srgb, currentColor var(--glowA), transparent));
-  animation:
-    bob calc(2.4s * var(--anim)) ease-in-out calc(var(--d) * 1s * var(--anim)) infinite,
-    shine calc(2.4s * var(--anim)) ease-in-out calc(var(--d) * 1s * var(--anim)) infinite;
+  margin-bottom: 2px;
 }
-.still .copy {
+.icon {
+  overflow: visible;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 50%, transparent));
+}
+/* 3+: the icon gilded, a thin gold outline round it. */
+.t3 .icon,
+.t4 .icon,
+.t5 .icon {
+  filter: drop-shadow(0.6px 0 0 #ffcf5a) drop-shadow(-0.6px 0 0 #ffcf5a) drop-shadow(0 0.6px 0 #ffcf5a) drop-shadow(0 -0.6px 0 #ffcf5a)
+    drop-shadow(0 0 6px color-mix(in srgb, currentColor 50%, transparent));
+}
+.rays {
+  transform-origin: 46px 46px;
+  animation: turn calc(30s * var(--anim)) linear infinite;
+}
+.still .rays {
   animation-play-state: paused;
 }
-@keyframes bob {
-  0%,
-  40%,
-  100% {
-    transform: translateY(0);
-  }
-  20% {
-    transform: translateY(-4px);
-  }
-}
-@keyframes shine {
-  0%,
-  40%,
-  100% {
-    filter: drop-shadow(0 0 var(--glow) color-mix(in srgb, currentColor var(--glowA), transparent));
-  }
-  20% {
-    filter: drop-shadow(0 0 calc(var(--glow) + 6px) currentColor) brightness(1.25);
+@keyframes turn {
+  to {
+    transform: rotate(1turn);
   }
 }
 </style>
