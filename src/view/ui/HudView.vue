@@ -12,6 +12,7 @@ import { ui } from "../presenter.ts";
 import { CARD_KINDS, cardDef } from "../../content/cards.ts";
 import { cardIcon } from "./cardIcons.ts";
 import SpellBar from "./SpellBar.vue";
+import { itemIcon } from "./itemIcons.ts";
 
 const h = computed(() => hud.value!);
 const hpPct = computed(() =>
@@ -103,7 +104,7 @@ function pause(): void {
           class="slot"
           :title="`${w.name} (level ${w.level} of ${w.max}): ${w.desc}`"
         >
-          <i :style="{ background: hex(w.color) }"></i
+          <svg class="ico" viewBox="0 0 24 24" fill="currentColor" :style="{ color: hex(w.color) }" v-html="itemIcon(w.id)"></svg
           ><b>{{ w.level === w.max ? "MAX" : w.level }}</b>
         </div>
         <div
@@ -121,7 +122,7 @@ function pause(): void {
           class="slot"
           :title="`${p.name} (level ${p.level} of ${p.max}): ${p.desc}`"
         >
-          <i class="sq" :style="{ background: hex(p.color) }"></i
+          <svg class="ico" viewBox="0 0 24 24" fill="currentColor" :style="{ color: hex(p.color) }" v-html="itemIcon(p.id)"></svg
           ><b>{{ p.level === p.max ? "MAX" : p.level }}</b>
         </div>
         <div
@@ -424,7 +425,7 @@ function pause(): void {
   color: var(--muted);
 }
 .slot {
-  width: 38px;
+  width: 43px;
   height: 26px;
   border-radius: 6px;
   background: rgba(10, 14, 30, 0.8);
@@ -435,14 +436,12 @@ function pause(): void {
   gap: 3px;
   font-size: 11px;
 }
-.slot i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.slot i.sq {
-  border-radius: 2px;
+.slot .ico {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  --hole: #0a0e1e;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
 }
 .slot.empty {
   opacity: 0.35;
