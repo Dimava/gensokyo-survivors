@@ -82,6 +82,12 @@ interface Floater {
 }
 
 const pos = { x: 0, y: 0 };
+/** Reimu watches the nearest enemy within this range (the Homing Amulets' reach, sim/weapons.ts). */
+const AIM_RANGE = 520;
+/** Reimu switches her gaze to a new nearest enemy only when it is this many times closer than her current one. */
+const FOCUS_SWITCH = 1.5;
+/** A moving mob leans this many radians into its horizontal heading (its look frame is toward the player). */
+const MOB_LEAN = 0.16;
 
 /**
  * See-through for a layered rig as one picture: container alpha would fade
@@ -409,6 +415,8 @@ export class Playfield {
     else l.holder.position.set(x - l.sr.w * ax, y - l.sr.h * ay);
   }
 
+  /** The enemy Reimu is watching (uid; -1 none). */
+  private focusUid = -1;
   private bossLast = { x: 0, y: 0, v: { x: 0, y: 0 } };
   /** The boss's velocity as a speed fraction, smoothed (bosses glide; frame jitter must not read as steps). */
   private bossVel(x: number, y: number, dt: number): { x: number; y: number } {
@@ -481,6 +489,16 @@ export class Playfield {
       this.arena.circle(run.ax, run.ay, BOSS.arena + 10).stroke({ width: 2, color: 0x6fd3ff, alpha: pulse * 0.4 });
     }
     const boss = v.derived("boss");
+    // Where Reimu looks (her focus, apart from where she walks): what her amulets aim at, the boss or the nearest enemy.
+    let focusX = 0;
+    let focusY = 0;
+    let focusD = AIM_RANGE * AIM_RANGE;
+    let focused = false;
+    let focusUid = -1;
+    /** Her current target, if it is still in range: she keeps watching it until another is clearly closer. */
+    let stickyX = 0;
+    let stickyY = 0;
+    let stickyD = -1;
     this.spellBg.visible = !!boss;
     this.boss.visible = !!boss;
     this.bossLive.visible = !!boss;
@@ -488,6 +506,9 @@ export class Playfield {
     if (boss) {
       const def = bossDef(boss.boss.id);
       bossPos(boss, t, pos);
+      focusX = pos.x;
+      focusY = pos.y;
+      focused = true;
       const bossArt = this.art[def.character];
       const bossLive = this.live[def.character];
       for (const [id, l] of Object.entries(this.live)) if (id !== "reimu") l.holder.visible = l === bossLive;
@@ -552,8 +573,26 @@ export class Playfield {
       const kind = ek[i]!;
       const flash = t - ehit[i]! < SWARM.flash;
       const def = ENEMIES[kind]!;
-      // Face the way it flies (crossing or leaving), else the player.
-      const heading = def.move.kind === "cross" || ephase[i] === PHASE.leaving;
+      if (!boss) {
+        const fdx = ex[i]! - p.body.x;
+        const fdy = ey[i]! - p.body.y;
+        const fd = fdx * fdx + fdy * fdy;
+        if (fd < focusD) {
+          focusD = fd;
+          focusX = ex[i]!;
+          focusY = ey[i]!;
+          focusUid = euid[i]!;
+          focused = true;
+        }
+        if (euid[i] === this.focusUid && fd < AIM_RANGE * AIM_RANGE) {
+          stickyX = ex[i]!;
+          stickyY = ey[i]!;
+          stickyD = fd;
+        }
+      }
+      // Focus and direction apart: a mob watches the player while it moves (only a leaving one looks
+      // away, where it flies). The sheet bakes look x gait frames, so the body's heading is a lean.
+      const heading = ephase[i] === PHASE.leaving;
       const art = this.enemyArt ? this.art[def.id] : undefined;
       if (art) {
         // Rigged art animates: each enemy runs the idle cycle at its own phase and blinks now and then.
@@ -574,7 +613,7 @@ export class Playfield {
       const sc = flash ? 1.12 : 1;
       q.scaleX = sc + wob;
       q.scaleY = sc - wob;
-      q.rotation = def.shape === "orb" && !art ? this.time * 2 + euid[i]! : 0;
+      q.rotation = def.shape === "orb" && !art ? this.time * 2 + euid[i]! : art && def.speed > 0 && ephase[i] !== PHASE.holding ? evx[i]! * MOB_LEAN : 0;
       // Procedural sprites only face left or right; drawn ones look the way they face.
       if (!art && (heading ? evx[i]! < 0 : q.x > p.body.x)) q.scaleX = -q.scaleX;
     }
@@ -637,11 +676,19 @@ export class Playfield {
     void shown;
 
     // Player, hitbox, graze ring, orbiting orbs.
+    // Keep the old target unless the new nearest is clearly closer (FOCUS_SWITCH), so her head doesn't twitch between enemies.
+    if (!boss && stickyD >= 0 && stickyD < focusD * FOCUS_SWITCH * FOCUS_SWITCH) {
+      focusX = stickyX;
+      focusY = stickyY;
+    } else if (!boss) this.focusUid = focusUid;
     const invuln = t < p.life.invulnUntil && run.phase !== "over";
     this.player.position.set(p.body.x, p.body.y);
     // Drawn Reimu looks where she moves (ahead when still); the procedural one only flips.
     const reimu = this.art.reimu;
     const liveReimu = this.live.reimu;
+    // Her head and eyes follow her focus (full turn at 200 px); her body, lean and gait follow her movement.
+    // No target: she looks where she walks, else ahead.
+    const look = focused ? { x: (focusX - p.body.x) / 200, y: (focusY - p.body.y) / 200 } : { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 };
     this.player.visible = !liveReimu;
     // Standing, walking, or walking slowly with focus held: the rig blends between them.
     if (liveReimu) {
@@ -649,11 +696,11 @@ export class Playfield {
       if (!ko) this.koSide = p.ctrl.mx < 0 ? -1 : 1;
       liveReimu.anim.down = ko?.down ?? 0;
       liveReimu.anim.recoil = ko?.recoil ?? 0;
-      this.drawLive(liveReimu, p.body.x, p.body.y, p.ctrl.mx, p.ctrl.my, 0.5, 0.55, fdt, { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 }, p.ctrl.focus && !ko, HITBOX_PART);
+      this.drawLive(liveReimu, p.body.x, p.body.y, look.x, look.y, 0.5, 0.55, fdt, { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 }, p.ctrl.focus && !ko, HITBOX_PART);
       this.tipOver(liveReimu, ko);
     }
     else if (reimu) {
-      this.player.texture = lookTexture(reimu, p.ctrl.mx, p.ctrl.my);
+      this.player.texture = lookTexture(reimu, look.x, look.y);
       this.player.scale.set(1, 1);
     } else this.player.scale.set(p.body.fx < -0.1 ? -1 : 1, 1);
     this.player.alpha = run.phase === "over" && run.outcome === "dead" ? Math.max(0, 1 - (t - run.endedAt) / 30) : invuln ? (Math.floor(this.time * 20) % 2 ? 0.35 : 0.9) : 1;
