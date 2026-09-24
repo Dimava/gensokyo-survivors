@@ -6,10 +6,12 @@ import ItemCopies from "./ItemCopies.vue";
 import ItemMedallion from "./ItemMedallion.vue";
 import ItemDetail from "./ItemDetail.vue";
 import ItemEffect from "./ItemEffect.vue";
+import ItemIconEffect from "./ItemIconEffect.vue";
 
-export type ItemLook = "icon" | "copies" | "medallion" | "detail" | "effect";
+export type ItemLook = "iconfx" | "icon" | "copies" | "medallion" | "detail" | "effect";
 
 export const ITEM_LOOKS: readonly { id: ItemLook; label: string; blurb: string; component: Component }[] = [
+  { id: "iconfx", label: "Icon + effect", blurb: "The HUD icon, unchanged, with an effect round it that grows each level", component: ItemIconEffect },
   { id: "icon", label: "Icon", blurb: "The HUD icon, big, with level pips", component: ItemIcon },
   { id: "copies", label: "Copies", blurb: "One copy of the icon per level, a wave through them", component: ItemCopies },
   { id: "medallion", label: "Medallion", blurb: "The icon in a medallion: silver, gold, gems, a crown", component: ItemMedallion },

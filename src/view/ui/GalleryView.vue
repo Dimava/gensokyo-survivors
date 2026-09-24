@@ -21,7 +21,7 @@ import { WEAPONS } from "../../content/weapons.ts";
 import { hex } from "./useGame.ts";
 import ItemPreview from "./ItemPreview.vue";
 import WeaponPreview from "./WeaponPreview.vue";
-import { ITEM_LOOKS } from "./items/index.ts";
+import { ITEM_LOOKS, type ItemLook } from "./items/index.ts";
 
 interface Item {
   key: string;
@@ -93,6 +93,11 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(raf);
 });
 
+function pickItemArt(look: ItemLook): void {
+  prefs.itemArt = look;
+  prefs.itemArtPicked = true;
+}
+
 function draw(d: Drawing, key: string, px: number): string {
   return svgOf(d, px, looks[key] ?? AHEAD);
 }
@@ -161,7 +166,7 @@ function draw(d: Drawing, key: string, px: number): string {
       <div class="section-head">
         <h3>Items</h3>
         <div class="styles">
-          <button v-for="l in ITEM_LOOKS" :key="l.id" class="btn small" :class="{ primary: prefs.itemArt === l.id }" :title="l.blurb" @click="prefs.itemArt = l.id">{{ l.label }}</button>
+          <button v-for="l in ITEM_LOOKS" :key="l.id" class="btn small" :class="{ primary: prefs.itemArt === l.id }" :title="l.blurb" @click="pickItemArt(l.id)">{{ l.label }}</button>
         </div>
       </div>
       <p class="muted look-note">{{ ITEM_LOOKS.find((l) => l.id === prefs.itemArt)?.blurb }}. The level-up cards use the look picked here.</p>

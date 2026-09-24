@@ -7,8 +7,8 @@ import { reactive, watch } from "vue";
 /** Character art: the drawn SVG art or the rigged, animated models (the default). */
 export type ArtStyle = "drawn" | "live2d";
 /** How level-up cards picture items (ui/items/index.ts ITEM_LOOKS). */
-export type ItemArt = "icon" | "copies" | "medallion" | "detail" | "effect";
-const ITEM_ARTS: readonly ItemArt[] = ["icon", "copies", "medallion", "detail", "effect"];
+export type ItemArt = "iconfx" | "icon" | "copies" | "medallion" | "detail" | "effect";
+const ITEM_ARTS: readonly ItemArt[] = ["iconfx", "icon", "copies", "medallion", "detail", "effect"];
 
 export interface Prefs {
   master: number;
@@ -26,11 +26,13 @@ export interface Prefs {
   fps: boolean;
   artStyle: ArtStyle;
   itemArt: ItemArt;
+  /** The player picked the item look (in the gallery); until then it follows the default. */
+  itemArtPicked: boolean;
 }
 
 const KEY = "gensokyo-survivors/prefs";
 
-const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false, artStyle: "live2d", itemArt: "icon" };
+const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false, artStyle: "live2d", itemArt: "iconfx", itemArtPicked: false };
 
 function load(): Prefs {
   try {
@@ -39,7 +41,7 @@ function load(): Prefs {
     const data = JSON.parse(raw) as Partial<Prefs>;
     // A stored choice stands; no (or an unknown) choice gets the default.
     const artStyle: ArtStyle = data.artStyle === "drawn" || data.artStyle === "live2d" ? data.artStyle : DEFAULTS.artStyle;
-    const itemArt: ItemArt = ITEM_ARTS.includes(data.itemArt as ItemArt) ? (data.itemArt as ItemArt) : DEFAULTS.itemArt;
+    const itemArt: ItemArt = data.itemArtPicked && ITEM_ARTS.includes(data.itemArt as ItemArt) ? (data.itemArt as ItemArt) : DEFAULTS.itemArt;
     return { ...DEFAULTS, ...data, artStyle, itemArt, seen: Array.isArray(data.seen) ? data.seen.filter((s) => typeof s === "string") : [] };
   } catch {
     return { ...DEFAULTS, seen: [] };
