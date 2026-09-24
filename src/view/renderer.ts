@@ -81,6 +81,8 @@ interface Floater {
 }
 
 const pos = { x: 0, y: 0 };
+/** The graze ring starts to show when a grazeable bullet is this many pixels outside the graze radius. */
+const GRAZE_APPROACH = 40;
 
 function pool(pc: ParticleContainer, n: number, tex: Texture): Particle[] {
   const kids = pc.particleChildren as Particle[];
@@ -144,6 +146,8 @@ export class Playfield {
   private broochGlow: Sprite | null = null;
   /** Graze ring strength: 1 on a graze, decaying to 0 (grazeFlash). */
   private grazeA = 0;
+  /** Graze ring from approach: rises as a grazeable bullet nears the graze radius (smoothed). */
+  private grazeNearA = 0;
   /** Time of the rigged art's idle cycles: runs at the animation-speed setting. */
   private artTime = 0;
   private zoom = 1;
@@ -538,6 +542,8 @@ export class Playfield {
     const frozen = v.has(v.derived("state"), "timestop");
     const grazed = b.col("grazed");
     let nearest = 1e9;
+    /** The nearest bullet that can still be grazed (squared distance). */
+    let nearestFresh = 1e9;
     let shown = 0;
     for (let i = 0; i < b.count; i++) {
       const q = bp[i]!;
@@ -551,6 +557,7 @@ export class Playfield {
       const ddy = pos.y - p.body.y;
       const dd = ddx * ddx + ddy * ddy;
       if (dd < nearest) nearest = dd;
+      if (dd < nearestFresh && !grazed[i]) nearestFresh = dd;
       // Bullets with a life fade out over their last half second.
       q.alpha = dd < viewR * viewR ? Math.min(1, (b.endsAt(i) - td) / 30) : 0;
       if (q.alpha) shown++;
@@ -600,16 +607,20 @@ export class Playfield {
     }
     this.hitbox.rotation = this.time * 3;
     this.fxG.clear();
-    // The graze ring lights up on an actual graze and fades out; it is not shown passively.
+    // The graze ring lights up on an actual graze and fades out, and shows faintly as a
+    // grazeable bullet closes in (never while invulnerable: no grazing then); not shown passively.
     this.grazeA *= Math.exp(-dt * 7);
+    const approach = invuln ? 0 : Math.max(0, Math.min(1, (PLAYER.graze + GRAZE_APPROACH - Math.sqrt(nearestFresh)) / GRAZE_APPROACH));
+    this.grazeNearA += (approach - this.grazeNearA) * (1 - Math.exp(-dt * (approach > this.grazeNearA ? 18 : 6)));
     if (this.broochGlow && liveReimu) {
       const c = liveReimu.view.partCenter(HITBOX_PART);
       if (c) this.broochGlow.position.set(c[0], c[1]);
       this.broochGlow.alpha = this.grazeA;
       this.broochGlow.scale.set(0.8 + 0.4 * this.grazeA);
     }
-    if (this.grazeA > 0.02) {
-      this.fxG.circle(p.body.x, p.body.y, PLAYER.graze).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 * this.grazeA });
+    const ringA = Math.max(0.5 * this.grazeA, 0.28 * this.grazeNearA);
+    if (ringA > 0.01) {
+      this.fxG.circle(p.body.x, p.body.y, PLAYER.graze).stroke({ width: 1.5, color: 0xffffff, alpha: ringA });
     }
     let orbN = 0;
     const stats = v.derived("stats");
