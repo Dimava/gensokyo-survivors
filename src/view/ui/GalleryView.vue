@@ -3,6 +3,7 @@
 // field sprites. They all look at the cursor: each drawing is re-rendered
 // with a look from its own centre toward the pointer. The style switch shows
 // the drawn set, the rigged Live2D-style set (src/art-l2d), or both side by side.
+// Below them, the items and weapons at every level, as their level-up cards show them.
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { prefs } from "../prefs.ts";
 import { livePortrait } from "../art-set.ts";
@@ -14,6 +15,11 @@ import { ART } from "../../art/index.ts";
 import { AHEAD, svgOf, type Drawing, type Look } from "../../art/drawing.ts";
 import { CHARACTERS, type CharacterId } from "../../content/names.ts";
 import { ENEMIES } from "../../content/enemies.ts";
+import { PASSIVES } from "../../content/passives.ts";
+import { WEAPONS } from "../../content/weapons.ts";
+import { hex } from "./useGame.ts";
+import ItemPreview from "./ItemPreview.vue";
+import WeaponPreview from "./WeaponPreview.vue";
 
 interface Item {
   key: string;
@@ -150,6 +156,32 @@ function draw(d: Drawing, key: string, px: number): string {
           <div class="sub muted">{{ e.sub }}</div>
         </div>
       </div>
+      <h3>Items</h3>
+      <div class="rows">
+        <div v-for="p in PASSIVES" :key="p.id" class="item row" tabindex="0">
+          <div class="levels">
+            <div v-for="l in p.max" :key="l" class="lv">
+              <ItemPreview :id="p.id" :color="hex(p.color)" :level="l" :max="p.max" active />
+              <span class="muted">Lv {{ l }}</span>
+            </div>
+          </div>
+          <div class="name">{{ p.name }}</div>
+          <div class="sub muted">{{ p.desc }}</div>
+        </div>
+      </div>
+      <h3>Weapons</h3>
+      <div class="rows">
+        <div v-for="w in WEAPONS" :key="w.id" class="item row" tabindex="0">
+          <div class="levels">
+            <div v-for="l in w.levels.length" :key="l" class="lv">
+              <WeaponPreview :id="w.id" :level="l" active />
+              <span class="muted">Lv {{ l }}</span>
+            </div>
+          </div>
+          <div class="name">{{ w.name }}</div>
+          <div class="sub muted">{{ w.desc }} (from {{ w.from }})</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -216,5 +248,28 @@ function draw(d: Drawing, key: string, px: number): string {
 .sub {
   font-size: 12px;
   margin-top: 2px;
+}
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: safe center;
+  align-items: flex-end;
+  gap: 6px 14px;
+}
+.lv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+}
+/* Eight weapon levels on one line. */
+.lv :deep(.wpv) {
+  width: 116px !important;
+  height: 53px !important;
 }
 </style>
