@@ -50,6 +50,36 @@ export const SWARM = {
   shootRange: 560,
 } as const;
 
+/** Formations (stages.ts beats) and enemy jobs (enemies.ts `move`). */
+export const FORMATION = {
+  /** Formations enter this far from the player: just outside a 1280x760 view. */
+  edgeX: 700,
+  edgeY: 440,
+  /** Spacing in a line, nose to tail in a stream, and between the steps of a V. */
+  lineGap: 70,
+  streamGap: 72,
+  veeGap: 52,
+  /** Snipers' posts: distance from the player and the angle between neighbours. */
+  postRadius: 250,
+  postSpread: 0.42,
+  /** A sniper is at its post within this distance; its first shot comes this many ticks later. */
+  arrived: 14,
+  firstShot: 20,
+  /** Holding snipers drift after the player at this fraction of their speed. */
+  holdDrift: 0.5,
+  /** Orbit rings start at this radius. Orbiters, and snipers flying to their posts, may move this many times their speed to keep up. */
+  circleRadius: 640,
+  orbitCatchUp: 2.2,
+  /** A midboss keeps station this far above the player, swaying this far sideways; she fires within this range. */
+  hoverHeight: 210,
+  hoverSway: 140,
+  hoverFireRange: 420,
+  /** Leaving enemies speed up by this factor and are gone past this distance; any non-chaser this far away is lost. */
+  leaveSpeed: 1.4,
+  gone: 900,
+  lost: 2400,
+} as const;
+
 export const XP = {
   /** Experience needed for level n -> n+1. */
   next: (level: number): number => (level < 20 ? 5 + (level - 1) * 10 : 195 + (level - 20) * 30),
@@ -85,7 +115,7 @@ export const HITSTOP = { hurt: 6, spellBreak: 14 } as const;
 export const END_DELAY = 100;
 
 /** Run donations: per this many seconds survived, per this many kills. */
-export const REWARD = { perSeconds: 8, perKills: 50 } as const;
+export const REWARD = { perSeconds: 8, perKills: 20 } as const;
 
 /** Bullets further than this from the player (or the arena) are culled when checked. */
 export const BULLET_CULL = 900;

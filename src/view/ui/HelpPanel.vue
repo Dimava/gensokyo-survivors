@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ENEMIES } from "../../content/enemies.ts";
+import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { STAGES } from "../../content/stages.ts";
 import { bossDef } from "../../content/bosses.ts";
 import { fmtTime, hex } from "./useGame.ts";
 const first = STAGES[0]!;
 const spells = bossDef(first.boss).spells.length;
+const mid = first.script.find((b) => b.form === "midboss");
+const midMove = mid ? ENEMIES[enemyIndex(mid.enemy)]!.move : undefined;
+const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
 </script>
 
 <template>
@@ -27,7 +30,9 @@ const spells = bossDef(first.boss).spells.length;
       <ul>
         <li>Your weapons fire on their own. You only move.</li>
         <li>Defeated enemies drop <b style="color: #4da3ff">point items</b> (experience). A full EXP bar is a level-up: pick one of three upgrades.</li>
-        <li>At {{ fmtTime(first.bossAt) }} the stage boss arrives. She has {{ spells }} <b>spell cards</b>, each with its own HP bar and timer. Break each by damage before its timer runs out for a bonus (after that it must still be broken, without bonus); take no hits during one to <b>capture</b> it for double.</li>
+        <li>Enemies come in <b>formations</b>: fairies fly across in lines and streams, take up posts around you, or circle you, fire, and leave. Defeat them before they go. Only the fuzzballs simply chase you.</li>
+        <li>Halfway through, a <b>midboss</b> holds the stage for up to {{ midStay }} seconds. Defeat her and every bullet on screen turns into points.</li>
+        <li>At {{ fmtTime(first.bossAt) }} (plus the time the midboss held you up) the field turns into points and the stage boss arrives. She has {{ spells }} <b>spell cards</b>, each with its own HP bar and timer. Break each by damage before its timer runs out for a bonus (after that it must still be broken, without bonus); take no hits during one to <b>capture</b> it for double.</li>
         <li>Clearing the stage, surviving, kills and coins pay out <b>{{ CURRENCY.name }}</b> ({{ CURRENCY.icon }}) when the run ends, even if you fall.</li>
       </ul>
     </section>

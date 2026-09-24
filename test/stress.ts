@@ -21,7 +21,7 @@ export function stress(k: Game, path: RunPath, enemies: number, bullets: number)
   for (let i = e.count; i < enemies; i++) {
     const a = rnd() * Math.PI * 2;
     const d = 120 + rnd() * 600;
-    e.add({ x: body.x + Math.cos(a) * d, y: body.y + Math.sin(a) * d, hp: 1e9, kind: enemyIndex("fairy"), uid: 1e6 + i, hitAt: -100, orbAt: -100, fireAt: 1e9 });
+    e.add({ x: body.x + Math.cos(a) * d, y: body.y + Math.sin(a) * d, hp: 1e9, kind: enemyIndex("kedama"), uid: 1e6 + i, hitAt: -100, orbAt: -100, fireAt: 1e9 });
   }
   for (let i = b.count; i < bullets; i++) {
     const a = rnd() * Math.PI * 2;

@@ -18,6 +18,7 @@ import { CAP } from "./tuning.ts";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { directorProcess } from "./director.ts";
+import { ENEMY_FIELDS } from "./swarm.ts";
 import { spellProcess } from "./boss.ts";
 
 import { OUTCOMES, PHASES, DeckEntry } from "./schemas.ts";
@@ -159,7 +160,7 @@ const RunDecl = defineScope("run", {
   rng: ["spawn", "loot", "levelup", "deck", "boss", "weapons"],
   packed: {
     enemies: () =>
-      columns({ fields: ["x", "y", "hp", "kind", "uid", "hitAt", "orbAt", "fireAt", "kx", "ky", "volley"], capacity: CAP.enemies }),
+      columns({ fields: ENEMY_FIELDS, capacity: CAP.enemies }),
     drops: () => columns({ fields: ["x", "y", "kind", "value", "pulled", "check", "spd"], capacity: CAP.drops }),
     shots: () =>
       columns({

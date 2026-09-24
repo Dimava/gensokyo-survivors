@@ -10,6 +10,7 @@ import { weaponDef } from "../content/weapons.ts";
 import { activeRun, runView, type Game, type RunPath } from "./game.ts";
 import { spiritAt, handCards } from "./cards.ts";
 import { bossPos } from "./boss.ts";
+import { PHASE, enemyVelocity } from "./swarm.ts";
 import { BOSS } from "./tuning.ts";
 
 export interface BotOptions {
@@ -36,7 +37,7 @@ const LOOK = [3, 6, 10, 15, 21];
 /**
  * The move the bot wants this tick, as the ints the `move` event takes. It
  * scores 17 candidate directions by looking ahead: bullets are computable, so
- * their future positions are exact; enemies are assumed to keep chasing.
+ * their future positions are exact; enemies are assumed to keep their current velocity.
  * Danger dominates; then it drifts toward gems (or its spot below the boss).
  */
 export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: number; y: number } {
@@ -54,11 +55,20 @@ export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: num
   const e = v.packed("enemies");
   const ex = e.col("x");
   const ey = e.col("y");
+  let midboss = -1;
+  for (let i = 0; i < e.count; i++) if (ENEMIES[e.col("kind")[i]!]!.midboss && e.col("phase")[i] !== PHASE.leaving) midboss = i;
   const near: number[] = [];
+  const nearVx: number[] = [];
+  const nearVy: number[] = [];
   for (let i = 0; i < e.count; i++) {
     const dx = ex[i]! - px;
     const dy = ey[i]! - py;
-    if (dx * dx + dy * dy < 170 * 170) near.push(i);
+    if (dx * dx + dy * dy < 170 * 170) {
+      near.push(i);
+      enemyVelocity(e, i, px, py, t, pos);
+      nearVx.push(pos.x);
+      nearVy.push(pos.y);
+    }
   }
   const b = v.packed("bullets");
   const bnear: number[] = [];
@@ -68,7 +78,7 @@ export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: num
     const dy = pos.y - py;
     if (dx * dx + dy * dy < 150 * 150) bnear.push(i);
   }
-  // Goal: the boss spot, else the nearest gem, else a slow circle.
+  // Goal: the boss spot, else under the midboss, else the nearest gem, else a slow circle.
   let gx = Math.cos(t / 240);
   let gy = Math.sin(t / 240);
   const boss = v.derived("boss");
@@ -76,6 +86,10 @@ export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: num
     bossPos(boss, t, pos);
     gx = pos.x - px;
     gy = pos.y + 170 - py;
+  } else if (midboss >= 0) {
+    // Stand under the midboss so every weapon is on her.
+    gx = ex[midboss]! - px;
+    gy = ey[midboss]! + 170 - py;
   } else {
     const d = v.packed("drops");
     let best = 450 * 450;
@@ -112,15 +126,12 @@ export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: num
         }
       }
       const w = 1 / (1 + k2 * 0.08);
-      for (const i of near) {
+      for (let n = 0; n < near.length; n++) {
+        const i = near[n]!;
         const def = ENEMIES[e.col("kind")[i]!]!;
-        // Enemies close in on where the player is now.
-        let ox = ex[i]! - px;
-        let oy = ey[i]! - py;
-        const od = Math.sqrt(ox * ox + oy * oy) || 1;
-        const step = Math.min(od, def.speed * k2);
-        ox = ex[i]! - (ox / od) * step - qx;
-        oy = ey[i]! - (oy / od) * step - qy;
+        // Each enemy keeps doing what it does now (chasing, crossing, holding a post).
+        const ox = ex[i]! + nearVx[n]! * k2 - qx;
+        const oy = ey[i]! + nearVy[n]! * k2 - qy;
         const dd = Math.sqrt(ox * ox + oy * oy);
         const r = def.radius + 11 + 8;
         if (dd < r + 20) danger += ((r + 20 - dd) / (r + 20)) * 30 * w;

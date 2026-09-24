@@ -22,6 +22,7 @@ import { weaponDef } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
 import { bossPos } from "../sim/boss.ts";
 import { weaponStats } from "../sim/weapons.ts";
+import { PHASE } from "../sim/swarm.ts";
 import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { BOSS, PLAYER, SWARM } from "../sim/tuning.ts";
 import { buildAtlas, type Atlas } from "./atlas.ts";
@@ -319,6 +320,8 @@ export class Playfield {
     const ek = e.col("kind");
     const ehit = e.col("hitAt");
     const euid = e.col("uid");
+    const evx = e.col("vx");
+    const ephase = e.col("phase");
     for (let i = 0; i < e.count; i++) {
       const q = ep[i]!;
       q.x = ex[i]!;
@@ -331,8 +334,10 @@ export class Playfield {
       q.scaleX = sc + wob;
       q.scaleY = sc - wob;
       q.rotation = ENEMIES[kind]!.shape === "orb" ? this.time * 2 + euid[i]! : 0;
-      // Face the player.
-      if (q.x > p.body.x) q.scaleX = -q.scaleX;
+      // Face the way it flies (crossing or leaving), else the player.
+      const def = ENEMIES[kind]!;
+      const heading = def.move.kind === "cross" || ephase[i] === PHASE.leaving ? evx[i]! : 0;
+      if (heading ? heading < 0 : q.x > p.body.x) q.scaleX = -q.scaleX;
     }
 
     // Player shots (computable: evaluated at t).

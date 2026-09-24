@@ -6,7 +6,8 @@ with bun 1.4.0.
 
 Milestones reached: **M1, M2, M3, M4**, and from M5: **idle expeditions** and
 a **second stage** (Forest of Magic, boss Rumia) that opens once the first is
-cleared.
+cleared. After that, at the owner's request, **stage formations** replaced
+the chasing swarm (see Deviations).
 
 Verification follows kernel PRD D56: Chrome is only a renderer. Every test
 runs under bun and reads the game through the test renderer
@@ -109,7 +110,16 @@ kernel was modified.
     reopening `/run` would replay the same run, hence `/run:<n>`), whether
     the tick payload is `{}` (it is, which is why tick records collapse),
     and the `TypeAt` rules for keyed paths.
-15. **Smaller notes.** `PackedStore` has no way to say "I am big": the
+15. **Adding a column to a packed store needs a byte-level migration** (D23,
+    D30). The formations rework added six enemy columns. A `columns` store
+    saves as base64 of its own layout (count, then each column's live rows),
+    so the run's save migration decodes the bytes, pads the new columns and
+    re-encodes them, and it renames the director's process state by editing
+    raw `sys.procs` rows (`migrateToFormations` in `src/sim/swarm.ts`).
+    Both lean on internals the README does not promise. A `columns`
+    migration helper (add or drop a field with a default) and a way to
+    migrate a process's state and locals by name would cover it.
+16. **Smaller notes.** `PackedStore` has no way to say "I am big": the
     rollback snapshot copies the whole enemy and bullet stores every tick
     (about 0.2 ms of the 1.6 ms at the M2 load). Dispatching to a path that
     does not exist throws instead of refusing, so UI code checks
@@ -137,8 +147,18 @@ Pieces the kernel's stdlib should own, with where they live here:
 - **Emitters as data** (D27-ish): `src/content/patterns.ts` (rows) and
   `emitPattern` in `src/sim/danmaku.ts` (six pattern kinds).
 - **Director-like sequencing**: the stage director process
-  (`src/sim/director.ts`: wave table, set pieces, boss call, sleeping exactly
-  until the next event) and the spell-card process (`src/sim/boss.ts`).
+  (`src/sim/director.ts`: a script of formation beats, a thin background of
+  chasers, a midboss who stops the script clock while she is up, the boss
+  call; it sleeps exactly until the next event) and the spell-card process
+  (`src/sim/boss.ts`). Stage scripts are rows (`src/content/stages.ts`,
+  with a `cycle()` helper for repeating beats), checked at load against each
+  enemy's movement.
+- **Enemy jobs and formations**: `src/sim/swarm.ts`. Each enemy kind has a
+  movement job (chase, cross, snipe from a post, orbit, hover as a midboss)
+  kept in packed columns (heading, post or orbit, phase, deadline), and
+  `spawnFormation` lays out lines, V's, streams, posts and circles from the
+  edge of the view. `enemyVelocity` is pure, so the bot predicts enemies
+  with the same code that moves them.
 - **Presenter** (D26, D53): `src/view/presenter.ts` walks each dispatch's
   trace (including the queued inputs' traces) and maps event names to
   effects, sounds and UI banners; rejections become toasts with the check
@@ -162,21 +182,25 @@ Pieces the kernel's stdlib should own, with where they live here:
 
 | Measure | Result |
 |---|---|
-| M1: ms per tick, 1,500 enemies (`test/m1-survivors.test.ts`) | **1.0-1.3 ms** |
-| M2: ms per tick, 3,000 bullets + 1,500 enemies (`test/m2-boss.test.ts`) | **1.5-3.2 ms** (varies with machine load) |
-| Normal play, whole run (bot) | 0.5-0.8 ms per tick (lake), 1.2-1.6 ms (forest, denser) |
+| M1: ms per tick, 1,500 enemies (`test/m1-survivors.test.ts`) | **1.0-1.3 ms** (1.24 ms after the formations rework) |
+| M2: ms per tick, 3,000 bullets + 1,500 enemies (`test/m2-boss.test.ts`) | **1.5-3.2 ms** (varies with machine load; 1.73 ms after the rework) |
+| Normal play, whole run (bot) | 0.4-0.7 ms per tick (lake and forest; the fields hold 300-500 enemies now, not 1,000) |
 | Frame rate | not measured by the tests: rendering is Chrome's job and outside what bun can verify; at the numbers above the simulation leaves more than 13 ms of each 16.7 ms frame to Pixi |
 | Save, fresh profile | 825 bytes |
 | Save, profile after a run (meta only) | about 1.2 KB |
-| Save, mid-run at its largest (4:00, 998 enemies, 2,357 bullets, 1,298 drops) | 672 KB (packed stores as base64) |
-| Log per minute of play | about 190 KB (expert bot, `bun scripts/numbers.ts`: 1.63 MB, 19,447 records over a 7.5-minute clear) |
-| Whole test suite | 9 tests, about 45 s (M2's playthrough and its replay dominate) |
+| Save, mid-run at its largest (3:00, 314 enemies, 730 bullets, 588 drops) | 247 KB (packed stores as base64; 672 KB with the old chasing swarm) |
+| Log per minute of play | about 190 KB (expert bot, `bun scripts/numbers.ts`: 1.22 MB, 14,503 records over a 6-minute run) |
+| Whole test suite | 11 tests, about 30 s (M2's playthrough and its replay dominate) |
 
-Balance (bot runs, `bun scripts/balance.ts`): the novice bot dies at 3:00-3:50
-on its first runs and clears the boss on the third run after two or three
-shrine purchases (seed `s1`); on a lucky seed it clears the first run. The
-expert bot clears its first run. A run pays 50-120 donations when lost and
-700-2,000 when cleared; the tree totals 9,140.
+Balance (bot runs, `STAGE=forest bun scripts/balance.ts 5 <seed>` over seeds
+`a`, `b`, `bal`, `s1`, after the formations rework): the novice bot dies at
+1:40-3:30 on its first lake runs and clears the lake on its second or third
+run; it clears the forest on its first or second try there. The expert bot
+clears the lake on its first run and dies in the forest on its first try
+(fresh tree). With the midboss, the boss arrives at about 3:30-3:50 and a
+clear takes 5-8 minutes. A run pays 50-220 donations when lost and 400-1,200
+when cleared (kills now pay one donation per 20, as there are fewer of
+them); the tree totals 9,140.
 
 ## Deviations
 
@@ -201,6 +225,22 @@ expert bot clears its first run. A run pays 50-120 donations when lost and
 - **M5 taken so far:** idle expeditions (the smallest D3 item that fits the
   kernel's elapsed clocks) and the second stage. Not done: route map,
   fishing, bonds, automation garden, metroidvania hub.
+- **Enemies do not all chase the player** (owner's call, after M5). The
+  brief's M1 says "enemies ... chasing the player"; a whole field of chasers
+  read as mindless and orderless next to Touhou. Now only fuzzballs chase
+  (a thin background, and the scripted rings and stampedes). Fairies enter
+  in authored formations from the edge of the view: lines, V's and streams
+  that cross and fire, sunflower fairies and shades that hold posts near the
+  player and fire fans, phantoms that circle and close in, orbs that drift
+  through. Anything not shot down leaves. Each stage has a midboss
+  (Daiyousei; a Great Dusk Fairy) who stops the script for up to 25 seconds;
+  defeating her turns every bullet into points. The boss's arrival turns the
+  field into experience that flies to the player. The M1 timing still loads
+  1,500 chasers, the heaviest case for separation.
+- **Older mid-run saves migrate** (run scope v0 to v1): enemy rows gain the
+  job columns, enemies that no longer chase are sent off the field, and the
+  director resumes at the next beat (`migrateToFormations` in
+  `src/sim/swarm.ts`, covered by `test/m6-formations.test.ts`).
 - **Placeholder art** is generated shapes (Pixi Graphics into one atlas) and
   SVG busts for the dialogue; all names are in `src/content/names.ts`.
 - **Debug hooks kept in the build:** `window.__gs` (host and state, for the

@@ -14,7 +14,7 @@ import type { Ctx } from "gamebones";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
-import { collectDead, contactDamage, enemyFire, rebuildGrid, stepEnemies } from "./swarm.ts";
+import { collectDead, contactDamage, enemyFire, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
 import { applyVolley, damageArea, damageLine, fireWeapons, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, pullAll, stepDrops } from "./drops.ts";
@@ -25,9 +25,6 @@ import { BOSS, CARDS_TUNING, END_DELAY, HITSTOP, PLAYER, REWARD, XP, sec } from 
 import type { RunSummary } from "./schemas.ts";
 
 type C = Ctx<RS0>;
-
-/** The swarm's stray shots hurt this much (armor applies); boss bullets use the boss's own number. */
-export const SWARM_BULLET_DMG = 10;
 
 const bp = { x: 0, y: 0 };
 
@@ -205,7 +202,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     const res = stepBullets(ctx, stats.graze, playerSpeedBound(ctx));
     if (res.hit && ctx.derived("state").run.phase !== "over") {
       const boss = ctx.derived("boss");
-      ctx.emit("player:hurt", { player: p.id, dmg: boss ? bossDef(boss.boss.id).bulletDmg : SWARM_BULLET_DMG, cause: "bullet" });
+      ctx.emit("player:hurt", { player: p.id, dmg: boss ? bossDef(boss.boss.id).bulletDmg : stageDef(ctx.derived("state").run.stage).bulletDmg, cause: "bullet" });
       ctx.emit("bullets:erase", { x: p.body.x, y: p.body.y, radius: PLAYER.mercyRadius, gems: false });
     }
     if (res.grazes) ctx.emit("graze", { player: p.id, n: res.grazes, x: r1(p.body.x), y: r1(p.body.y) });
@@ -245,6 +242,12 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
       addDrop(ctx, DROP.xp, x, y, def.xp);
       if (loot.chance(def.coin)) addDrop(ctx, DROP.coin, x + 6, y - 4, def.coin >= 1 ? 10 : 1);
       if (loot.chance(def.heart)) addDrop(ctx, DROP.heart, x - 6, y + 4, 1);
+      if (def.midboss) {
+        // A midboss's defeat turns every bullet into points.
+        ctx.emit("bullets:erase", { x, y, radius: 1e6, gems: true });
+        ctx.emit("hitstop:start", { ticks: HITSTOP.spellBreak });
+        ctx.emit("banner", { text: `${def.name} defeated!`, tone: "good" });
+      }
     }
   }),
 
@@ -401,6 +404,13 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   // ---------- the boss ----------
   r.on("boss:approach", (_, ctx) => {
     const run = ctx.derived("state");
+    const { body } = ctx.derived("player");
+    // The boss clears the field: every enemy and bullet turns into points (experience only) that fly to the player.
+    const e = ctx.packed("enemies");
+    for (let i = 0; i < e.count; i++) addDrop(ctx, DROP.xp, r1(e.col("x")[i]!), r1(e.col("y")[i]!), ENEMIES[e.col("kind")[i]!]!.xp);
+    e.clear();
+    ctx.emit("bullets:erase", { x: body.x, y: body.y, radius: 1e6, gems: true });
+    ctx.emit("drops:pullAll", {});
     ctx.mut(run, "run").phase = "warning";
     ctx.emit("banner", { text: "WARNING: a powerful presence approaches", tone: "warn" });
     ctx.after("action", BOSS.warning, "boss:dialogue", {});
@@ -552,7 +562,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("run:finish", (_, ctx) => ctx.send("/", Meta, "run:ended", summary(ctx))),
 
   ...cardRules(r),
-]);
+]).migrations([migrateToFormations]);
 
 function r1(v: number): number {
   return Math.round(v * 10) / 10;

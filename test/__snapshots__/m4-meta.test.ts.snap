@@ -315,8 +315,8 @@ run:start stage=lake
     . +discard#7 {pile} (apply run:begin)
     . +card#8 {card, in} (apply run:begin)
     . ... 7 more changes
-    process:director pid=director#16 state=swarm [enemies: count=6]
-      . run#2.run nextUid 1 -> 7 (process:director.swarm)
+    process:director pid=director#16 state=script [enemies: count=5]
+      . run#2.run nextUid 1 -> 6 (process:director.script)
     card:draw
       . card#8.in of deck#5 -> hand#6 (apply card:draw)
       card:drawn card=card#8
@@ -327,7 +327,7 @@ cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-char
 last run: -
 lake swarm t=0:00 fixed=0 | hp 130/130 lv 1 xp 0/5 kills 0 | pos 0,0
 weapons: amulet1 | passives: -
-enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
+enemies 5 [kedama 5] | drops 0 | shots 0 | bullets 0
 cards: spirit 1.00/3 meter 0 grazes 0 | hand: pocket-watch
 == tick /run:1 fixed x600
 > before tick 1: move x=70 y=70
@@ -335,30 +335,30 @@ meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:
 tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
-lake swarm t=0:08 fixed=600 | hp 130/130 lv 2 xp 0/15 kills 9 | pos 833,833
+lake swarm t=0:06 fixed=600 | hp 130/130 lv 2 xp 1/15 kills 5 | pos 633,633
 weapons: amulet1 | passives: -
-enemies 75 [kedama 75] | drops 4 | shots 0 | bullets 0
-cards: spirit 3.00/3 meter 0 grazes 0 | hand: pocket-watch
+enemies 54 [kedama 40, fairy 14] | drops 2 | shots 0 | bullets 2
+cards: spirit 2.57/3 meter 0 grazes 0 | hand: pocket-watch
 overlay: levelup
--- save size mid-run: 13141 bytes
+-- save size mid-run: 14400 bytes
 == play / run:abandon
 run:abandon
   run:forfeit @/run:1
     run:over outcome=quit
       . clock:game.scale 1/1 -> 0/1 (apply run:over)
-      . run#2.run phase swarm -> over, outcome none -> quit, endedAt 0 -> 785 (apply run:over)
+      . run#2.run phase swarm -> over, outcome none -> quit, endedAt 0 -> 676 (apply run:over)
 meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
-lake over(quit) t=0:13 fixed=900 | hp 120/130 lv 2 xp 8/15 kills 21 | pos 140,833
+lake over(quit) t=0:11 fixed=900 | hp 130/130 lv 2 xp 9/15 kills 15 | pos -84,633
 weapons: amulet2 | passives: -
-enemies 73 [kedama 73] | drops 8 | shots 1 | bullets 0
+enemies 68 [kedama 38, fairy 30] | drops 8 | shots 1 | bullets 28
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: pocket-watch
 == tick /run:1 fixed x1
-meta: coins 421 (lifetime 1) | runs 1 clears 0 [] best 13s/21 kills | active -
+meta: coins 421 (lifetime 1) | runs 1 clears 0 [] best 11s/15 kills | active -
 tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
-last run: lake quit at 13s, lv 2, 21 kills, +1 coins (new: time, kills, level)
+last run: lake quit at 11s, lv 2, 15 kills, +1 coins (new: time, kills, level)
 "
 `;

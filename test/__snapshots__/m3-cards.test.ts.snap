@@ -20,8 +20,8 @@ run:start stage=lake
     . +discard#7 {pile} (apply run:begin)
     . +card#8 {card, in} (apply run:begin)
     . ... 1 more changes
-    process:director pid=director#10 state=swarm [enemies: count=6]
-      . run#2.run nextUid 1 -> 7 (process:director.swarm)
+    process:director pid=director#10 state=script [enemies: count=5]
+      . run#2.run nextUid 1 -> 6 (process:director.script)
     card:draw
       . card#8.in of deck#5 -> hand#6 (apply card:draw)
       card:drawn card=card#8
@@ -32,7 +32,7 @@ cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pi
 last run: -
 lake swarm t=0:00 fixed=0 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
 weapons: amulet1 | passives: -
-enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
+enemies 5 [kedama 5] | drops 0 | shots 0 | bullets 0
 cards: spirit 1.00/3 meter 0 grazes 0 | hand: graze-ribbon
 -- hand (spirit 1):
 {"key":1,"name":"Graze Ribbon","cost":2,"playable":false,"does":"For 30s, every bullet you graze restores 1 HP and 0.05 Spirit."}
@@ -45,7 +45,7 @@ cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pi
 last run: -
 lake swarm t=0:00 fixed=0 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
 weapons: amulet1 | passives: -
-enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
+enemies 5 [kedama 5] | drops 0 | shots 0 | bullets 0
 cards: spirit 1.00/3 meter 0 grazes 0 | hand: graze-ribbon
 == play /run:1 card:play card=card#9
 !! card:play card=card#9: Power Charm is not in your hand (check card:play)
@@ -56,7 +56,7 @@ cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pi
 last run: -
 lake swarm t=0:00 fixed=0 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
 weapons: amulet1 | passives: -
-enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
+enemies 5 [kedama 5] | drops 0 | shots 0 | bullets 0
 cards: spirit 1.00/3 meter 0 grazes 0 | hand: graze-ribbon
 == tick /run:1 fixed x240
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
@@ -65,7 +65,7 @@ cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pi
 last run: -
 lake swarm t=0:04 fixed=240 | hp 100/100 lv 1 xp 0/5 kills 0 | pos 0,0
 weapons: amulet1 | passives: -
-enemies 42 [kedama 42] | drops 0 | shots 2 | bullets 0
+enemies 42 [kedama 35, fairy 7] | drops 0 | shots 2 | bullets 0
 cards: spirit 2.00/3 meter 0 grazes 0 | hand: graze-ribbon
 -- hand (spirit 3):
 {"key":1,"name":"Graze Ribbon","cost":2,"playable":true,"does":"For 30s, every bullet you graze restores 1 HP and 0.05 Spirit."}
@@ -73,49 +73,48 @@ cards: spirit 2.00/3 meter 0 grazes 0 | hand: graze-ribbon
 -- the graze meter drew the second card after 12 grazes
 == play /run:1 card:play card=card#9
 card:play card=card#9
-  . player#3.spirit t0 0 -> 5573 (pay and discard)
+  . player#3.spirit t0 0 -> 1130 (pay and discard)
   . player#3.progress cardsPlayed 0 -> 1 (pay and discard)
   . card#9.in of hand#6 -> discard#7, at 1 -> 0 (pay and discard)
-  card:played card=card#9 x=-208.31245019877326 y=-153.46746314604053 fx=-1 fy=0
-    . +player#3.empowered {"pct":50,"until":6173,"pid":"after#19"} (Power Charm)
+  card:played card=card#9 x=308.13269273124297 y=154.57165388946837 fx=0.924261426490025 fy=0.3817601544197929
+    . +player#3.empowered {"pct":50,"until":1730,"pid":"after#13"} (Power Charm)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
 last run: -
-lake swarm t=1:32 fixed=5593 | hp 98/120 lv 9 xp 80/85 kills 411 | pos -208,-153
-weapons: amulet3 border1 needle3 | passives: clock1 heart1
-enemies 363 [fairy 160, kedama 132, sunflower 42, phantom 29] | drops 26 | shots 7 | bullets 150
+lake swarm t=0:18 fixed=1130 | hp 100/100 lv 4 xp 14/35 kills 33 | pos 308,155
+weapons: amulet2 border1 | passives: clock1
+enemies 72 [kedama 38, fairy 34] | drops 5 | shots 0 | bullets 162
 cards: spirit 1.00/3 meter 8 grazes 12 | hand: graze-ribbon
--- weapon:fire after Power Charm: {"weapon":"weapon#14","dmg":12} (might 1, +50%)
+-- weapon:fire after Power Charm: {"weapon":"weapon#11","dmg":10.5} (might 1, +50%)
 == play /run:1 card:play card=card#8
 card:play card=card#8
-  . player#3.spirit base 1 -> 0, t0 5573 -> 5813 (pay and discard)
+  . player#3.spirit base 1 -> 0, t0 1130 -> 1370 (pay and discard)
   . player#3.progress cardsPlayed 1 -> 2 (pay and discard)
-  . card#8.in of hand#6 -> discard#7, at 0 -> 1 (pay and discard)
-  card:played card=card#8 x=-530.5715841571766 y=-297.05400846144653 fx=-0.924261426490025 fy=-0.3817601544197929
+  . card#8.in of hand#6 -> discard#7 (pay and discard)
+  card:played card=card#8 x=419.82235508215666 y=-80.36327240261254 fx=0 fy=-1
     . +player#3.triggers [{"on":"graze","rule":"grazeHeal","params":{"hp":1,"spirit":0.05}}] (Graze Ribbon)
-    . +run#2.timed {"pids":{"grazeHeal":"after#20"}} (Graze Ribbon)
+    . +run#2.timed {"pids":{"grazeHeal":"after#14"}} (Graze Ribbon)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
 last run: -
-lake swarm t=1:36 fixed=5833 | hp 98/120 lv 10 xp 9/95 kills 428 | pos -531,-297
-weapons: amulet3 border1 needle4 | passives: clock1 heart1
-enemies 424 [fairy 187, kedama 138, sunflower 51, phantom 48] | drops 31 | shots 7 | bullets 166
-cards: spirit 0.00/3 meter 26 grazes 14 | hand: -
+lake swarm t=0:22 fixed=1370 | hp 100/100 lv 4 xp 31/35 kills 44 | pos 420,-80
+weapons: amulet2 border1 | passives: clock1
+enemies 73 [kedama 40, fairy 33] | drops 8 | shots 0 | bullets 209
+cards: spirit 0.00/3 meter 7 grazes 23 | hand: power-charm
 -- a graze under Graze Ribbon ran the trigger row's rule:
--- graze player=player#3 n=1 x=-598.8 y=-378.1
-  . player#3.progress grazes 14 -> 15 (apply graze)
-  . player#3.meter graze 26 -> 35 (apply graze)
-  . player#3.life hp 98 -> 99 (grazeHeal)
-  . player#3.spirit base 0 -> 0.25833333333333336, t0 5813 -> 5863 (grazeHeal)
+-- graze player=player#3 n=1 x=417.6 y=-114.9
+  . player#3.progress grazes 23 -> 24 (apply graze)
+  . player#3.meter graze 7 -> 16 (apply graze)
+  . player#3.spirit base 0 -> 0.12083333333333333, t0 1370 -> 1387 (grazeHeal)
 -- meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
 last run: -
-lake swarm t=2:12 fixed=7983 | hp 97/120 lv 11 xp 76/105 kills 575 | pos -2025,-2812
-weapons: amulet3 border2 needle4 | passives: clock1 heart1
-enemies 536 [phantom 114, fairy 198, kedama 111, sunflower 91, yinyang 22] | drops 70 | shots 6 | bullets 260
-cards: spirit 3.00/3 meter 97 grazes 33 | hand: graze-ribbon
+lake swarm t=0:57 fixed=3487 | hp 106/120 lv 9 xp 19/85 kills 198 | pos 812,-318
+weapons: amulet3 border1 needle3 | passives: clock1 heart1
+enemies 162 [kedama 109, fairy 50, sunflower 3] | drops 34 | shots 8 | bullets 328
+cards: spirit 3.00/3 meter 25 grazes 125 | hand: power-charm, graze-ribbon
 "
 `;

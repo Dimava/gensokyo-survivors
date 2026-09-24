@@ -22,7 +22,7 @@ describe("M1 survivors run", () => {
     h.tick(path, "fixed", 300);
     expect(v.derived("player").body.x).toBeGreaterThan(600);
     expect(v.derived("player").progress.kills).toBeGreaterThan(0);
-    h.note(`the field after five seconds of walking right (the first spawn waves):
+    h.note(`the field after five seconds of walking right (the first formation and a few fuzzballs):
 ${renderField(k, path)}`);
 
     // Circle for a while, answering every level-up with the first choice.
@@ -52,7 +52,7 @@ ${renderLevelUp(k, path)}`);
     expect(levelUps).toBeGreaterThan(0);
     expect(v.derived("weapons").length + v.derived("passives").length).toBeGreaterThan(1);
     h.note(`level-ups taken: ${levelUps}`);
-    h.note(`the field at ${Math.floor(v.now("action") / 60)}s, just after the ring of kedama closed in:
+    h.note(`the field at ${Math.floor(v.now("action") / 60)}s:
 ${renderField(k, path)}`);
 
     // Stand still and let the swarm win.

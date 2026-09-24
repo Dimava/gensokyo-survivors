@@ -7,7 +7,12 @@ import { bossDef, bossName } from "../../content/bosses.ts";
 import { DECK_MIN } from "../../content/gacha.ts";
 import { affordableNodes, fmtTime, owned, profile, stages, wallet } from "./useGame.ts";
 import { stageDef, type StageDef } from "../../content/stages.ts";
+import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
 
+const midbossName = (s: StageDef): string => {
+  const mid = s.script.find((b) => b.form === "midboss");
+  return mid ? ENEMIES[enemyIndex(mid.enemy)]!.name : "none";
+};
 const locked = (s: StageDef): boolean => !!s.requires && !profile.value.cleared.includes(s.requires);
 
 const picking = ref(false);
@@ -97,7 +102,7 @@ function hover(): void {
               </div>
               <div class="muted">{{ s.blurb }}</div>
               <div class="muted small">
-                Boss at {{ fmtTime(s.bossAt) }}: {{ bossName(bossDef(s.boss)) }} with {{ bossDef(s.boss).spells.length }} spell cards · clear bonus {{ CURRENCY.icon }}
+                Midboss {{ midbossName(s) }}; boss at {{ fmtTime(s.bossAt) }}: {{ bossName(bossDef(s.boss)) }} with {{ bossDef(s.boss).spells.length }} spell cards · clear bonus {{ CURRENCY.icon }}
                 {{ s.clearBonus }}
               </div>
             </div>

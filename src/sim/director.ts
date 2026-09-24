@@ -1,20 +1,37 @@
 // The stage director (a game-side stand-in for the kernel's missing
-// Director/sequencing stdlib): a process on the action clock that reads the
-// stage's wave table, spawns groups while under the cap, fires set pieces at
-// their times, and calls the boss. It sleeps exactly until the next thing it
-// has to do.
+// Director/sequencing stdlib): a process on the action clock that plays the
+// stage's script of formations beat by beat, keeps a thin background of
+// chasers under it, waits out the midboss, and calls the boss. Script time is
+// action time minus the time the midboss held the stage. It sleeps exactly
+// until the next thing it has to do.
 
 import { done, wait, type Ctx, type ProcessDef } from "gamebones";
-import { enemyIndex } from "../content/enemies.ts";
+import { ENEMIES, enemyIndex } from "../content/enemies.ts";
 import { stageDef, type WaveDef } from "../content/stages.ts";
 import type { RS0 } from "./run.ts";
 import { sec } from "./tuning.ts";
-import { spawnAround, spawnRing, spawnRush } from "./swarm.ts";
+import { PHASE, spawnAround, spawnFormation } from "./swarm.ts";
 
 type ProcessHelper = <L extends Record<string, unknown>>(def: ProcessDef<RS0, L>) => ProcessDef<RS0, L>;
 
+/** Ticks between checks on whether the midboss is still up. */
+const MIDBOSS_POLL = 20;
+
+function countWhere(ctx: Ctx<RS0>, test: (kind: number, phase: number) => boolean): number {
+  const e = ctx.packed("enemies");
+  const kind = e.col("kind");
+  const phase = e.col("phase");
+  let n = 0;
+  for (let i = 0; i < e.count; i++) if (test(kind[i]!, phase[i]!)) n++;
+  return n;
+}
+
+const isChaser = (kind: number): boolean => ENEMIES[kind]!.move.kind === "chase";
+/** A midboss still holding the stage (one who is retreating no longer does). */
+const isMidboss = (kind: number, phase: number): boolean => ENEMIES[kind]!.midboss === true && phase !== PHASE.leaving;
+
 function spawnWave(ctx: Ctx<RS0>, wave: WaveDef): void {
-  const alive = ctx.packed("enemies").count;
+  const alive = countWhere(ctx, isChaser);
   if (alive >= wave.cap) return;
   const kinds = Object.entries(wave.kinds);
   const total = kinds.reduce((s, [, w]) => s + w, 0);
@@ -37,43 +54,53 @@ function spawnWave(ctx: Ctx<RS0>, wave: WaveDef): void {
 export function directorProcess(process: ProcessHelper) {
   return process({
     clock: "action",
-    start: "swarm",
-    locals: { piece: 0 },
+    start: "script",
+    locals: { beat: 0, held: 0, heldFrom: 0, waveAt: 0 },
     states: {
-      swarm: (p, ctx) => {
+      script: (p, ctx) => {
         const run = ctx.derived("state").run;
-        if (run.phase !== "swarm") return wait(1, "boss");
+        if (run.phase !== "swarm") return done();
         const stage = stageDef(run.stage);
         const t = ctx.now("action");
-        if (t >= sec(stage.bossAt)) {
+        const st = t - p.locals.held;
+        if (st >= sec(stage.bossAt)) {
           ctx.emit("boss:approach", {});
-          return wait(1, "boss");
+          return done();
         }
-        while (p.locals.piece < stage.setPieces.length && sec(stage.setPieces[p.locals.piece]!.at) <= t) {
-          const piece = stage.setPieces[p.locals.piece]!;
-          const kind = enemyIndex(piece.enemy);
-          if (piece.kind === "ring") spawnRing(ctx, kind, piece.n, piece.radius);
-          else if (piece.kind === "rush") spawnRush(ctx, kind, piece.n);
-          else spawnAround(ctx, kind, piece.n);
-          if (piece.banner) ctx.emit("banner", { text: piece.banner, tone: piece.kind === "elite" ? "warn" : "info" });
-          p.locals.piece += 1;
+        while (p.locals.beat < stage.script.length && sec(stage.script[p.locals.beat]!.at) <= st) {
+          const beat = stage.script[p.locals.beat]!;
+          p.locals.beat += 1;
+          spawnFormation(ctx, beat, enemyIndex(beat.enemy));
+          if (beat.banner) ctx.emit("banner", { text: beat.banner, tone: beat.form === "midboss" || beat.enemy === "bigfairy" ? "warn" : "info" });
+          if (beat.form === "midboss") {
+            p.locals.heldFrom = t;
+            return wait(MIDBOSS_POLL, "midboss");
+          }
         }
-        const secs = t / 60;
-        const wave = stage.waves.find((w) => secs >= w.from && secs < w.to) ?? stage.waves[stage.waves.length - 1]!;
-        spawnWave(ctx, wave);
-        let next = wave.every;
-        const piece = stage.setPieces[p.locals.piece];
-        if (piece) next = Math.min(next, sec(piece.at) - t);
-        next = Math.min(next, sec(stage.bossAt) - t);
+        const secs = st / 60;
+        const wave = stage.waves.find((w) => secs >= w.from && secs < w.to);
+        if (wave && t >= p.locals.waveAt) {
+          spawnWave(ctx, wave);
+          p.locals.waveAt = t + wave.every;
+        }
+        let next = sec(stage.bossAt) - st;
+        const beat = stage.script[p.locals.beat];
+        if (beat) next = Math.min(next, sec(beat.at) - st);
+        if (wave) next = Math.min(next, p.locals.waveAt - t);
+        else {
+          // Between background waves: wake when the next one starts.
+          const upcoming = stage.waves.find((w) => w.from > secs);
+          if (upcoming) next = Math.min(next, sec(upcoming.from) - st);
+        }
         return wait(Math.max(1, next));
       },
-      // During the boss: a thin trickle, only while the fight is on.
-      boss: (_, ctx) => {
+      // The script clock stops while the midboss is up; she is defeated or leaves on her own.
+      midboss: (p, ctx) => {
         const run = ctx.derived("state").run;
-        if (run.phase === "cleared" || run.phase === "over") return done();
-        const stage = stageDef(run.stage);
-        if (run.phase === "boss") spawnWave(ctx, stage.bossWave);
-        return wait(stage.bossWave.every);
+        if (run.phase !== "swarm") return done();
+        if (countWhere(ctx, isMidboss) > 0) return wait(MIDBOSS_POLL);
+        p.locals.held += ctx.now("action") - p.locals.heldFrom;
+        return wait(1, "script");
       },
     },
   });
