@@ -10,6 +10,7 @@ import { botCard, botPick, botSteer, type BotInputs } from "../sim/bot.ts";
 import { navConfirm, navMove, navSelected, navTop } from "./keynav.ts";
 import { handSlots } from "../sim/cards.ts";
 import { audio, type Track } from "./audio.ts";
+import { musicMood } from "./music-mood.ts";
 import { input, type Action } from "./input.ts";
 import { addStamp, keyGate } from "./keys.ts";
 import { eraseSave, freshGame, loadOrCreate, save } from "./persist.ts";
@@ -91,6 +92,9 @@ class Host {
   }
 
   async start(el: HTMLElement): Promise<void> {
+    // One per page: a second (a hot update re-ran the game) reloads the page.
+    if ((window as any).__gsHost) return location.reload();
+    (window as any).__gsHost = true;
     await this.field.init(el);
     input.onAction((a) => this.action(a));
     // A death plays slowly; any fresh key, click or tap skips it, and does nothing else.
@@ -395,16 +399,22 @@ class Host {
   }
 
   private music(): void {
-    let track: Track = "menu";
+    const s = state.screen;
+    // The title theme on the title and main menu, the calm theme on the screens between runs.
+    let track: Track = s === "title" || s === "menu" ? "menu" : s === "results" ? "results" : s === "settings" || s === "help" ? "keep" : "shop";
     let stage: string | undefined;
-    if (state.screen === "run") {
+    if (s === "run") {
       const path = this.path();
       const run = path ? runView(this.k, path).derived("state").run : null;
       const phase = run?.phase ?? "over";
       stage = run?.stage;
-      // The boss theme starts with her dialogue; a clear gets a fanfare, a death silence.
-      track = phase === "boss" || phase === "dialogue" ? "boss" : phase === "cleared" ? "clear" : phase === "over" ? null : "stage";
+      // The stage theme fades out at the boss's warning, her theme starts with her dialogue; a clear gets a fanfare, a death a sting.
+      track =
+        phase === "boss" || phase === "dialogue" ? "boss" : phase === "warning" ? "hush" : phase === "cleared" ? "clear" : phase === "over" ? (run?.outcome === "dead" ? "over" : null) : "stage";
+      // Intensity layers follow the fight, sampled a few times a second.
+      if (path && state.frame % 15 === 0) audio.intensity(musicMood(this.k, path));
     }
+    audio.paused(s === "run" && state.paused);
     audio.music(track, stage);
   }
 
