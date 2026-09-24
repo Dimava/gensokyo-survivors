@@ -243,6 +243,10 @@ function onDirection(e: KdsEvent, dx: number, dy: number): void {
 function activate(e: KdsEvent): void {
   const s = top();
   if (!s || e.event.timeStamp - s.born < GRACE_MS) return;
+  confirm(s);
+}
+
+function confirm(s: Scope): void {
   if (s.opts.confirm) return s.opts.confirm();
   const a = current(s);
   if (!a) return;
@@ -297,30 +301,70 @@ kds.on({ code: "Back", scopeBack: true, mods: undefined, event: { repeat: false 
   top()?.opts.back?.();
 });
 
+// ---------- driving it from code (the ?bot=1 player) ----------
+
+/** The top scope's element, or null when the game has the keys. */
+export function navTop(): HTMLElement | null {
+  return top()?.el ?? null;
+}
+
+/** The selected (focused) control in the top scope. */
+export function navSelected(): HTMLElement | null {
+  const s = top();
+  return s ? current(s) : null;
+}
+
+/** An arrow press in the top scope: moves the selection (the first press on a scope with none selects its first control). */
+export function navMove(dx: number, dy: number): void {
+  const s = top();
+  if (s) move(s, dx, dy);
+}
+
+/** A confirm press in the top scope (the open grace applies). */
+export function navConfirm(): void {
+  const s = top();
+  if (s && performance.now() - s.born >= GRACE_MS) confirm(s);
+}
+
 // ---------- the directive ----------
 
 type Value = NavOptions | false | undefined;
 
-/** `v-keynav` / `v-keynav="{ id, back }"`: the element is a keyboard scope while mounted. `false` opts out. */
+function open(el: HTMLElement, opts: NavOptions): void {
+  el.setAttribute("data-keynav", "");
+  stack.push({ el, opts, born: performance.now(), last: null, lastRect: null, sel: null });
+  schedule();
+}
+
+function close(el: HTMLElement): void {
+  const i = stack.findIndex((x) => x.el === el);
+  if (i < 0) return;
+  stack[i]!.sel?.removeAttribute("data-nav-sel");
+  stack.splice(i, 1);
+  el.removeAttribute("data-keynav");
+  // Its focused control may outlive it for a leave transition, inside the scope below: let go of it now.
+  const a = document.activeElement;
+  if (a instanceof HTMLElement && el.contains(a)) a.blur();
+  schedule();
+}
+
+/**
+ * `v-keynav` / `v-keynav="{ id, back }"`: the element is a keyboard scope while mounted. `false` opts out;
+ * a value turning false or back closes or opens the scope (it opens on top, as if just mounted).
+ */
 export const vKeynav: Directive<HTMLElement, Value> = {
   mounted(el, b) {
-    if (b.value === false) return;
-    el.setAttribute("data-keynav", "");
-    stack.push({ el, opts: b.value ?? {}, born: performance.now(), last: null, lastRect: null, sel: null });
-    schedule();
+    if (b.value !== false) open(el, b.value ?? {});
   },
   updated(el, b) {
     const s = stack.find((x) => x.el === el);
-    if (s && b.value) s.opts = b.value;
+    if (b.value === false) {
+      if (s) close(el);
+    } else if (!s) open(el, b.value ?? {});
+    else if (b.value) s.opts = b.value;
   },
   beforeUnmount(el) {
-    const i = stack.findIndex((x) => x.el === el);
-    if (i < 0) return;
-    stack.splice(i, 1);
-    // Its focused control may outlive it for a leave transition, inside the scope below: let go of it now.
-    const a = document.activeElement;
-    if (a instanceof HTMLElement && el.contains(a)) a.blur();
-    schedule();
+    close(el);
   },
 };
 

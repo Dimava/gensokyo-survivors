@@ -6,7 +6,8 @@
 import { reactive, markRaw } from "vue";
 import type { DispatchResult } from "gamebones";
 import { activeRun, newGame, runView, type Game, type RunPath } from "../sim/game.ts";
-import { botCard, botMove, botPick } from "../sim/bot.ts";
+import { botCard, botPick, botSteer, type BotInputs } from "../sim/bot.ts";
+import { navConfirm, navMove, navSelected, navTop } from "./keynav.ts";
 import { handSlots } from "../sim/cards.ts";
 import { audio, type Track } from "./audio.ts";
 import { input, type Action } from "./input.ts";
@@ -17,11 +18,14 @@ import { Playfield } from "./renderer.ts";
 import { prefs } from "./prefs.ts";
 import { Vn } from "../sim/vn.ts";
 
-/** The ?bot=1 player's pace on screens a person reads (ms). */
-const BOT_PACE = { levelUp: 1600, typeMs: 28, readMs: 900, readPerChar: 30 };
+/**
+ * The ?bot=1 player's pace on screens a person reads (ms). A level-up: once the
+ * guard is over it moves the selection one card per `navStep`, then confirms one step later.
+ */
+const BOT_PACE = { navStep: 230, typeMs: 28, readMs: 900, readPerChar: 30 };
 /**
  * A level-up offer shares the card keys: for `cast` ms after it opens a card key
- * still casts, and until `block` ms no pick is taken (keys or clicks).
+ * still casts, and until `block` ms no pick is taken (keys, clicks, or the arrows and confirm: LevelUpView).
  */
 const LEVELUP_GUARD = { cast: 100, block: 600 };
 
@@ -59,8 +63,10 @@ class Host {
   private acc = 0;
   private last = 0;
   private lastMove = { x: 0, y: 0 };
+  /** The ?bot=1 player's last sent move. */
+  private bot: BotInputs = { move: { x: 0, y: 0 } };
   private sinceSave = 0;
-  private demo: { k: Game; presenter: Presenter; last: { x: number; y: number } } | null = null;
+  private demo: { k: Game; presenter: Presenter; last: BotInputs } | null = null;
   private tickCost = 0;
   private frames: number[] = [];
   /**
@@ -69,8 +75,8 @@ class Host {
    */
   private levelUpAt = 0;
   private wasLevelUp = false;
-  /** Level-ups the bot has picked (keys its wait per level-up). */
-  private levelups = 0;
+  /** When the bot last moved the level-up selection (wall clock, ms). */
+  private botNavAt = 0;
   /** Debug: the bot plays the run (?bot=1). */
   autoplay = params.get("bot") === "1";
   /** Debug: ticks per frame multiplier (?turbo=4). */
@@ -271,9 +277,8 @@ class Host {
         this.lastMove = m;
       }
     }
-    // Focus is logged input too (it narrows the weapons), sent only when it changes. The bot leaves it off.
-    const focus = !this.autoplay && input.focused;
-    if (focus !== v.derived("player").ctrl.focus) this.k.queue(path, "focus", { on: focus });
+    // Focus is logged input too (it narrows the weapons and locks facing), sent only when it changes. The bot sends its own (botSteer).
+    if (!this.autoplay && input.focused !== v.derived("player").ctrl.focus) this.k.queue(path, "focus", { on: input.focused });
     const res = this.k.tick(path, "fixed");
     this.presenter.consume(this.k, path, res);
     if (!this.path()) {
@@ -298,11 +303,7 @@ class Host {
 
   private botStep(path: RunPath, overlay: string): void {
     if (overlay === "levelup") {
-      // Look at the three choices before picking one.
-      if (this.botWaited(`levelup:${this.levelups}`, BOT_PACE.levelUp)) {
-        this.dispatchRun(`${path}/levelup`, "levelup:pick", { index: botPick(this.k, path) });
-        this.levelups++;
-      }
+      this.botLevelUp(path);
       return;
     }
     if (overlay === "vn") {
@@ -314,15 +315,40 @@ class Host {
       if (this.botWaited(`vn:${scene?.script}:${scene?.index}`, ms)) this.dispatchRun(vn, "vn:next", {});
       return;
     }
-    const m = botMove(this.k, path);
-    if (m.x !== this.lastMove.x || m.y !== this.lastMove.y) {
-      this.k.queue(path, "move", m);
-      this.lastMove = m;
-    }
+    botSteer(this.k, path, this.bot);
     if (runView(this.k, path).now("fixed") % 20 === 0) {
       const c = botCard(this.k, path);
       if (c) this.k.queue(path, "card:play", { card: c });
     }
+  }
+
+  /**
+   * The bot picks a level-up the way a player does with the keys, so a recording shows it:
+   * once the guard is over (the arrows come alive) it steps the selection onto its card
+   * (botPick), one card per BOT_PACE.navStep, and confirms a step later.
+   */
+  private botLevelUp(path: RunPath): void {
+    const now = performance.now();
+    const scope = navTop();
+    const cards = scope?.matches(".lvl.live") ? [...scope.querySelectorAll<HTMLElement>(".choice")] : null;
+    if (!this.levelUpArmed() || !cards?.length) {
+      // No level-up view (hidden tab, a stuck overlay): pick directly after a while.
+      if (this.levelUpArmed() && now - this.botNavAt > 2000 / this.turbo) this.dispatchRun(`${path}/levelup`, "levelup:pick", { index: botPick(this.k, path) });
+      else if (!this.levelUpArmed()) this.botNavAt = now;
+      return;
+    }
+    if (now - this.botNavAt < BOT_PACE.navStep / this.turbo) return;
+    this.botNavAt = now;
+    const target = Math.min(botPick(this.k, path), cards.length - 1);
+    const sel = cards.indexOf(navSelected() as HTMLElement);
+    if (sel === target) return navConfirm();
+    if (sel < 0) return navMove(1, 0);
+    // Toward the target card on screen (the cards may wrap onto two rows).
+    const a = cards[sel]!.getBoundingClientRect();
+    const b = cards[target]!.getBoundingClientRect();
+    const dy = b.top - a.top;
+    if (Math.abs(dy) > a.height / 2) navMove(0, Math.sign(dy));
+    else navMove(Math.sign(b.left - a.left), 0);
   }
 
   /** Skips a playing death: the animation jumps to its end and the run plays out its last ticks at once. */
@@ -336,6 +362,7 @@ class Host {
 
   private runEnded(): void {
     this.lastMove = { x: 0, y: 0 };
+    this.bot = { move: { x: 0, y: 0 } };
     input.clear();
     this.save();
     state.resultsFor = Date.now();
@@ -348,7 +375,7 @@ class Host {
     if (!this.demo) {
       const k = newGame(`attract-${Math.floor(Math.random() * 1e6)}`);
       k.dispatch("/", "run:start", { stage: "lake" });
-      this.demo = { k: markRaw(k) as Game, presenter: new Presenter(this.field, true), last: { x: 0, y: 0 } };
+      this.demo = { k: markRaw(k) as Game, presenter: new Presenter(this.field, true), last: { move: { x: 0, y: 0 } } };
     }
     const d = this.demo;
     const path = activeRun(d.k);
@@ -360,13 +387,7 @@ class Host {
     const overlay = v.derived("state").run.overlay;
     if (overlay === "levelup") d.k.dispatch(`${path}/levelup` as "/run:1/levelup", "levelup:pick", { index: botPick(d.k, path) });
     else if (overlay === "vn") d.k.dispatch(`${path}/vn` as "/run:1/vn", "vn:skip", {});
-    else {
-      const m = botMove(d.k, path);
-      if (m.x !== d.last.x || m.y !== d.last.y) {
-        d.k.queue(path, "move", m);
-        d.last = m;
-      }
-    }
+    else botSteer(d.k, path, d.last);
     const res = d.k.tick(path, "fixed");
     d.presenter.consume(d.k, path, res);
     // Keep the demo's memory flat: its log is never needed.
@@ -435,6 +456,7 @@ class Host {
     if (!res.ok) return;
     this.field.clearFx();
     this.lastMove = { x: 0, y: 0 };
+    this.bot = { move: { x: 0, y: 0 } };
     input.clear();
     state.paused = false;
     state.pausePage = "main";
@@ -463,10 +485,15 @@ class Host {
     this.k.queue(path, "card:play", { card: card.id });
   }
 
+  /** The level-up offer is past its guard: picks are taken, and its cards are keyboard-navigable (LevelUpView). */
+  levelUpArmed(): boolean {
+    return performance.now() - this.levelUpAt >= LEVELUP_GUARD.block;
+  }
+
   /** Ignored while the offer is fresh (LEVELUP_GUARD), keys and clicks alike. */
   pickLevelUp(index: number): void {
     const path = this.path();
-    if (!path || performance.now() - this.levelUpAt < LEVELUP_GUARD.block) return;
+    if (!path || !this.levelUpArmed()) return;
     this.dispatchRun(`${path}/levelup`, "levelup:pick", { index });
     // A chained level-up opens a fresh offer: it gets its own guard.
     this.levelUpAt = performance.now();

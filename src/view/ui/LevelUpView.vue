@@ -118,6 +118,16 @@ const layers = computed<Layer[]>(() => {
   return [...live, ...ghosts.value];
 });
 
+/**
+ * Past the offer's guard (host LEVELUP_GUARD) the live cards are a keynav scope: the arrows
+ * select (the first press selects the first card; none is preselected, so a stray confirm
+ * never picks) and Enter/Space/Z confirm. Before it the arrows and confirm do nothing here.
+ */
+const armed = computed(() => {
+  void state.frame;
+  return host.levelUpArmed();
+});
+
 function pick(i: number): void {
   markSeen("levelup");
   host.pickLevelUp(i);
@@ -131,7 +141,7 @@ function hover(): void {
   <Transition name="lvlbg">
     <div v-if="open && offer" class="lvlbg"></div>
   </Transition>
-  <div v-for="L in layers" :key="L.id" class="lvl" :class="[L.mode, { chained: L.chained }]">
+  <div v-for="L in layers" :key="L.id" v-keynav="L.mode === 'live' && armed && { autofocus: false }" class="lvl" :class="[L.mode, { chained: L.chained }]">
     <div class="head">
       <h2>Level {{ L.level }}!</h2>
       <p class="muted">
