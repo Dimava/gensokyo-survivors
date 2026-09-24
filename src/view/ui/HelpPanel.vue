@@ -24,6 +24,7 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
           <tr><td><Keys for="Action:pick1" :max="1" /><Keys for="Action:pick2" :max="1" /><Keys for="Action:pick3" :max="1" /></td><td>Pick a level-up upgrade; <Keys for="Action:reroll" /> rerolls if you have rerolls</td></tr>
           <tr><td><Keys for="Action:confirm" /></td><td>Advance dialogue; <Keys for="Action:skip" /> skips it</td></tr>
           <tr><td><Keys for="Action:pause" /></td><td>Pause (the run also pauses when the tab is hidden)</td></tr>
+          <tr><td><Keys for="Action:fullscreen" /></td><td>Fullscreen on and off</td></tr>
           <tr><td><Keys :for="['ArrowY', 'ArrowX']" /> <Keys for="Confirm" :max="2" /> <Keys for="Back" /></td><td>Menus: select, confirm, back. The mouse works everywhere too</td></tr>
         </tbody>
       </table>

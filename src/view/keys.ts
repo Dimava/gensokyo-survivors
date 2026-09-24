@@ -72,6 +72,7 @@ const ACTIONS: [from: object, action: string][] = [
   [{ code: "KeyR" }, "reroll"],
   [{ code: "KeyX" }, "skip"],
   [{ code: "ControlLeft" }, "skip"],
+  [{ code: "Slash" }, "fullscreen"],
 ];
 for (let n = 1; n <= 5; n++) {
   for (const code of [`Digit${n}`, `Numpad${n}`]) {

@@ -24,6 +24,12 @@ const FOCUS_SPEED = 45;
 
 const ACTIONS: Action[] = ["pause", "confirm", "back", "card1", "card2", "card3", "card4", "card5", "pick1", "pick2", "pick3", "reroll", "skip"];
 
+/** Enter or leave browser fullscreen (the key press is the user gesture it needs). */
+export function toggleFullscreen(): void {
+  if (document.fullscreenElement) void document.exitFullscreen();
+  else void document.documentElement.requestFullscreen().catch(() => {});
+}
+
 export class Input {
   /** Held movement keys (physical code -> direction) and focus keys. */
   private held = new Map<string, [number, number]>();
@@ -61,6 +67,11 @@ export class Input {
         for (const l of this.listeners) l(a, e.event as KeyboardEvent);
       });
     }
+    // Fullscreen is the page's, not the game's: it works on every screen and never reaches the host.
+    kds.on({ code: "Action:fullscreen", mods: undefined, event: { repeat: false } }, (e) => {
+      e.event.preventDefault();
+      toggleFullscreen();
+    });
     kds.on({ code: "Blur", mods: undefined }, () => {
       this.held.clear();
       this.focusHeld.clear();
