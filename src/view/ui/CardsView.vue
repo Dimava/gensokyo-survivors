@@ -26,7 +26,7 @@ onBeforeUnmount(() => {
     <div class="screen-head">
       <div>
         <h1>Skill Cards &amp; Deck</h1>
-        <div class="sub">Pick a card you own (click, or select it and confirm) to put it in or take it out of your deck. Each run shuffles your deck; grazing draws from it.</div>
+        <div class="sub">Each run shuffles your deck; grazing draws from it.</div>
       </div>
       <div class="headr">
         <div class="deck" :class="{ full: deckSize >= DECK_MAX }">Deck {{ deckSize }} / {{ DECK_MAX }}</div>

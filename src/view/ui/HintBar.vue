@@ -52,7 +52,7 @@ const HINTS: Hint[] = [
   },
   {
     id: "cards",
-    text: "You hold a skill card. Play it with its number key or by clicking it. Cards cost Spirit (the blue orbs, bottom left), which refills over time.",
+    text: "Skill cards cost Spirit (the blue orbs, bottom left), which refills over time.",
     when: () => (hud.value?.hand.some((c) => c.affordable) ?? false),
     done: () => false,
     seconds: 12,

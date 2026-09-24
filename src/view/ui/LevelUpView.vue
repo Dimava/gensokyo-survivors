@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { host, state } from "../host.ts";
-import { prefs, markSeen, anim } from "../prefs.ts";
+import { anim } from "../prefs.ts";
 import { ui } from "../presenter.ts";
 import { audio } from "../audio.ts";
 import { LevelUp } from "../../sim/levelup.ts";
@@ -129,7 +129,6 @@ const armed = computed(() => {
 });
 
 function pick(i: number): void {
-  markSeen("levelup");
   host.pickLevelUp(i);
 }
 function hover(): void {
@@ -146,9 +145,6 @@ function hover(): void {
       <h2>Level {{ L.level }}!</h2>
       <p class="muted">
         Choose one upgrade<span v-if="L.pending > 1"> ({{ L.pending }} level-ups waiting)</span>
-      </p>
-      <p v-if="prefs.hints && !prefs.seen.includes('levelup')" class="hint">
-        Press <Keys for="Action:pick1" :max="1" /> <Keys for="Action:pick2" :max="1" /> <Keys for="Action:pick3" :max="1" /> or click a card. The run is paused while you choose.
       </p>
     </div>
     <div class="choices">
@@ -245,9 +241,6 @@ h2 {
 }
 .head p {
   margin: 6px 0 0;
-}
-.hint {
-  color: var(--gold);
 }
 .choices {
   display: flex;
