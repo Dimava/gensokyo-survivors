@@ -5,7 +5,10 @@
 // the drawn set, the rigged Live2D-style set (src/art-l2d), or both side by side.
 // Below them, the items and weapons at every level, as their level-up cards
 // show them; the items in any of their looks, the chosen one used by the cards.
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+// Three tabs (Characters, Items, Music: the music room), switched by click or
+// Q/E; only the open tab is mounted, and the last one is remembered.
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import MusicRoom from "./MusicRoom.vue";
 import { prefs } from "../prefs.ts";
 import { livePortrait } from "../art-set.ts";
 import type { Model } from "../../art-l2d/rig.ts";
@@ -84,12 +87,38 @@ function onMove(e: PointerEvent): void {
   mouse.y = e.clientY;
 }
 
+type Tab = "characters" | "items" | "music";
+const TABS: [Tab, string][] = [
+  ["characters", "Characters"],
+  ["items", "Items"],
+  ["music", "Music"],
+];
+const TAB_KEY = "gensokyo-survivors/gallery-tab";
+const tab = ref<Tab>(TABS.find(([id]) => id === sessionStorage.getItem(TAB_KEY))?.[0] ?? "characters");
+watch(tab, (t) => {
+  sessionStorage.setItem(TAB_KEY, t);
+  // The drawings of the tab closed are gone; stop following them.
+  els.value = {};
+});
+
+/** Q and E (or PageUp and PageDown) step through the tabs. */
+function onKey(e: KeyboardEvent): void {
+  if (e.ctrlKey || e.altKey || e.metaKey || (e.target as HTMLElement | null)?.closest?.("input, textarea, select")) return;
+  const d = e.code === "KeyQ" || e.code === "PageUp" ? -1 : e.code === "KeyE" || e.code === "PageDown" ? 1 : 0;
+  if (!d) return;
+  e.preventDefault();
+  const i = TABS.findIndex(([id]) => id === tab.value);
+  tab.value = TABS[(i + d + TABS.length) % TABS.length]![0];
+}
+
 onMounted(() => {
   window.addEventListener("pointermove", onMove);
+  window.addEventListener("keydown", onKey);
   raf = requestAnimationFrame(frame);
 });
 onBeforeUnmount(() => {
   window.removeEventListener("pointermove", onMove);
+  window.removeEventListener("keydown", onKey);
   cancelAnimationFrame(raf);
 });
 
@@ -107,12 +136,19 @@ function draw(d: Drawing, key: string, px: number): string {
   <div v-keynav="{ pointer: true }" class="screen">
     <div class="screen-head">
       <h1>Gallery</h1>
-      <div class="styles">
+      <div class="tabs">
+        <span class="key">Q</span>
+        <button v-for="[id, label] in TABS" :key="id" class="btn small tab" :class="{ primary: tab === id }" @click="tab = id">{{ label }}</button>
+        <span class="key">E</span>
+      </div>
+      <div v-if="tab === 'characters'" class="styles">
         <button v-for="[id, label] in STYLES" :key="id" class="btn small" :class="{ primary: style === id }" @click="style = id">{{ label }}</button>
       </div>
       <button class="btn back" @click="host.go('menu')">Back</button>
     </div>
     <div class="panel body">
+      <MusicRoom v-if="tab === 'music'" />
+      <template v-if="tab === 'characters'">
       <h3>Characters</h3>
       <div class="grid" :class="{ wide: style !== 'drawn' }">
         <div v-for="c in characters" :key="c.key" class="item" tabindex="0">
@@ -163,6 +199,8 @@ function draw(d: Drawing, key: string, px: number): string {
           <div class="sub muted">{{ e.sub }}</div>
         </div>
       </div>
+      </template>
+      <template v-if="tab === 'items'">
       <div class="section-head">
         <h3>Items</h3>
         <div class="styles">
@@ -195,6 +233,7 @@ function draw(d: Drawing, key: string, px: number): string {
           <div class="sub muted">{{ w.desc }} (from {{ w.from }})</div>
         </div>
       </div>
+      </template>
     </div>
   </div>
 </template>
@@ -250,6 +289,12 @@ function draw(d: Drawing, key: string, px: number): string {
   gap: 6px;
   margin-left: auto;
   margin-right: 12px;
+}
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 18px;
 }
 .sprite :deep(svg) {
   display: block;
