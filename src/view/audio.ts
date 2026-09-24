@@ -2,7 +2,9 @@
 // from oscillators and a noise buffer with WebAudio. Volumes follow prefs.
 
 import { watch } from "vue";
+import { Music, type Song } from "./music.ts";
 import { prefs } from "./prefs.ts";
+import { cirnoSong, clearSong, forestSong, lakeSong, menuSong, rumiaSong } from "./songs.ts";
 
 export type Sfx =
   | "ui"
@@ -40,9 +42,11 @@ export type Sfx =
   | "warning"
   | "text"
   | "aura"
-  | "revive";
+  | "revive"
+  | "pichuun";
 
-export type Track = "menu" | "stage" | "boss" | null;
+/** What plays: the title theme, the stage theme, the boss theme (both per stage), the clear fanfare, or silence. */
+export type Track = "menu" | "stage" | "boss" | "clear" | null;
 
 /** Minimum milliseconds between two plays of the same sound (bulk events would otherwise stack). */
 const THROTTLE: Partial<Record<Sfx, number>> = { shoot: 70, hit: 45, pop: 40, pickup: 35, graze: 50, coin: 60, aura: 150, text: 40 };
@@ -56,10 +60,10 @@ class Synth {
   private last = new Map<Sfx, number>();
   private streak = 0;
   private streakAt = 0;
-  private track: Track = null;
-  private seqTimer: number | null = null;
-  private step = 0;
-  private nextAt = 0;
+  private songs: Music | null = null;
+  /** The current track and stage ("stage:lake"), null when silent, and its song. */
+  private track: string | null = null;
+  private song: Song | null = null;
 
   /** Call from a user gesture: browsers start audio only after one. */
   unlock(): void {
@@ -89,7 +93,8 @@ class Synth {
       data[i] = (seed / 0x7fffffff) * 2 - 1;
     }
     this.applyVolumes();
-    if (this.track) this.startSeq();
+    this.songs = new Music(ctx, this.musicBus, this.noiseBuf);
+    this.songs.play(this.song);
   }
 
   applyVolumes(): void {
@@ -99,7 +104,7 @@ class Synth {
     this.musicBus.gain.value = prefs.music * 0.32;
   }
 
-  private tone(freq: number, dur: number, type: OscillatorType, vol: number, slide?: number, delay = 0, bus?: GainNode): void {
+  private tone(freq: number, dur: number, type: OscillatorType, vol: number, slide?: number, delay = 0): void {
     const ctx = this.ctx!;
     const t = ctx.currentTime + delay;
     const o = ctx.createOscillator();
@@ -111,12 +116,12 @@ class Synth {
     g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.01, dur / 4));
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g);
-    g.connect(bus ?? this.sfxBus);
+    g.connect(this.sfxBus);
     o.start(t);
     o.stop(t + dur + 0.02);
   }
 
-  private noise(dur: number, vol: number, filter: BiquadFilterType, freq: number, delay = 0, bus?: GainNode): void {
+  private noise(dur: number, vol: number, filter: BiquadFilterType, freq: number, delay = 0): void {
     const ctx = this.ctx!;
     const t = ctx.currentTime + delay;
     const src = ctx.createBufferSource();
@@ -129,7 +134,7 @@ class Synth {
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(f);
     f.connect(g);
-    g.connect(bus ?? this.sfxBus);
+    g.connect(this.sfxBus);
     src.start(t, Math.random() * 0.5);
     src.stop(t + dur + 0.02);
   }
@@ -245,93 +250,39 @@ class Synth {
         return this.tone(160, 0.25, "sine", 0.08 * v, 90);
       case "revive":
         return this.arp([392, 523, 659, 784, 1047, 1319], 0.08, 0.4, "sine", 0.12 * v);
+      case "pichuun":
+        // The shot-down "pichuun": a bright chirp falling fast over a burst of noise.
+        this.tone(2400, 0.3, "square", 0.06 * v, 300);
+        this.tone(1200, 0.45, "sine", 0.14 * v, 140);
+        return this.noise(0.4, 0.16 * v, "bandpass", 2200);
     }
   }
 
-  // ---------- music: a tiny step sequencer ----------
+  // ---------- music (music.ts plays, songs.ts holds the notes) ----------
 
-  music(track: Track): void {
-    if (track === this.track) return;
-    this.track = track;
-    this.step = 0;
-    if (this.seqTimer !== null) {
-      clearInterval(this.seqTimer);
-      this.seqTimer = null;
-    }
-    if (track && this.ctx) this.startSeq();
-  }
-
-  private startSeq(): void {
-    if (!this.ctx || this.seqTimer !== null) return;
-    this.nextAt = this.ctx.currentTime + 0.1;
-    this.seqTimer = window.setInterval(() => this.schedule(), 25);
-  }
-
-  private schedule(): void {
-    const ctx = this.ctx;
-    const song = this.track ? SONGS[this.track] : null;
-    if (!ctx || !song) return;
-    const stepDur = 60 / song.bpm / 4;
-    while (this.nextAt < ctx.currentTime + 0.12) {
-      const delay = Math.max(0, this.nextAt - ctx.currentTime);
-      const s = this.step % (song.lead.length);
-      const lead = song.lead[s]!;
-      if (lead >= 0) this.tone(noteHz(song.root + lead), stepDur * 1.8, song.leadWave, 0.09, undefined, delay, this.musicBus);
-      const bass = song.bass[s % song.bass.length]!;
-      if (bass >= 0) this.tone(noteHz(song.root - 24 + bass), stepDur * 1.5, "triangle", 0.16, undefined, delay, this.musicBus);
-      if (song.hat && s % 2 === 0) this.noise(0.03, s % 4 === 0 ? 0.05 : 0.025, "highpass", 7000, delay, this.musicBus);
-      if (song.kick && s % 4 === 0) this.tone(120, 0.12, "sine", 0.22, 45, delay, this.musicBus);
-      this.step++;
-      this.nextAt += stepDur;
-    }
+  /** Picks the song for a track; stage and boss tracks have one per stage (the lake's by default). */
+  music(track: Track, stage = "lake"): void {
+    const key = track && `${track}:${stage}`;
+    if (key === this.track) return;
+    this.track = key;
+    this.song = songFor(track, stage);
+    this.songs?.play(this.song);
   }
 }
 
-function noteHz(semitone: number): number {
-  return 440 * Math.pow(2, (semitone - 9) / 12);
-}
-
-interface Song {
-  bpm: number;
-  root: number;
-  leadWave: OscillatorType;
-  lead: number[];
-  bass: number[];
-  hat: boolean;
-  kick: boolean;
-}
-
-const _ = -1;
-// Pentatonic phrases in semitones above the root (-1 rests).
-const SONGS: Record<Exclude<Track, null>, Song> = {
-  menu: {
-    bpm: 84,
-    root: 12,
-    leadWave: "sine",
-    lead: [0, _, 7, _, 12, _, 9, _, 7, _, 4, _, 2, _, _, _, 0, _, 4, _, 7, _, 9, _, 7, _, _, _, _, _, _, _],
-    bass: [0, _, _, _, _, _, _, _, 5, _, _, _, _, _, _, _, 7, _, _, _, _, _, _, _, 5, _, _, _, 0, _, _, _],
-    hat: false,
-    kick: false,
-  },
-  stage: {
-    bpm: 138,
-    root: 14,
-    leadWave: "square",
-    lead: [0, _, 3, 5, 7, _, 10, _, 7, 5, 3, _, 5, _, _, _, 0, _, 3, 5, 7, _, 12, _, 10, 7, 5, _, 7, _, _, _],
-    bass: [0, _, 0, _, 0, _, 0, _, 8, _, 8, _, 10, _, 10, _],
-    hat: true,
-    kick: true,
-  },
-  boss: {
-    bpm: 158,
-    root: 16,
-    leadWave: "sawtooth",
-    lead: [0, 3, 7, 10, 12, 10, 7, 3, 5, 8, 12, 15, 12, _, 10, _, 0, 3, 7, 10, 12, 15, 17, 15, 12, 10, 7, 5, 3, _, 2, _],
-    bass: [0, _, 0, 0, _, 0, 0, _, 8, _, 8, 8, _, 7, 7, _],
-    hat: true,
-    kick: true,
-  },
+const SONGS: Record<string, Song> = {
+  menu: menuSong,
+  clear: clearSong,
+  "stage:lake": lakeSong,
+  "boss:lake": cirnoSong,
+  "stage:forest": forestSong,
+  "boss:forest": rumiaSong,
 };
+
+function songFor(track: Track, stage: string): Song | null {
+  if (!track) return null;
+  return SONGS[`${track}:${stage}`] ?? SONGS[track] ?? SONGS[`${track}:lake`] ?? null;
+}
 
 export const audio = new Synth();
 
