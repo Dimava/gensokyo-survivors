@@ -20,11 +20,14 @@ interface Hint {
 }
 
 const moved = ref(0);
+const touch = matchMedia("(pointer: coarse)").matches;
 
 const HINTS: Hint[] = [
   {
     id: "move",
-    text: "Move with WASD or the arrow keys, or hold the mouse button on the field and point where to go.",
+    text: touch
+      ? "Put a finger anywhere on the field and slide it the way you want to go."
+      : "Move with WASD or the arrow keys, or hold the mouse button on the field and point where to go.",
     when: () => true,
     done: () => moved.value > 90,
     seconds: 20,
@@ -39,7 +42,7 @@ const HINTS: Hint[] = [
   },
   {
     id: "graze",
-    text: "Enemy bullets! Your hitbox is only the tiny red dot. Let bullets pass close without touching it to GRAZE: grazing fills the card meter (bottom right).",
+    text: `Enemy bullets! Your hitbox is only the tiny red dot. Let bullets pass close without touching it to GRAZE: grazing fills the card meter (bottom right). ${touch ? "Hold the Focus button" : "Hold Shift"} to move slowly; focus also tightens your shots.`,
     when: () => {
       const path = host.path();
       return !!path && runView(host.k, path).packed("bullets").count > 0;

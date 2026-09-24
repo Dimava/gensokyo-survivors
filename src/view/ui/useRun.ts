@@ -3,7 +3,7 @@
 import { computed } from "vue";
 import { host, state } from "../host.ts";
 import { runView } from "../../sim/game.ts";
-import { handCards, spiritAt } from "../../sim/cards.ts";
+import { handSlots, spiritAt } from "../../sim/cards.ts";
 import { CARDS_TUNING, XP } from "../../sim/tuning.ts";
 import { cardDef, cardText } from "../../content/cards.ts";
 import { weaponDef } from "../../content/weapons.ts";
@@ -24,7 +24,9 @@ export const hud = computed(() => {
   const t = v.now("action");
   const spirit = spiritAt(v, t);
   const piles = v.derived("piles");
-  const hand = handCards(v).map((c, slot) => {
+  // Fixed hand slots: null is an empty slot, and a card keeps its slot until played.
+  const slots = handSlots(v).map((c, slot) => {
+    if (!c) return null;
     const card = v.req(c.id, "card").card;
     const def = cardDef(card.id);
     return {
@@ -40,6 +42,7 @@ export const hud = computed(() => {
       affordable: spirit + 1e-9 >= def.cost,
     };
   });
+  const hand = slots.filter((c) => c !== null);
   const boss = v.derived("boss");
   let bossInfo = null as null | {
     name: string;
@@ -107,6 +110,7 @@ export const hud = computed(() => {
       return { id: def.id, name: def.name, level: x.passive.level, max: def.max, color: def.color, desc: def.desc };
     }),
     hand,
+    slots,
     handMax: stats.hand,
     deck: v.related("inPile", piles.deck).length,
     discard: v.related("inPile", piles.discard).length,
