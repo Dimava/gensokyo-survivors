@@ -24,7 +24,8 @@ export const PLAYER = {
 /**
  * Focus (Shift), Touhou's slow mode: the sim hears it as the `focus` input
  * and gathers the weapons in. (The slow movement is the view's shorter `move`
- * vector, input.ts.) Each factor multiplies the unfocused value.
+ * vector, input.ts.) It also locks her facing (rules.ts movePlayer), so the
+ * facing weapons stay on target while she strafes. Each factor multiplies the unfocused value.
  */
 export const FOCUS = {
   /** Fans (amulets, needles): the spread between shots. */

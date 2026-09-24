@@ -716,9 +716,11 @@ export class Playfield {
     // Drawn Reimu looks where she moves (ahead when still); the procedural one only flips.
     const reimu = this.art.reimu;
     const liveReimu = this.live.reimu;
-    // Her head and eyes follow her focus (full turn at 200 px); her body, lean and gait follow her movement.
-    // No target: she looks where she walks, else ahead.
-    const look = focused ? { x: (focusX - p.body.x) / 200, y: (focusY - p.body.y) / 200 } : { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 };
+    // Her head and eyes follow her focus (full turn at 200 px); her body, lean and gait follow her movement,
+    // except that with focus held her facing is locked (the sim's strafe): she turns and leans that way and backpedals.
+    // No target: she looks where she walks (her locked facing while focused), else ahead.
+    const strafe = p.ctrl.focus;
+    const look = focused ? { x: (focusX - p.body.x) / 200, y: (focusY - p.body.y) / 200 } : strafe ? { x: p.body.fx, y: p.body.fy } : { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 };
     this.player.visible = !liveReimu;
     // Standing, walking, or walking slowly with focus held: the rig blends between them.
     if (liveReimu) {
@@ -735,6 +737,7 @@ export class Playfield {
         else top.addChildAt(this.playerLive, top.getChildIndex(this.player) + 1);
       }
       const move = ko ? { x: 0, y: 0 } : { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 };
+      liveReimu.anim.face = strafe && !ko ? { x: p.body.fx, y: p.body.fy } : null;
       this.drawLive(liveReimu, p.body.x, p.body.y, look.x, look.y, 0.5, 0.55, fdt * (ko?.rate ?? 1), move, p.ctrl.focus && !ko, HITBOX_PART);
       this.tipOver(liveReimu, ko);
     }

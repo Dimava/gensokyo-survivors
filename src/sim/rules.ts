@@ -54,7 +54,9 @@ function movePlayer(ctx: C): void {
       y = run.ay + (ddy / d) * lim;
     }
   }
-  Object.assign(ctx.mut(p, "body"), { x, y, fx: mx / len, fy: my / len });
+  // Focus locks facing (strafe): the facing weapons stay on target while she sidesteps or backpedals.
+  if (p.ctrl.focus) Object.assign(ctx.mut(p, "body"), { x, y });
+  else Object.assign(ctx.mut(p, "body"), { x, y, fx: mx / len, fy: my / len });
 }
 
 function openLevelUp(ctx: C): void {

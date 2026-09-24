@@ -27,6 +27,8 @@ export class Animator {
    */
   move: Look = { x: 0, y: 0 };
   slow = false;
+  /** A held facing (a unit vector; focus strafing): the body turns and leans this way while moving, not along the move. */
+  face: Look | null = null;
   /**
    * Knocked out (0..1): eyes shut, head drooping, the body sinking, arms and
    * hair hanging slack. `recoil` (0..1) is the flinch of being hit: eyes
@@ -76,9 +78,10 @@ export class Animator {
     const ease = 1 - Math.exp(-dt * RATE.gaitBlend);
     this.walkW += ((moving && !this.slow ? speed : 0) - this.walkW) * ease;
     this.slowW += ((moving && this.slow ? speed : 0) - this.slowW) * ease;
-    const len = Math.hypot(this.move.x, this.move.y) || 1;
-    this.dir.x += ((moving ? this.move.x / len : 0) - this.dir.x) * ease;
-    this.dir.y += ((moving ? this.move.y / len : 0) - this.dir.y) * ease;
+    const heading = this.face ?? this.move;
+    const len = Math.hypot(heading.x, heading.y) || 1;
+    this.dir.x += ((moving ? heading.x / len : 0) - this.dir.x) * ease;
+    this.dir.y += ((moving ? heading.y / len : 0) - this.dir.y) * ease;
     const stand = Math.max(0, 1 - this.walkW - this.slowW);
     // Strides per second: brisk walking, a deliberate slow walk, or the idle cycle.
     this.phase += dt * (stand * this.rate + this.walkW * RATE.walk + this.slowW * RATE.slowWalk);

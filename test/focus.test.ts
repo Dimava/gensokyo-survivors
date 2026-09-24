@@ -114,6 +114,44 @@ describe("focus", () => {
     h.verifyReplay();
   });
 
+  test("focus locks her facing: she strafes and backpedals facing the same way, and it replays", () => {
+    const h = harness(() => fixtureGame("focus-strafe", { tree: TREE }), { render });
+    const k = h.kernel;
+    h.play("/", "run:start", { stage: "lake" });
+    const path = activeRun(k)! as RunPath;
+    const p = path as "/run:1";
+    const v = runView(k, path);
+    const body = () => v.derived("player").body;
+    const walk = (x: number, y: number, n = 10): void => {
+      k.queue(p, "move", { x, y });
+      for (let i = 0; i < n; i++) k.tick(p, "fixed");
+    };
+    walk(0, -100);
+    expect(body().fx).toBeCloseTo(0, 9);
+    expect(body().fy).toBeCloseTo(-1, 9);
+
+    // Focused: sidestepping and backpedalling move her, not her facing.
+    k.queue(p, "focus", { on: true });
+    const x0 = body().x;
+    walk(100, 0);
+    expect(body().x).toBeGreaterThan(x0);
+    const y0 = body().y;
+    walk(0, 100);
+    expect(body().y).toBeGreaterThan(y0);
+    expect(body().fx).toBeCloseTo(0, 9);
+    expect(body().fy).toBeCloseTo(-1, 9);
+    walk(0, 0);
+    expect(body().fy).toBeCloseTo(-1, 9);
+
+    // Released: facing follows movement again.
+    k.queue(p, "focus", { on: false });
+    walk(-100, 0);
+    expect(body().fx).toBeCloseTo(-1, 9);
+    expect(body().fy).toBeCloseTo(0, 9);
+
+    h.verifyReplay();
+  });
+
   test("focus strengthens the border's pushback, not its radius or damage", () => {
     expect(weaponDef("border").behaviour).toBe("aura");
     expect(weaponStats("border", 1).knock).toBeGreaterThan(0);
