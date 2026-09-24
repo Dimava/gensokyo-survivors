@@ -31,6 +31,9 @@ export function destination(id: string): DestinationDef {
 /** Always at the shrine; others join when you own one of their skill cards. */
 export const STARTING_COMPANIONS: readonly CharacterId[] = ["daiyousei"];
 
+/** Off for now: the menu hides Expeditions and no return toast shows. The sim and saves keep them. */
+export const EXPEDITIONS_ENABLED = false;
+
 /** How many companions can be away at once. */
 export const MAX_EXPEDITIONS = 3;
 

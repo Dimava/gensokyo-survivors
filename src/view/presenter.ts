@@ -12,7 +12,7 @@ import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { audio, type Sfx } from "./audio.ts";
 import type { Playfield } from "./renderer.ts";
 import { CHARACTERS, type CharacterId } from "../content/names.ts";
-import { destination } from "../content/expeditions.ts";
+import { EXPEDITIONS_ENABLED, destination } from "../content/expeditions.ts";
 import { END_DELAY } from "../sim/tuning.ts";
 import { DeathFx } from "./fx-death.ts";
 
@@ -319,7 +319,7 @@ export class Presenter {
         break;
       case "expedition:returned": {
         const trip = k.view().get(p.trip as string) as { expedition?: { who: string; dest: string } } | undefined;
-        if (trip?.expedition && !this.quiet) {
+        if (trip?.expedition && EXPEDITIONS_ENABLED && !this.quiet) {
           const who = CHARACTERS[trip.expedition.who as CharacterId]?.short ?? trip.expedition.who;
           toast(`${who} is back from ${destination(trip.expedition.dest).name}: claim the donations in Expeditions`, "good", 4);
           this.sfx("chime");

@@ -5,6 +5,7 @@ import { audio } from "../audio.ts";
 import { GAME_TITLE, CURRENCY, CHARACTERS, PLAYER_CHARACTER } from "../../content/names.ts";
 import { bossDef, bossName } from "../../content/bosses.ts";
 import { DECK_MIN } from "../../content/gacha.ts";
+import { EXPEDITIONS_ENABLED } from "../../content/expeditions.ts";
 import { affordableNodes, fmtTime, owned, profile, stages, wallet } from "./useGame.ts";
 import { stageDef, type StageDef } from "../../content/stages.ts";
 import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
@@ -57,7 +58,7 @@ function hover(): void {
             Skill Cards &amp; Deck <span v-if="freshCards" class="badge">{{ freshCards }} new</span>
           </button>
           <button class="btn big" @mouseenter="hover" @click="host.go('packs')">Card Packs</button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('expeditions')">
+          <button v-if="EXPEDITIONS_ENABLED" class="btn big" @mouseenter="hover" @click="host.go('expeditions')">
             Expeditions <span v-if="tripsBack" class="badge">{{ tripsBack }} back</span>
           </button>
           <button class="btn big" @mouseenter="hover" @click="host.go('records')">Records</button>
