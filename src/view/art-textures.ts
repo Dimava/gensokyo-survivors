@@ -24,6 +24,8 @@ import type { ArtStyle } from "./prefs.ts";
 
 /** Device pixels per game pixel for the rasterized art (crisp on 2x screens and when zoomed). */
 const PX = 2;
+/** The largest sheet side in device pixels (a texture size practically every GPU takes). */
+const MAX_SHEET = 4096;
 
 export interface SpriteArt {
   /** Textures by frame, then by look index (LOOKS / lookIndex); a single look when the art is the same from every side. */
@@ -81,7 +83,6 @@ async function rigEntry(renderer: Renderer, sr: SpriteRig): Promise<[Texture[], 
   const s = Math.min(sr.w / sr.model.w, sr.h / sr.model.h);
   view.scale.set(s);
   view.position.set((sr.w - sr.model.w * s) / 2, (sr.h - sr.model.h * s) / 2);
-  const frame = new Rectangle(0, 0, sr.w, sr.h);
   const looks = sr.looks ? LOOKS : [AHEAD];
   const set = (look: (typeof LOOKS)[number], phase: number, closed = false) => {
     for (const p of sr.model.params) rig.params[p.id] = p.def;
@@ -93,26 +94,80 @@ async function rigEntry(renderer: Renderer, sr: SpriteRig): Promise<[Texture[], 
     }
     view.update();
   };
+  // Parts reach past the model's canvas (wings, flapping sleeves), so the cells are baked in a frame
+  // that holds every pose's mesh bounds, then cut down to the pixels actually drawn. Both stay even
+  // about the canvas centre, so the sprite's centre anchor is where it was.
+  const cx = sr.w / 2;
+  const cy = sr.h / 2;
+  let hw = cx;
+  let hh = cy;
+  for (let f = 0; f < sr.frames; f++)
+    for (const look of looks) {
+      set(look, f / sr.frames);
+      const b = root.getLocalBounds();
+      hw = Math.max(hw, cx - b.minX, b.maxX - cx);
+      hh = Math.max(hh, cy - b.minY, b.maxY - cy);
+    }
+  hw = Math.ceil(hw + 1);
+  hh = Math.ceil(hh + 1);
+  const frame = new Rectangle(cx - hw, cy - hh, hw * 2, hh * 2);
   const snap = () => renderer.generateTexture({ target: root, frame, resolution: PX, antialias: true });
-  const list: Texture[] = [];
+  const baked: Texture[] = [];
   set(AHEAD, 0);
   const white = whiteFilter();
   root.filters = [white];
-  list.push(snap());
+  baked.push(snap());
   root.filters = [];
   white.destroy();
   for (let f = 0; f < sr.frames; f++)
     for (const look of looks) {
       set(look, f / sr.frames);
-      list.push(snap());
+      baked.push(snap());
     }
   if (sr.looks)
     for (const look of looks) {
       set(look, 0, true);
-      list.push(snap());
+      baked.push(snap());
     }
   root.destroy({ children: true });
+  const [tw, th] = drawnHalf(renderer, baked, hw * 2, hh * 2);
+  const cut = new Rectangle(hw - tw, hh - th, tw * 2, th * 2);
+  const list = baked.map((t) => {
+    const c = new Texture({ source: t.source, frame: cut });
+    t.destroy();
+    return c;
+  });
   return [list, { frames: sr.frames, looks: looks.length, blink: sr.looks, rate: sr.rate }];
+}
+
+/**
+ * Half the width and height (game px, whole) of the smallest box even about the centre that holds
+ * every pixel drawn in any of these w x h cells. Mesh bounds are looser than the art: a part's quad
+ * carries its transparent margins, and a turning one (the yin-yang orb's ring) sweeps its corners.
+ */
+function drawnHalf(renderer: Renderer, cells: Texture[], w: number, h: number): [number, number] {
+  const all = new Container();
+  for (const t of cells) all.addChild(new Sprite(t));
+  const union = renderer.generateTexture({ target: all, frame: new Rectangle(0, 0, w, h), resolution: PX });
+  const { pixels, width, height } = renderer.extract.pixels(union);
+  union.destroy(true);
+  all.destroy({ children: true });
+  let x0 = width;
+  let y0 = height;
+  let x1 = 0;
+  let y1 = 0;
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++)
+      if (pixels[(y * width + x) * 4 + 3]! > 0) {
+        x0 = Math.min(x0, x);
+        x1 = Math.max(x1, x + 1);
+        y0 = Math.min(y0, y);
+        y1 = Math.max(y1, y + 1);
+      }
+  if (x1 <= x0) return [w / 2, h / 2];
+  // One game px of margin for the antialiased edge; never more than the baked cell.
+  const half = (lo: number, hi: number, size: number) => Math.min(size / 2, Math.ceil(Math.max(size / 2 - lo / PX, hi / PX - size / 2)) + 1);
+  return [half(x0, x1, w), half(y0, y1, h)];
 }
 
 /**
@@ -136,33 +191,36 @@ export async function loadSpriteArt(renderer: Renderer, style: ArtStyle = "drawn
       }),
     );
   }
-  // Shelf packing in game pixels; the sheet renders at PX.
+  // Shelf packing in game pixels, tallest cells first so each shelf wastes little height.
   const W = style === "live2d" ? 2048 : 1024;
   const root = new Container();
   const frames: Record<string, Rectangle[]> = {};
+  const cells = Object.entries(loose).flatMap(([id, [texs]]) => texs.map((t, i) => ({ t, id, i })));
+  cells.sort((a, b) => b.t.height - a.t.height || b.t.width - a.t.width);
   let x = 0;
   let y = 0;
   let row = 0;
-  for (const [id, [texs]] of Object.entries(loose)) {
-    frames[id] = texs.map((t) => {
-      const w = Math.ceil(t.width);
-      const h = Math.ceil(t.height);
-      if (x + w > W) {
-        x = 0;
-        y += row + 2;
-        row = 0;
-      }
-      const s = new Sprite(t);
-      s.position.set(x, y);
-      root.addChild(s);
-      const r = new Rectangle(x, y, w, h);
-      x += w + 2;
-      row = Math.max(row, h);
-      return r;
-    });
+  for (const { t, id, i } of cells) {
+    const w = Math.ceil(t.width);
+    const h = Math.ceil(t.height);
+    if (x + w > W) {
+      x = 0;
+      y += row + 2;
+      row = 0;
+    }
+    const s = new Sprite(t);
+    s.position.set(x, y);
+    root.addChild(s);
+    (frames[id] ??= [])[i] = new Rectangle(x, y, w, h);
+    x += w + 2;
+    row = Math.max(row, h);
   }
-  const sheet = renderer.generateTexture({ target: root, frame: new Rectangle(0, 0, W, y + row + 2), resolution: PX, antialias: true });
-  lastSheet = { w: W * PX, h: (y + row + 2) * PX, cells: Object.values(frames).reduce((n, r) => n + r.length, 0) };
+  const H = y + row + 2;
+  // The sheet renders at PX, unless that would pass the texture size every GPU takes: then a
+  // little softer, rather than a sheet some machines cannot load.
+  const res = Math.min(PX, MAX_SHEET / Math.max(W, H));
+  const sheet = renderer.generateTexture({ target: root, frame: new Rectangle(0, 0, W, H), resolution: res, antialias: true });
+  lastSheet = { w: Math.ceil(W * res), h: Math.ceil(H * res), cells: cells.length };
   root.destroy({ children: true });
   for (const [texs] of Object.values(loose)) for (const t of texs) t.destroy(true);
   const out: Record<string, SpriteArt> = {};
