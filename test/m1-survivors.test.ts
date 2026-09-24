@@ -6,6 +6,7 @@ import { describe, expect, test } from "bun:test";
 import { harness } from "gamebones";
 import { activeRun, newGame, runView, type RunPath } from "../src/sim/game.ts";
 import { msPerTick, render, stress } from "./helpers.ts";
+import { renderField, renderLevelUp } from "../src/view/text-renderer.ts";
 
 describe("M1 survivors run", () => {
   test("scripted playthrough: move, level up through the overlay, die, results", () => {
@@ -21,6 +22,8 @@ describe("M1 survivors run", () => {
     h.tick(path, "fixed", 300);
     expect(v.derived("player").body.x).toBeGreaterThan(600);
     expect(v.derived("player").progress.kills).toBeGreaterThan(0);
+    h.note(`the field after five seconds of walking right (the first spawn waves):
+${renderField(k, path)}`);
 
     // Circle for a while, answering every level-up with the first choice.
     const dirs = [
@@ -35,6 +38,8 @@ describe("M1 survivors run", () => {
       const before = v.now("game");
       h.tick(path, "fixed", 60);
       while (v.derived("state").run.overlay === "levelup") {
+        if (levelUps === 0) h.note(`the first level-up offer:
+${renderLevelUp(k, path)}`);
         // The overlay paused the run's game clock (D22): fixed ticks, game did not.
         const g = v.now("game");
         h.tick(path, "fixed", 5);
@@ -47,6 +52,8 @@ describe("M1 survivors run", () => {
     expect(levelUps).toBeGreaterThan(0);
     expect(v.derived("weapons").length + v.derived("passives").length).toBeGreaterThan(1);
     h.note(`level-ups taken: ${levelUps}`);
+    h.note(`the field at ${Math.floor(v.now("action") / 60)}s, just after the ring of kedama closed in:
+${renderField(k, path)}`);
 
     // Stand still and let the swarm win.
     k.queue(path, "move", { x: 0, y: 0 });

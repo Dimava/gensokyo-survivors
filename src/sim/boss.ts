@@ -2,7 +2,7 @@
 // the card's emitters on schedule. Breaking, timing out and the next card are
 // rules (rules.ts); the process only shoots and moves.
 
-import { sin, wait, done, type Ctx, type EntityOf, type ProcessDef } from "gamebones";
+import { wait, done, type Ctx, type EntityOf, type ProcessDef } from "gamebones";
 import { bossDef } from "../content/bosses.ts";
 import type { RS0 } from "./run.ts";
 import { emitPattern } from "./danmaku.ts";
@@ -32,7 +32,7 @@ export function bossPos(boss: BossEntity, t: number, out: { x: number; y: number
   let s = (t - b.t0) / span;
   s = s < 0 ? 0 : s > 1 ? 1 : s;
   s = s * s * (3 - 2 * s);
-  out.x = b.x0 + (b.x1 - b.x0) * s + (b.sway ? 110 * sin(t * 0.018) : 0);
+  out.x = b.x0 + (b.x1 - b.x0) * s + (b.sway ? 110 * Math.sin(t * 0.018) : 0);
   out.y = b.y0 + (b.y1 - b.y0) * s;
 }
 

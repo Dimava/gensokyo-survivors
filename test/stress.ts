@@ -1,10 +1,10 @@
 // Load fixtures for timing: fills a run's stores to a target size directly,
-// outside any dispatch. Only for measurements (tests, and the ?stress= debug
-// flag in the browser): a run touched this way no longer replays from its log.
+// outside any dispatch. Only for timing tests: a run touched this way no
+// longer replays from its log.
 
-import { styleIndex } from "../content/patterns.ts";
-import { enemyIndex } from "../content/enemies.ts";
-import { runView, type Game, type RunPath } from "./game.ts";
+import { styleIndex } from "../src/content/patterns.ts";
+import { enemyIndex } from "../src/content/enemies.ts";
+import { runView, type Game, type RunPath } from "../src/sim/game.ts";
 
 /** Loads the run's stores up to a target load, outside any dispatch (perf fixtures only: not replayable). */
 export function stress(k: Game, path: RunPath, enemies: number, bullets: number): void {

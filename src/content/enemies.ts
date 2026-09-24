@@ -23,6 +23,8 @@ export interface EnemyDef {
   heart: number;
   color: number;
   shape: EnemyShape;
+  /** One character for the test renderer's ASCII field. */
+  glyph: string;
   /** Enemies that shoot: a bullet emitter aimed from the enemy (see patterns.ts). */
   shoots?: EmitterDef;
   /** Knockback resistance 0..1 (bosses and elites shrug hits off). */
@@ -43,6 +45,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     heart: 0.002,
     color: 0xf3e6ff,
     shape: "fuzz",
+    glyph: "k",
   },
   {
     id: "fairy",
@@ -57,6 +60,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     heart: 0.003,
     color: 0x6fb6ff,
     shape: "fairy",
+    glyph: "f",
   },
   {
     id: "phantom",
@@ -71,6 +75,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     heart: 0.004,
     color: 0xb9fff4,
     shape: "ghost",
+    glyph: "p",
   },
   {
     id: "sunflower",
@@ -85,6 +90,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     heart: 0.01,
     color: 0xffd23f,
     shape: "flower",
+    glyph: "s",
     shoots: { pattern: "aimed", every: 260, params: { n: 3, spread: 0.5, speed: 2.1, style: "rice" } },
   },
   {
@@ -100,6 +106,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     heart: 0.03,
     color: 0xd04a6a,
     shape: "orb",
+    glyph: "Y",
     heavy: 0.6,
     shoots: { pattern: "ring", every: 320, params: { n: 8, speed: 1.6, style: "orb", spin: 0.2 } },
   },
@@ -116,6 +123,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     heart: 0.004,
     color: 0x5a3d8a,
     shape: "ghost",
+    glyph: "d",
     shoots: { pattern: "aimed", every: 300, params: { n: 5, spread: 0.9, speed: 1.9, style: "star" } },
   },
   {
@@ -131,6 +139,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     heart: 1,
     color: 0x7bd88f,
     shape: "bigfairy",
+    glyph: "F",
     heavy: 0.85,
     shoots: { pattern: "spiral", every: 30, params: { arms: 3, speed: 1.9, step: 0.35, style: "star" } },
   },

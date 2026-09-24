@@ -2,7 +2,7 @@
 
 exports[`M2 boss scripted playthrough: warning, dialogue overlay, three spell cards, stage clear 1`] = `
 "== initial
-meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+meta: coins 0 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
@@ -24,7 +24,7 @@ run:start stage=lake
       . card#8.in of deck#5 -> hand#6 (apply card:draw)
       card:drawn card=card#8
     banner text=Misty Lake tone=info
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
@@ -33,120 +33,137 @@ weapons: amulet1 | passives: -
 enemies 6 [kedama 6] | drops 0 | shots 0 | bullets 0
 cards: spirit 1.00/3 meter 0 grazes 0 | hand: barrier
 -- minute 1
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=1:00 fixed=3600 | hp 205/205 lv 12 xp 19/115 kills 544 | pos 488,139
-weapons: amulet3 border1 needle1 orbs3 | passives: magnet1 power1 grimoire1 clock1
-enemies 219 [kedama 118, fairy 85, sunflower 16] | drops 41 | shots 10 | bullets 6
+lake swarm t=1:00 fixed=3600 | hp 205/205 lv 11 xp 12/105 kills 496 | pos 377,-280
+weapons: amulet3 border1 needle1 orbs2 | passives: magnet1 power1 grimoire1 clock1
+enemies 213 [fairy 90, kedama 108, sunflower 15] | drops 85 | shots 7 | bullets 0
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
 -- minute 2
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=2:00 fixed=7200 | hp 205/205 lv 23 xp 165/285 kills 2012 | pos 113,-1404
-weapons: amulet4 border2 needle5 orbs8 | passives: magnet1 power1 grimoire1 clock1
-enemies 300 [sunflower 65, fairy 115, phantom 65, kedama 55] | drops 299 | shots 23 | bullets 257
-cards: spirit 2.75/3 meter 37 grazes 93 | hand: healing
+lake swarm t=2:00 fixed=7200 | hp 205/205 lv 24 xp 26/315 kills 2057 | pos 705,517
+weapons: amulet4 border2 needle6 orbs8 | passives: magnet1 power1 grimoire1 clock1
+enemies 393 [fairy 156, kedama 81, phantom 92, sunflower 64] | drops 275 | shots 23 | bullets 160
+cards: spirit 2.38/3 meter 0 grazes 100 | hand: healing
 -- minute 3
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=3:00 fixed=10800 | hp 205/205 lv 32 xp 427/555 kills 4525 | pos 840,-3264
+lake swarm t=3:00 fixed=10800 | hp 205/205 lv 32 xp 40/555 kills 4533 | pos 1458,-1363
 weapons: amulet7 border3 needle8 orbs8 | passives: magnet1 power1 grimoire3 clock1
-enemies 569 [fairy 24, sunflower 176, yinyang 118, kedama 119, phantom 132] | drops 1551 | shots 45 | bullets 890
-cards: spirit 2.50/3 meter 18 grazes 202 | hand: healing
+enemies 750 [sunflower 224, phantom 170, yinyang 134, kedama 130, fairy 91, bigfairy 1] | drops 1607 | shots 38 | bullets 1094
+cards: spirit 2.88/3 meter 36 grazes 204 | hand: healing
 -- minute 4
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake warning t=4:00 fixed=14400 | hp 205/205 lv 34 xp 473/615 kills 7934 | pos -2064,-2687
+lake warning t=4:00 fixed=14400 | hp 205/205 lv 34 xp 106/615 kills 7970 | pos 2767,-5024
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 994 [sunflower 215, yinyang 285, fairy 284, phantom 199, kedama 11] | drops 2559 | shots 37 | bullets 2359
-cards: spirit 2.00/3 meter 70 grazes 330 | hand: healing
+enemies 995 [phantom 187, yinyang 268, fairy 284, sunflower 228, kedama 28] | drops 2573 | shots 34 | bullets 2272
+cards: spirit 1.38/3 meter 87 grazes 343 | hand: healing
 -- the boss approaches
 == tick /run:1 fixed x1
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake warning t=4:00 fixed=14401 | hp 205/205 lv 34 xp 473/615 kills 7935 | pos -2066,-2685
+lake warning t=4:00 fixed=14401 | hp 205/205 lv 34 xp 106/615 kills 7970 | pos 2767,-5024
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 993 [sunflower 215, yinyang 285, fairy 283, phantom 199, kedama 11] | drops 2559 | shots 36 | bullets 2357
-cards: spirit 2.00/3 meter 70 grazes 330 | hand: healing
+enemies 995 [phantom 187, yinyang 268, fairy 284, sunflower 228, kedama 28] | drops 2573 | shots 33 | bullets 2270
+cards: spirit 1.38/3 meter 87 grazes 343 | hand: healing
+-- the swarm at the warning:
++-------------------------------------------+
+|*f*Y ***Y * **** *  Y ssYsYs*f*p* *Y*  * Y |
+|f*pp******f** *** * *s*sYsf*sf * ****Y **sY|
+|fY***** ************ Y*YYY * s*Yf*p*** fY  |
+|fs***Y******* * *-****Y*Ysf f*fY***Y*s*  * |
+|*s******s****  ******* *-s*Ys YYYs****Y  **|
+|fff*Y ******s** ** *******Y**s**Y***p * *  |
+|YsYs*******Y*********@*******Y*Y*  * Y** f |
+| f s *p***pY************ * **Y**** **** *  |
+|Y***p*sY*YYYYYfsp******** ***Y*****  *Y** f|
+| ****sYfYYYYYssfssp********* ***** *** ***s|
+|*s*sYYpYYsYssYsYsYYsY***p******** s Y****f*|
+|fYsYYYYYYYsYYYYYYYsYYY**********Y*Y***   Y |
+|ffYsssYYYYYssYfpYpYYYYY***p*** s***Y** ***Y|
++-------------------------------------------+
 == tick /run:1 fixed x10
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake dialogue t=4:02 fixed=14560 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2201,-2458
+lake dialogue t=4:02 fixed=14565 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2833,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2562 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 overlay: vn
+-- dialogue 1/6 Reimu (left): The fog is thicker than usual. And colder. Much colder.
 == play /run:1/vn vn:next
 vn:next
   . scene#1.scene index 0 -> 1 (apply vn:next)
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake dialogue t=4:02 fixed=14560 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2201,-2458
+lake dialogue t=4:02 fixed=14565 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2833,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2562 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 overlay: vn
 == play /run:1/vn vn:next
 vn:next
   . scene#1.scene index 1 -> 2 (apply vn:next)
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake dialogue t=4:02 fixed=14560 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2201,-2458
+lake dialogue t=4:02 fixed=14565 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2833,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2562 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 overlay: vn
 == play /run:1/vn vn:next
 vn:next
   . scene#1.scene index 2 -> 3 (apply vn:next)
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake dialogue t=4:02 fixed=14560 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2201,-2458
+lake dialogue t=4:02 fixed=14565 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2833,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2562 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 overlay: vn
 == play /run:1/vn vn:next
 vn:next
   . scene#1.scene index 3 -> 4 (apply vn:next)
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake dialogue t=4:02 fixed=14560 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2201,-2458
+lake dialogue t=4:02 fixed=14565 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2833,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2562 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 overlay: vn
 == play /run:1/vn vn:next
 vn:next
   . scene#1.scene index 4 -> 5 (apply vn:next)
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake dialogue t=4:02 fixed=14560 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2201,-2458
+lake dialogue t=4:02 fixed=14565 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2833,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2562 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 overlay: vn
 == play /run:1/vn vn:next
 vn:next
@@ -155,62 +172,116 @@ vn:next
     . -/run:1/vn.scope (apply vn:closed)
     . clock:game.scale 0/1 -> 1/1 (apply vn:closed)
     . run#2.run phase dialogue -> boss, overlay vn -> none (apply vn:closed)
-    . +boss#20 {boss} (apply vn:closed)
+    . +boss#21 {boss} (apply vn:closed)
     spell:start index=0
-      . boss#20.boss pid  -> spell#21, t1 14610 -> 14600, sway false -> true (apply spell:start)
-      process:spell pid=spell#21 state=intro
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+      . boss#21.boss pid  -> spell#22, hitsAtStart 0 -> 1, t1 14610 -> 14600, sway false -> true (apply spell:start)
+      process:spell pid=spell#22 state=intro
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake boss t=4:02 fixed=14560 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2201,-2458
+lake boss t=4:02 fixed=14565 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2833,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2562 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 boss cirno: spell 1/3 "Ice Sign “Icicle Fall”" hp 2800/2800 results []
 -- spell card 1; bullets on the field: 0
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake boss t=4:02 fixed=14561 | hp 205/205 lv 34 xp 473/615 kills 8035 | pos -2202,-2461
+lake boss t=4:02 fixed=14566 | hp 198/205 lv 34 xp 106/615 kills 8115 | pos 2832,-5105
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2561 | shots 44 | bullets 0
-cards: spirit 1.63/3 meter 42 grazes 338 | hand: healing
+enemies 0 [] | drops 2578 | shots 29 | bullets 0
+cards: spirit 1.00/3 meter 76 grazes 364 | hand: healing, barrier
 boss cirno: spell 1/3 "Ice Sign “Icicle Fall”" hp 2800/2800 results []
+{"boss":"Cirno","spell":"1/3 Ice Sign “Icicle Fall”","hp":"[====================] 2800/2800","bonusTime":41.3,"results":[]}
+-- spell card 1, a few seconds in:
+{"boss":"Cirno","spell":"1/3 Ice Sign “Icicle Fall”","hp":"[========            ] 1106/2800","bonusTime":34.7,"results":[]}
++-------------------------------------------+
+|   -            * * * ######               |
+|        -      ** *##** *  *##*# * -       |
+|-           - *$#*** *   * *  **#*         |
+|     $        *#* -*-B** *   --  **        |
+|              * ****  **** ** ****#*       |
+|             ##* * **** ****   *   #       |
+|             #  *    @  * -* *** **#       |
+|             ## *** ** ***** ***** #       |
+|              #**  * ****    *   **#       |
+|      $        ##* *** ***   - *###        |
+|-               ##** *   * * *#*#$*        |
+|          $   *   **##*#*######            |
+|       $-          ***         -           |
++-------------------------------------------+
 -- spell card 2; bullets on the field: 0
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake boss t=4:22 fixed=15764 | hp 205/205 lv 34 xp 473/615 kills 8078 | pos -2187,-2357
+lake boss t=4:15 fixed=15369 | hp 205/205 lv 34 xp 106/615 kills 8139 | pos 2798,-5103
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 8 [fairy 5, kedama 3] | drops 2558 | shots 59 | bullets 0
-cards: spirit 2.88/3 meter 57 grazes 373 | hand: healing
+enemies 9 [kedama 5, fairy 4] | drops 2570 | shots 59 | bullets 0
+cards: spirit 1.30/3 meter 20 grazes 380 | hand: healing
 boss cirno: spell 2/3 "Freeze Sign “Perfect Freeze”" hp 3400/3400 results [captured]
+{"boss":"Cirno","spell":"2/3 Freeze Sign “Perfect Freeze”","hp":"[====================] 3400/3400","bonusTime":46.3,"results":["captured"]}
+-- spell card 2, a few seconds in:
+{"boss":"Cirno","spell":"2/3 Freeze Sign “Perfect Freeze”","hp":"[=========           ] 1467/3400","bonusTime":39.7,"results":["captured"]}
++-------------------------------------------+
+|           *****#*###*#*#   *  -           |
+|         - *#******    ****#            -  |
+|$        *$********   B   *#*#*   -    -   |
+|       - ********     *    -*#*            |
+|      -  #*  * *         ** - #           -|
+|        ##    *    -*****   * #            |
+|      - ## *   *   * @** **   #            |
+|         #   *  ***  * -*     -           -|
+|       - ##     ** --*-*+    #             |
+| $         *# * *          --           -  |
+|            #### - -  - -###$              |
+|  $  $    *   * #*######                   |
+|                $                          |
++-------------------------------------------+
 -- spell card 3; bullets on the field: 0
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake boss t=4:34 fixed=16492 | hp 205/205 lv 34 xp 473/615 kills 8107 | pos -2133,-2437
+lake boss t=4:27 fixed=16114 | hp 205/205 lv 34 xp 106/615 kills 8170 | pos 2871,-5115
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 9 [kedama 5, fairy 4] | drops 2558 | shots 59 | bullets 0
-cards: spirit 3.00/3 meter 56 grazes 384 | hand: healing
+enemies 8 [kedama 6, fairy 2] | drops 2569 | shots 59 | bullets 0
+cards: spirit 3.00/3 meter 82 grazes 398 | hand: healing
 boss cirno: spell 3/3 "Snow Sign “Diamond Blizzard”" hp 4000/4000 results [captured, captured]
--- most bullets on the field during the fight: 423
+{"boss":"Cirno","spell":"3/3 Snow Sign “Diamond Blizzard”","hp":"[====================] 4000/4000","bonusTime":51.3,"results":["captured","captured"]}
+-- spell card 3, a few seconds in:
+{"boss":"Cirno","spell":"3/3 Snow Sign “Diamond Blizzard”","hp":"[========            ] 1696/4000","bonusTime":44.7,"results":["captured","captured"]}
++-------------------------------------------+
+|      -* - ***-***####k**#*       -        |
+|     *   *  #*#* ***  * ****#-   **     -  |
+| $    *-  **# * * **** *** *##             |
+|     -    ## *******B**-*** * *    *       |
+|      *  #*   **- * ******   -*#  *    * - |
+|    *-   *   *  * *    **     -# *  *      |
+|        **    * * * *@* ** * **#           |
+|     -   ##*   *    **  -    *#*     *   - |
+|          #****       --**   ##            |
+| $$    -   ###*           -#*# *        -  |
+|             ##**  *   *-### $ *           |
+|   $  $  -      #####*###                  |
+|                 k                         |
++-------------------------------------------+
+-- most bullets on the field during the fight: 384
 -- cleared
-meta: coins 0 (lifetime 0) | runs 1 clears 0 best 0s/0 kills | active /run:1
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake over(clear) t=4:47 fixed=17274 | hp 205/205 lv 34 xp 516/615 kills 8135 | pos -2065,-2632
+lake over(clear) t=4:40 fixed=16872 | hp 205/205 lv 34 xp 107/615 kills 8196 | pos 2695,-4959
 weapons: amulet8 border3 needle8 orbs8 | passives: magnet1 power2 grimoire3 clock1
-enemies 0 [] | drops 2486 | shots 59 | bullets 0
-cards: spirit 2.54/3 meter 18 grazes 402 | hand: healing
--- meta: coins 847 (lifetime 847) | runs 1 clears 1 best 287s/8135 kills | active -
+enemies 0 [] | drops 2502 | shots 59 | bullets 0
+cards: spirit 3.00/3 meter 90 grazes 410 | hand: healing
+-- meta: coins 874 (lifetime 874) | runs 1 clears 1 [lake] best 280s/8196 kills | active -
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
-last run: clear at 287s, lv 34, 8135 kills, +847 coins (new: time, kills, level, first clear)
+last run: lake clear at 280s, lv 34, 8196 kills, +874 coins (new: time, kills, level, first clear)
 "
 `;

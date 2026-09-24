@@ -77,10 +77,11 @@ README.md is written. If it is not there yet, stop and say so.
 - Placeholder art only: shapes, colours, text. Bosses and characters are
   Touhou-style (it is a private fan project); keep names in one content
   file so they can change.
-- Determinism: the simulation replays exactly from its log. Tests run under
-  bun and the game runs in Chrome; per the kernel's math dial, pick
-  `portable` if you want Chrome-recorded runs to replay in `bun test`, and
-  say which you chose and why in NOTES.md.
+- Determinism: the simulation replays exactly from its log.
+- Chrome is only a renderer: the game runs in Chrome, and it is verified
+  through a test renderer under bun (ASCII art, small pictures or trimmed
+  JSON of the same kernel state the Pixi renderer reads). Nothing in
+  testing or verification runs Chrome.
 
 ## Milestones, in order
 
@@ -123,14 +124,15 @@ automation garden, metroidvania hub.
 ## Tests
 
 Use the kernel's harness. For each milestone: a scripted playthrough with a
-transcript snapshot (the game writes a text render of its state), a replay
+transcript snapshot (the game's test renderer writes its state as text), a replay
 verification of that session, and a timing print (ms per tick at the
 milestone's target load). Bots driven by `options()` are welcome.
 
 ## Done means
 
 - `bun test` and `tsc --noEmit` pass; `bun run dev` serves a playable game.
-- The milestones you reached are playable in Chrome end to end.
+- The milestones you reached are playable in Chrome end to end (the
+  owner's manual check).
 - `NOTES.md` holds your reporting.
 - Everything is committed.
 

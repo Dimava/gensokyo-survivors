@@ -7,6 +7,7 @@ import { harness } from "gamebones";
 import { destination } from "../src/content/expeditions.ts";
 import { loadGame } from "../src/sim/game.ts";
 import { fixtureGame, render } from "./helpers.ts";
+import { renderExpeditions } from "../src/view/text-renderer.ts";
 
 describe("M5 idle expeditions", () => {
   test("send, come back after real time, claim; refusals; recall", () => {
@@ -21,12 +22,14 @@ describe("M5 idle expeditions", () => {
     expect(k.rejections.at(-1)?.reason).toBe("Marisa is already away");
     h.play("/", "expedition:send", { who: "daiyousei", dest: "errand" });
     h.play("/", "expedition:send", { who: "yukari", dest: "festival" });
+    h.note(renderExpeditions(k));
     const trips = () => v.derived("trips").map((t) => `${t.expedition.who}:${t.expedition.back ? "back" : "away"}`);
     const tripOf = (who: string) => v.derived("trips").find((t) => t.expedition.who === who)!.id;
 
     // The game was closed for 10 minutes: the errand is back, the village trip is not.
     h.play("/", "time:resumed", { elapsed: 600 });
     expect(trips()).toEqual(["marisa:away", "daiyousei:back", "yukari:away"]);
+    h.note(renderExpeditions(k));
     h.play("/", "expedition:claim", { trip: tripOf("marisa") });
     expect(k.rejections.at(-1)?.reason).toBe("they are not back yet");
     const coins = v.derived("wallet").wallet.coins;

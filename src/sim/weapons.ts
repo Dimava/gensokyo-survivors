@@ -2,7 +2,7 @@
 // shared by weapons and cards: player shots are computable too (straight
 // lines from their spawn parameters), checked against the spatial grid.
 
-import { atan2, cos, sin, type Ctx, type EntityOf } from "gamebones";
+import type { Ctx, EntityOf } from "gamebones";
 import { ENEMIES } from "../content/enemies.ts";
 import { WEAPONS, WEAPON_INDEX, weaponDef, type WeaponStats } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
@@ -51,13 +51,13 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
         const boss = ctx.derived("boss");
         if (boss && bossVulnerable(boss, t)) {
           bossPos(boss, t, bp);
-          base = atan2(bp.y - body.y, bp.x - body.x);
-        } else if (i >= 0) base = atan2(e.col("y")[i]! - body.y, e.col("x")[i]! - body.x);
-        else base = atan2(body.fy, body.fx);
+          base = Math.atan2(bp.y - body.y, bp.x - body.x);
+        } else if (i >= 0) base = Math.atan2(e.col("y")[i]! - body.y, e.col("x")[i]! - body.x);
+        else base = Math.atan2(body.fy, body.fx);
       } else if (def.aim === "ring") {
         base = ctx.rng("weapons").float() * TAU;
       } else {
-        base = atan2(body.fy, body.fx);
+        base = Math.atan2(body.fy, body.fx);
       }
       const spread = def.aim === "ring" ? TAU : (s.spread ?? 0.2) * Math.max(1, count - 1);
       for (let k = 0; k < count; k++) {
@@ -65,8 +65,8 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
         shots.add({
           x0: body.x,
           y0: body.y,
-          vx: cos(a) * speed,
-          vy: sin(a) * speed,
+          vx: Math.cos(a) * speed,
+          vy: Math.sin(a) * speed,
           t0: t,
           dieAt: t + (s.life ?? 60),
           dmg,
@@ -209,8 +209,8 @@ export function stepOrbits(ctx: C): number {
     const hp = e.col("hp");
     for (let k = 0; k < count; k++) {
       const a = t * (s.spin ?? 0.06) + (TAU * k) / count;
-      const ox = body.x + cos(a) * dist;
-      const oy = body.y + sin(a) * dist;
+      const ox = body.x + Math.cos(a) * dist;
+      const oy = body.y + Math.sin(a) * dist;
       const found = enemyGrid.query(ox, oy, size + MAX_ENEMY_R);
       for (let j = 0; j < found; j++) {
         const i = enemyGrid.hits[j]!;

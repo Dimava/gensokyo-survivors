@@ -10,6 +10,7 @@ import { Pack } from "../src/sim/pack.ts";
 import { PACKS } from "../src/content/gacha.ts";
 import { RARITIES } from "../src/content/cards.ts";
 import { fixtureGame, render } from "./helpers.ts";
+import { renderPack, renderTree } from "../src/view/text-renderer.ts";
 
 describe("M4 meta progression", () => {
   test("scripted: tree, deck, packs with pity, a run that uses the loadout, save and load", () => {
@@ -28,6 +29,7 @@ describe("M4 meta progression", () => {
     h.play("/", "tree:buy", { node: "spark" });
     expect(k.rejections.at(-1)?.reason).toBe("Borrowed Hakkero is fully upgraded");
     expect(k.options("/", "tree:buy").length).toBeGreaterThan(0);
+    h.note(renderTree(k));
 
     // Packs: rarity rolls on the meta's own gacha stream, pity guarantees SR+ every 8 packs.
     const pity = PACKS[0]!.pity;
@@ -40,6 +42,7 @@ describe("M4 meta progression", () => {
       since = high ? 0 : since + 1;
       expect(since).toBeLessThan(pity.every);
       if (opening.pulls.some((p) => p.pity)) pityHit = true;
+      if (i === 0) h.note(renderPack(k));
       // A second pack cannot open while one is on screen.
       if (i === 0) {
         h.play("/", "pack:buy", { pack: "omikuji" });

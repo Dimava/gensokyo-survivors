@@ -8,7 +8,7 @@
 // skipped (one comparison) until then. Far bullets cost nothing; bullets
 // hugging the player are checked every tick.
 
-import { atan2, cos, sin, type Ctx } from "gamebones";
+import type { Ctx } from "gamebones";
 import { BULLET_STYLES, styleIndex, type EmitterDef } from "../content/patterns.ts";
 import type { RS0 } from "./run.ts";
 import { BULLET_CULL, PLAYER } from "./tuning.ts";
@@ -22,9 +22,9 @@ export function emitPattern(ctx: C, em: EmitterDef, ox: number, oy: number, voll
   const b = ctx.packed("bullets");
   const t0 = ctx.now("danmaku");
   const { body } = ctx.derived("player");
-  const aimAt = (): number => atan2(body.y - oy, body.x - ox);
+  const aimAt = (): number => Math.atan2(body.y - oy, body.x - ox);
   const add = (a: number, speed: number, style: string, accel?: number, vEnd?: number): void => {
-    b.add({ x: ox, y: oy, t0, dx: cos(a), dy: sin(a), speed, accel, vEnd, style: styleIndex(style) });
+    b.add({ x: ox, y: oy, t0, dx: Math.cos(a), dy: Math.sin(a), speed, accel, vEnd, style: styleIndex(style) });
   };
   switch (em.pattern) {
     case "ring": {
@@ -85,14 +85,14 @@ export function emitPattern(ctx: C, em: EmitterDef, ox: number, oy: number, voll
           x: ox,
           y: oy,
           t0,
-          dx: cos(a),
-          dy: sin(a),
+          dx: Math.cos(a),
+          dy: Math.sin(a),
           speed: v0,
           accel: -v0 / p.stopAt,
           vEnd: 0,
           turnAt: p.turnAt,
-          dx2: cos(a2),
-          dy2: sin(a2),
+          dx2: Math.cos(a2),
+          dy2: Math.sin(a2),
           v2: p.v2,
           style: styleIndex(p.style),
           style2: styleIndex(p.frozenStyle ?? p.style),

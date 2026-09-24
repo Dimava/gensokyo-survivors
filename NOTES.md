@@ -1,10 +1,18 @@
 # NOTES: Gensokyo Survivors on gamebones v2
 
 Reporting per AGENT.md. PRD ids point into `D:\bag\protoprd\gamebones\PRD.md`
-(kernel) unless marked "game PRD". Measured on the owner's Windows machine:
-bun 1.4.0 (JavaScriptCore), Chrome 153 (V8) through playwright-core.
+(kernel) unless marked "game PRD". Measured on the owner's Windows machine
+with bun 1.4.0.
 
-Milestones reached: **M1, M2, M3, M4**. M5 was not started (see Deviations).
+Milestones reached: **M1, M2, M3, M4**, and from M5: **idle expeditions** and
+a **second stage** (Forest of Magic, boss Rumia) that opens once the first is
+cleared.
+
+Verification follows kernel PRD D56: Chrome is only a renderer. Every test
+runs under bun and reads the game through the test renderer
+(`src/view/text-renderer.ts`: ASCII playfield, a picture of the shrine tree,
+trimmed JSON for overlays and menus). Playing in Chrome end to end is the
+owner's manual check.
 
 ## Kernel friction
 
@@ -46,7 +54,7 @@ kernel was modified.
    `level: cur.level + 1` through `ctx.mut`, then recorded `cur.level + 1` for
    the reveal: on the second duplicate in one pack `cur` was the mutated
    copy, so the reveal said "Level up to 4" (max is 3) while the save said 3.
-   The M4 transcript showed it and I missed it until a browser screenshot did.
+   The M4 transcript showed it and I missed it until I saw it while playing.
    Workaround: copy numbers out before writing (`src/sim/meta.ts`). The
    README documents the `related()` version of this trap; `req/get/q` have it
    too and it deserves the same line in section 16.
@@ -83,15 +91,14 @@ kernel was modified.
     same key would already remove most of it.
 11. **Perf fixtures have no replay-safe way in** (D23, D38). Loading 1,500
     enemies and 3,000 bullets for timings writes the packed stores outside
-    any dispatch (`src/sim/stress.ts`); that works but silently makes the log
+    any dispatch (`test/stress.ts`); that works but silently makes the log
     unreplayable. A harness "fixture dispatch" for packed stores, or a store
     `seed()` hook that runs inside `setup`, would keep timing runs honest.
 12. **The log grows about 180 KB per minute of real play** (D30). Every
     change of held direction is an input record, and it also breaks the
     collapsing of identical tick records, so a record is roughly an input
-    plus a tick with a 16-character hash each. A Chrome session with the bot
-    logged 188 KB per minute; a bun expert-bot run 180 KB per minute. Fine
-    for bug reports, heavy for a leaderboard. Suggestions: delta-encode
+    plus a tick with a 16-character hash each; an expert-bot run logs about
+    190 KB per minute. Fine for bug reports, heavy for a leaderboard. Suggestions: delta-encode
     records, store hashes every N records, or let a scope declare "sticky"
     inputs.
 13. **Missing stdlib, built game-side** (D14, D24, D26, D53): a spatial index,
@@ -141,6 +148,12 @@ Pieces the kernel's stdlib should own, with where they live here:
   queueing thin input between ticks, autosave, pause as "stop ticking").
 - **Thin input** (D7): `src/view/input.ts` (keys and pointer to a quantized
   `move {x, y}` and named actions).
+- **Test renderer** (D25, D38, D56): `src/view/text-renderer.ts`, a second
+  renderer beside the Pixi one reading the same state: `renderField` (ASCII
+  playfield centred on the player, glyphs from the enemy table),
+  `renderTree` (the board as a picture), `renderLevelUp`, `renderHand`,
+  `renderBoss`, `renderDialogue`, `renderPack`, `renderExpeditions`
+  (trimmed JSON). The milestone snapshots show it at the key moments.
 - **Bots over options()** (D21, D38): `src/sim/bot.ts`, a lookahead steering
   bot that evaluates future bullet positions exactly (computable state makes
   this cheap), with novice and expert settings for balance sweeps.
@@ -149,16 +162,15 @@ Pieces the kernel's stdlib should own, with where they live here:
 
 | Measure | Result |
 |---|---|
-| M1: ms per tick, 1,500 enemies (bun, `test/m1-survivors.test.ts`) | **1.0 ms** |
-| M2: ms per tick, 3,000 bullets + 1,500 enemies (bun, `test/m2-boss.test.ts`) | **1.6 ms** |
-| Same loads in Chrome 153 (headless, GPU, `bun scripts/browse.ts fps` with `GPU=1`) | 1,500 enemies: **120 fps**, 1.3-2.2 ms/tick; + 3,000 bullets: **116-120 fps**, 2.7-3.3 ms/tick |
-| Normal play, whole run (bot, bun) | 0.5-0.8 ms per tick |
-| Save, fresh profile | 772 bytes |
-| Save, profile after a run (meta only) | about 1.1 KB |
-| Save, mid-run at its largest (4:00, 1,000 enemies, 2,316 bullets, 1,223 drops) | 658 KB (packed stores as base64) |
-| Log per minute of play | about 180-190 KB (bun expert bot 180 KB/min; Chrome session 188 KB/min, 2,227 records) |
-| Replaying a Chrome-recorded minute under bun (`test/replay-chrome.test.ts`) | 3,744 ticks in about 1 s, every hash matching |
-| Whole test suite | 8 tests, about 45 s (M2's playthrough and its replay dominate) |
+| M1: ms per tick, 1,500 enemies (`test/m1-survivors.test.ts`) | **1.0-1.3 ms** |
+| M2: ms per tick, 3,000 bullets + 1,500 enemies (`test/m2-boss.test.ts`) | **1.5-3.2 ms** (varies with machine load) |
+| Normal play, whole run (bot) | 0.5-0.8 ms per tick (lake), 1.2-1.6 ms (forest, denser) |
+| Frame rate | not measured by the tests: rendering is Chrome's job and outside what bun can verify; at the numbers above the simulation leaves more than 13 ms of each 16.7 ms frame to Pixi |
+| Save, fresh profile | 825 bytes |
+| Save, profile after a run (meta only) | about 1.2 KB |
+| Save, mid-run at its largest (4:00, 998 enemies, 2,357 bullets, 1,298 drops) | 672 KB (packed stores as base64) |
+| Log per minute of play | about 190 KB (expert bot, `bun scripts/numbers.ts`: 1.63 MB, 19,447 records over a 7.5-minute clear) |
+| Whole test suite | 9 tests, about 45 s (M2's playthrough and its replay dominate) |
 
 Balance (bot runs, `bun scripts/balance.ts`): the novice bot dies at 3:00-3:50
 on its first runs and clears the boss on the third run after two or three
@@ -168,10 +180,6 @@ expert bot clears its first run. A run pays 50-120 donations when lost and
 
 ## Deviations
 
-- **Math dial: `portable`.** Chosen so logs recorded in Chrome replay under
-  bun, which `test/replay-chrome.test.ts` proves with a real Chrome session.
-  The simulation uses `pmath` (`sin`, `cos`, `atan2`) and `+ - * / sqrt`;
-  swarm spawn directions use a polynomial unit vector (`unitFromTurn`).
 - **Spell cards do not end on timeout.** In Touhou a timed-out spell simply
   ends. Here the timer is the *bonus* timer: when it runs out the bonus is
   lost, the boss fires a third faster, and the card must still be broken by
@@ -187,17 +195,13 @@ expert bot clears its first run. A run pays 50-120 donations when lost and
 - **The run is `/run:<n>`,** keyed by a run counter, so each run's rng
   streams differ (a child's streams are seeded from parent seed + slot +
   key).
-- **One stage, one boss (Cirno, three spell cards).** The PRD's pitch
-  includes a metroidvania hub, VN on top and five more games (game PRD D1,
-  D3); the brief scopes those to M5. Stages, bosses, spells, enemies,
-  weapons, passives, cards, tree nodes and packs are all rows, so a second
-  stage is data plus a dialogue script.
-- **M5 not started.** M1 to M4 took the budget; I preferred to finish the
-  bar on them (a second pass for balance, the pack reveal bug, UI polish)
-  over starting a stretch system.
+- **Two stages, two bosses** (Cirno and Rumia, three spell cards each). The
+  second stage was data (a stage row, a boss row, a dialogue script, one
+  enemy row) plus the unlock rule and a save migration for per-stage clears.
+- **M5 taken so far:** idle expeditions (the smallest D3 item that fits the
+  kernel's elapsed clocks) and the second stage. Not done: route map,
+  fishing, bonds, automation garden, metroidvania hub.
 - **Placeholder art** is generated shapes (Pixi Graphics into one atlas) and
   SVG busts for the dialogue; all names are in `src/content/names.ts`.
-- **Debug hooks kept in the build:** `window.__gs` (host and state, used by
-  the browser scripts), `?bot=1` (the bot plays), `?turbo=N`,
-  `?screen=menu`, and `?stress=E,B` (loads the field for fps measurement;
-  such a run no longer replays).
+- **Debug hooks kept in the build:** `window.__gs` (host and state, for the
+  browser console), `?bot=1` (the bot plays), `?turbo=N`, `?screen=menu`.

@@ -2,15 +2,15 @@
 
 import { createKernel, type Kernel } from "gamebones";
 import { Meta, newProfile } from "../src/sim/meta.ts";
-import { MATH, activeRun, renderMeta, renderRun, type Game, type RunPath } from "../src/sim/game.ts";
+import { activeRun, type Game, type RunPath } from "../src/sim/game.ts";
+import { renderMeta, renderRun } from "../src/view/text-renderer.ts";
 import { cardDef } from "../src/content/cards.ts";
-export { stress } from "../src/sim/stress.ts";
+export { stress } from "./stress.ts";
 
 /** A profile with extra cards in the deck (scenario fixture, D38). */
 export function fixtureGame(seed: string, opts: { cards?: string[]; coins?: number; tree?: Record<string, number>; onlyDeck?: boolean; sinceHigh?: number } = {}): Game {
   return createKernel(Meta, {
     seed,
-    math: MATH,
     setup: (ctx) => {
       newProfile(ctx);
       if (opts.onlyDeck) for (const o of ctx.q("owned")) ctx.mut(o, "owned").inDeck = false;

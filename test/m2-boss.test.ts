@@ -7,6 +7,7 @@ import { harness, type TraceNode } from "gamebones";
 import { activeRun, runView, type RunPath } from "../src/sim/game.ts";
 import { botCard, botMove, botPick, SKILL } from "../src/sim/bot.ts";
 import { fixtureGame, msPerTick, render, stress } from "./helpers.ts";
+import { renderBoss, renderDialogue, renderField } from "../src/view/text-renderer.ts";
 
 function has(n: TraceNode, event: string): boolean {
   return n.event === event || n.children.some((c) => has(c, event));
@@ -59,6 +60,7 @@ describe("M2 boss", () => {
     h.note("the boss approaches");
     h.tick(path, "fixed", 1);
     expect(v.derived("state").run.phase).toBe("warning");
+    h.note(`the swarm at the warning:\n${renderField(k, path)}`);
     while (v.derived("state").run.phase === "warning") {
       step();
       k.tick(path, "fixed");
@@ -69,6 +71,7 @@ describe("M2 boss", () => {
     const game = v.now("game");
     h.tick(path, "fixed", 10);
     expect(v.now("game")).toBe(game);
+    h.note(renderDialogue(k, path));
     while (k.paths().includes(vnPath)) h.play(vnPath, "vn:next", {});
     expect(v.derived("state").run.phase).toBe("boss");
     expect(v.derived("boss")).toBeDefined();
@@ -76,6 +79,7 @@ describe("M2 boss", () => {
     // The fight: sample the transcript at each spell card.
     let spell = -1;
     let maxBullets = 0;
+    let shotAt = -1;
     let guard = 0;
     while (activeRun(k) && v.derived("state").run.phase !== "over" && guard++ < 60 * 60 * 6) {
       step();
@@ -83,7 +87,11 @@ describe("M2 boss", () => {
       const b = v.derived("boss");
       if (b && b.boss.spell !== spell) {
         spell = b.boss.spell;
-        h.note(`spell card ${spell + 1}; bullets on the field: ${v.packed("bullets").count}\n${render(k)}`);
+        h.note(`spell card ${spell + 1}; bullets on the field: ${v.packed("bullets").count}\n${render(k)}\n${renderBoss(k, path)}`);
+        shotAt = v.now("action") + 400;
+      }
+      if (b && v.now("action") === shotAt) {
+        h.note(`spell card ${spell + 1}, a few seconds in:\n${renderBoss(k, path)}\n${renderField(k, path)}`);
       }
       if (b) maxBullets = Math.max(maxBullets, v.packed("bullets").count);
     }

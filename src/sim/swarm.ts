@@ -83,31 +83,10 @@ export function spawnRush(ctx: C, kind: number, n: number): void {
   }
 }
 
-/**
- * A unit vector for a fraction of a full turn, without trigonometry: the
- * swarm only needs directions, and polynomial sin/cos keeps the rule portable
- * and cheap. Accurate to about 1e-3, which is plenty for spawn angles.
- */
+/** A unit vector for a fraction of a full turn. */
 export function unitFromTurn(turn: number): [number, number] {
-  const a = (turn - Math.floor(turn)) * 4; // quadrant position 0..4
-  const q = Math.floor(a);
-  const f = a - q; // 0..1 within the quadrant
-  // Bhaskara-style quarter wave: s ~ sin(f * pi/2), c ~ cos(f * pi/2).
-  const s = (f * (3 - f * f)) / 2;
-  const c = ((1 - f) * (3 - (1 - f) * (1 - f))) / 2;
-  const len = Math.sqrt(s * s + c * c);
-  const x = c / len;
-  const y = s / len;
-  switch (q) {
-    case 0:
-      return [x, y];
-    case 1:
-      return [-y, x];
-    case 2:
-      return [-x, -y];
-    default:
-      return [y, -x];
-  }
+  const a = turn * Math.PI * 2;
+  return [Math.cos(a), Math.sin(a)];
 }
 
 /** Chase, knockback, separation, leash. */

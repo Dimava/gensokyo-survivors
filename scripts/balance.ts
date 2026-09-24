@@ -2,7 +2,8 @@
 // donations between runs (cheapest affordable shrine node first, a pack when
 // nothing else is affordable). Prints a few lines per run.
 //   bun scripts/balance.ts [runs=8] [seed=bal]      (DODGE=0..1 weakens the bot)
-import { newGame, activeRun, renderRun } from "../src/sim/game.ts";
+import { newGame, activeRun } from "../src/sim/game.ts";
+import { renderRun } from "../src/view/text-renderer.ts";
 import { playRun, SKILL } from "../src/sim/bot.ts";
 import { TREE } from "../src/content/tree.ts";
 

@@ -10,6 +10,7 @@ import { handCards, spiritAt } from "../src/sim/cards.ts";
 import { botMove, botPick, SKILL } from "../src/sim/bot.ts";
 import { weaponStats } from "../src/sim/weapons.ts";
 import { fixtureGame, render } from "./helpers.ts";
+import { renderHand } from "../src/view/text-renderer.ts";
 
 function find(n: TraceNode, pred: (n: TraceNode) => boolean): TraceNode | undefined {
   if (pred(n)) return n;
@@ -32,6 +33,7 @@ describe("M3 skill cards", () => {
 
     // The opening hand holds one card; Spirit starts at 1, both cards cost 2.
     expect(hand()).toHaveLength(1);
+    h.note(renderHand(k, path));
     const first = hand()[0]!;
     h.play(path, "card:play", { card: cardId(first) });
     expect(k.rejections.at(-1)?.reason).toBe("needs 2 Spirit (you have 1)");
@@ -58,6 +60,7 @@ describe("M3 skill cards", () => {
     while (hand().length < 2 && guard++ < 60 * 150) step();
     expect(hand().length).toBe(2);
     expect(v.derived("player").progress.grazes).toBeGreaterThan(0);
+    h.note(renderHand(k, path));
     h.note(`the graze meter drew the second card after ${v.derived("player").progress.grazes} grazes`);
     while (spiritAt(v, v.now("action")) < 2) step();
 
