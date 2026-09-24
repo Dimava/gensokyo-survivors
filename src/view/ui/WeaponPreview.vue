@@ -2,8 +2,9 @@
 // A level-up card's picture of a weapon at the offered level: its projectile
 // standing as many times as that level fires it (amulets in their fan, knives
 // in their ring, orbs in their circle), in the in-game shapes (atlas.ts shots
-// and yin-yang orb, renderer.ts beam and border colours), with a calm wave
-// running through them. The border and the beam: one piece, sized by the level.
+// and yin-yang orb, renderer.ts beam and border colours), lightly animated
+// (speed ghosts, orbiting orbs, a pulse). The border and the beam: one piece,
+// bolder with level.
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { weaponDef, type WeaponDef, type WeaponStats } from "../../content/weapons.ts";
 import { prefs } from "../prefs.ts";
@@ -94,18 +95,25 @@ function glow(g: CanvasRenderingContext2D, x: number, y: number, r: number, alph
 /**
  * Where N pieces stand, and which way each points: a fan flying diagonally up
  * the card (amulets, needles), knives pointing out from a ring, orbs around
- * an oval. Shown big, for the look: not to scale with the game.
+ * a circle they orbit. Shown big, for the look: not to scale with the game.
  */
-function layout(def: WeaponDef, n: number): { x: number; y: number; a: number }[] {
+function layout(def: WeaponDef, n: number, t: number): { x: number; y: number; a: number }[] {
   const cx = W / 2;
   const cy = H / 2;
-  if (def.behaviour === "orbit" || def.aim === "ring") {
+  if (def.behaviour === "orbit") {
+    // Orbs circle close around the middle, a little apart, within the card's height.
     if (n === 1) return [{ x: cx, y: cy, a: 0 }];
-    const [rx, ry] = def.behaviour === "orbit" ? [52, 20] : [30, 26];
-    const start = def.behaviour === "orbit" && n % 2 === 0 ? Math.PI : -Math.PI / 2;
+    const r = Math.min(29, Math.max(26, 21 / Math.sin(Math.PI / n)));
     return [...Array(n).keys()].map((i) => {
-      const a = start + (TAU * i) / n;
-      return { x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry, a };
+      const a = t * 2 + (TAU * i) / n;
+      return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, a };
+    });
+  }
+  if (def.aim === "ring") {
+    if (n === 1) return [{ x: cx, y: cy, a: 0 }];
+    return [...Array(n).keys()].map((i) => {
+      const a = -Math.PI / 2 + (TAU * i) / n;
+      return { x: cx + Math.cos(a) * 30, y: cy + Math.sin(a) * 26, a };
     });
   }
   // The fan flies up and to the right, from a point off the card's lower left.
@@ -127,12 +135,6 @@ function layout(def: WeaponDef, n: number): { x: number; y: number; a: number }[
 /** How big each weapon's piece is drawn (its in-game shape scaled up). */
 const SIZE: Record<string, number> = { amulet: 1.4, needle: 1.8, knives: 1.4, orbs: 1.25 };
 
-/** The wave at piece `i` of `n`, 0..1: one sweep through them every 1.6 s, then a short rest. */
-function wave(t: number, i: number, n: number): number {
-  const q = ((t % 2.4) / 1.6) * (n + 1.5) - i;
-  return q > 0 && q < 1.5 ? Math.sin((q / 1.5) * Math.PI) : 0;
-}
-
 function paint(g: CanvasRenderingContext2D, t: number): void {
   const def = weaponDef(props.id);
   const s: WeaponStats = def.levels[props.level - 1] ?? def.levels[0]!;
@@ -153,13 +155,9 @@ function paint(g: CanvasRenderingContext2D, t: number): void {
       piece(g, def);
       g.restore();
     };
-    layout(def, n).forEach((p, i) => {
-      const w = wave(t, i, n);
+    layout(def, n, t).forEach((p, i) => {
       if (orbit) {
-        // Orbs: the wave lifts each a little and brightens it.
-        const y = p.y - w * 4;
-        glow(g, p.x, y, 12 * size, 0.35 * w);
-        draw(p.x, y, t * 1.5, 1);
+        draw(p.x, p.y, t * 1.5, 1);
         return;
       }
       // Shots hold still; speed ghosts stream back off each like a rocket's flame.
