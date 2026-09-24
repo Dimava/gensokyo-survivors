@@ -7,7 +7,7 @@ import { describe, expect, test } from "bun:test";
 import { formatTrace, harness, type TraceNode } from "gamebones";
 import { activeRun, runView } from "../src/sim/game.ts";
 import { handCards, spiritAt } from "../src/sim/cards.ts";
-import { botMove, botPick, SKILL } from "../src/sim/bot.ts";
+import { botSteer, botPick, SKILL, type BotInputs } from "../src/sim/bot.ts";
 import { weaponStats } from "../src/sim/weapons.ts";
 import { fixtureGame, render } from "./helpers.ts";
 import { renderHand } from "../src/view/text-renderer.ts";
@@ -47,13 +47,12 @@ describe("M3 skill cards", () => {
     expect(spiritAt(v, v.now("action"))).toBeCloseTo(2, 5);
 
     // Bot steering from here on; it grazes the sunflower fairies' shots, which draws the second card.
-    let last = { x: 0, y: 0 };
+    const last: BotInputs = { move: { x: 0, y: 0 } };
     const step = (): ReturnType<typeof k.tick> => {
       if (v.derived("state").run.overlay === "levelup") {
         k.dispatch(`${path}/levelup` as "/run:1/levelup", "levelup:pick", { index: botPick(k, path) });
       }
-      const m = botMove(k, path, SKILL.expert);
-      if (m.x !== last.x || m.y !== last.y) k.queue(path, "move", (last = m));
+      botSteer(k, path, last, SKILL.expert);
       return k.tick(path, "fixed");
     };
     let guard = 0;

@@ -8,7 +8,7 @@ import { harness } from "gamebones";
 import { ENEMIES, enemyIndex } from "../src/content/enemies.ts";
 import { stageDef } from "../src/content/stages.ts";
 import { activeRun, loadGame, runView, type Game, type RunPath } from "../src/sim/game.ts";
-import { botCard, botMove, botPick, SKILL } from "../src/sim/bot.ts";
+import { botCard, botSteer, botPick, SKILL, type BotInputs } from "../src/sim/bot.ts";
 import { PHASE } from "../src/sim/swarm.ts";
 import { FORMATION } from "../src/sim/tuning.ts";
 import { renderField } from "../src/view/text-renderer.ts";
@@ -20,7 +20,7 @@ const TREE = { core: 3, magnet1: 3, might1: 3, hp1: 3, spirit1: 3, greed1: 2, gr
 /** Plays uncaptured ticks with the expert bot steering (inputs still go to the log) until `stop` or `max` ticks. */
 function advance(k: Game, path: RunPath, max: number, stop: () => boolean = () => false): void {
   const p = path as "/run:1";
-  let last = { x: 0, y: 0 };
+  const last: BotInputs = { move: { x: 0, y: 0 } };
   for (let i = 0; i < max && !stop(); i++) {
     const run = runView(k, path).derived("state").run;
     if (run.overlay === "levelup") {
@@ -32,8 +32,7 @@ function advance(k: Game, path: RunPath, max: number, stop: () => boolean = () =
       continue;
     }
     if (i % 6 === 0) {
-      const m = botMove(k, path, SKILL.expert);
-      if (m.x !== last.x || m.y !== last.y) k.queue(p, "move", (last = m));
+      botSteer(k, path, last, SKILL.expert);
     }
     if (i % 20 === 0) {
       const c = botCard(k, path);

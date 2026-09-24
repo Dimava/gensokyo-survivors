@@ -11,7 +11,7 @@ import { activeRun, runView, type Game, type RunPath } from "./game.ts";
 import { spiritAt, handCards } from "./cards.ts";
 import { bossPos } from "./boss.ts";
 import { PHASE, enemyVelocity } from "./swarm.ts";
-import { BOSS } from "./tuning.ts";
+import { BOSS, PLAYER } from "./tuning.ts";
 
 export interface BotOptions {
   /** 0..1: how hard the bot dodges bullets (1 = its best). */
@@ -20,11 +20,13 @@ export interface BotOptions {
   cards?: boolean;
   /** Ticks between steering decisions (a human's reaction time; 1 = every tick). */
   reaction?: number;
+  /** Hold focus when it helps (botFocus); default true. */
+  focus?: boolean;
 }
 
 /** Two reference players for balance: a first-timer and a practised danmaku player. */
 export const SKILL = {
-  novice: { dodge: 0.2, reaction: 14 },
+  novice: { dodge: 0.2, reaction: 14, focus: false },
   expert: { dodge: 1, reaction: 1 },
 } as const satisfies Record<string, BotOptions>;
 
@@ -49,7 +51,8 @@ export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: num
   const td = v.now("danmaku");
   const px = p.body.x;
   const py = p.body.y;
-  const speed = 2.4 * stats.speed;
+  // Focused she moves at the base pace (rules.ts movePlayer).
+  const speed = PLAYER.speed * (p.ctrl.focus ? 1 : stats.speed);
   const dodge = opts.dodge ?? 1;
   // Nearby threats, gathered once.
   const e = v.packed("enemies");
@@ -157,6 +160,73 @@ export function botMove(k: Game, path: RunPath, opts: BotOptions = {}): { x: num
   return { x: Math.round(bx * 100), y: Math.round(by * 100) };
 }
 
+/**
+ * Focus thresholds. Dense: this many bullets within `denseR` turns focus on
+ * (slow, precise threading), fewer than `sparse` within `sparseR` lets it go.
+ * Boss: facing within `aimOn` radians of the boss turns it on (the facing
+ * weapons stay on her while strafing), beyond `aimOff` lets it go so moving
+ * can re-aim. `hold`: action ticks between changes, so it never flickers.
+ */
+const FOCUS_BOT = { dense: 5, denseR: 60, sparse: 2, sparseR: 80, aimOn: 0.5, aimOff: 1.1, hold: 20 };
+
+/**
+ * Whether the bot holds focus now: threading bullets close by, or in a boss
+ * fight while her facing points at the boss. Reads the current focus for
+ * hysteresis (tighter to turn on than to stay on) and holds each change
+ * FOCUS_BOT.hold ticks.
+ */
+export function botFocus(k: Game, path: RunPath): boolean {
+  const v = runView(k, path);
+  const run = v.derived("state").run;
+  const p = v.derived("player");
+  const was = p.ctrl.focus;
+  const t = v.now("action");
+  if (run.overlay !== "none" || run.phase === "over") return was;
+  if (t - p.ctrl.focusAt < FOCUS_BOT.hold) return was;
+  const px = p.body.x;
+  const py = p.body.y;
+  const td = v.now("danmaku");
+  const b = v.packed("bullets");
+  const r = was ? FOCUS_BOT.sparseR : FOCUS_BOT.denseR;
+  const need = was ? FOCUS_BOT.sparse : FOCUS_BOT.dense;
+  let n = 0;
+  for (let i = 0; i < b.count && n < need; i++) {
+    if (!b.pos(i, td, pos)) continue;
+    const dx = pos.x - px;
+    const dy = pos.y - py;
+    if (dx * dx + dy * dy < r * r) n++;
+  }
+  if (n >= need) return true;
+  const boss = v.derived("boss");
+  if (boss && run.phase === "boss") {
+    bossPos(boss, t, pos);
+    const a = Math.atan2(pos.y - py, pos.x - px) - Math.atan2(p.body.fy, p.body.fx);
+    const off = Math.abs(Math.atan2(Math.sin(a), Math.cos(a)));
+    if (off < (was ? FOCUS_BOT.aimOff : FOCUS_BOT.aimOn)) return true;
+  }
+  return false;
+}
+
+/** The bot's last sent inputs (so only changes are queued). */
+export interface BotInputs {
+  move: { x: number; y: number };
+}
+
+/**
+ * One steering decision as logged input: queues `move` and `focus` when they
+ * change (focus off when opts.focus is false). Shared by playRun, the tests and the ?bot=1 host.
+ */
+export function botSteer(k: Game, path: RunPath, last: BotInputs, opts: BotOptions = {}): void {
+  const p = path as "/run:1";
+  const m = botMove(k, path, opts);
+  if (m.x !== last.move.x || m.y !== last.move.y) {
+    k.queue(p, "move", m);
+    last.move = m;
+  }
+  const on = opts.focus !== false && botFocus(k, path);
+  if (on !== runView(k, path).derived("player").ctrl.focus) k.queue(p, "focus", { on });
+}
+
 /** Which level-up choice to take: grow weapons first, then new weapons, then passives. */
 export function botPick(k: Game, path: RunPath): number {
   const offer = k.view(`${path}/levelup` as "/").q("offer" as never)[0] as unknown as
@@ -222,7 +292,7 @@ export function playRun(k: Game, opts: BotOptions & { maxTicks?: number; onTick?
   const path = activeRun(k);
   if (!path) throw new Error("playRun: no active run; dispatch run:start first");
   const p = path as "/run:1";
-  let last = { x: 0, y: 0 };
+  const last: BotInputs = { move: { x: 0, y: 0 } };
   const max = opts.maxTicks ?? 60 * 60 * 10;
   let i = 0;
   for (; i < max; i++) {
@@ -234,11 +304,7 @@ export function playRun(k: Game, opts: BotOptions & { maxTicks?: number; onTick?
     } else if (overlay === "vn") {
       k.dispatch(`${p}/vn` as "/run:1/vn", "vn:next", {});
     } else {
-      const m = i % (opts.reaction ?? 1) === 0 ? botMove(k, path, opts) : last;
-      if (m.x !== last.x || m.y !== last.y) {
-        k.queue(p, "move", m);
-        last = m;
-      }
+      if (i % (opts.reaction ?? 1) === 0) botSteer(k, path, last, opts);
       if (opts.cards !== false && i % 20 === 0) {
         const c = botCard(k, path);
         if (c) k.queue(p, "card:play", { card: c });

@@ -5,7 +5,7 @@
 import { describe, expect, test } from "bun:test";
 import { harness, type TraceNode } from "gamebones";
 import { activeRun, runView, type RunPath } from "../src/sim/game.ts";
-import { botCard, botMove, botPick, SKILL } from "../src/sim/bot.ts";
+import { botCard, botSteer, botPick, SKILL, type BotInputs } from "../src/sim/bot.ts";
 import { fixtureGame, msPerTick, render, stress } from "./helpers.ts";
 import { renderBoss, renderDialogue, renderField } from "../src/view/text-renderer.ts";
 
@@ -24,15 +24,14 @@ describe("M2 boss", () => {
     const v = runView(k, path);
 
     // The bot plays the swarm (every decision is logged input); the transcript samples it.
-    let last = { x: 0, y: 0 };
+    const last: BotInputs = { move: { x: 0, y: 0 } };
     const step = (): void => {
       const overlay = v.derived("state").run.overlay;
       if (overlay === "levelup") {
         k.dispatch(`${path}/levelup` as "/run:1/levelup", "levelup:pick", { index: botPick(k, path) });
         return;
       }
-      const m = botMove(k, path, SKILL.expert);
-      if (m.x !== last.x || m.y !== last.y) k.queue(path, "move", (last = m));
+      botSteer(k, path, last, SKILL.expert);
       if (v.now("fixed") % 30 === 0) {
         const c = botCard(k, path);
         if (c) k.queue(path, "card:play", { card: c });

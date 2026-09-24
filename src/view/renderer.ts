@@ -27,7 +27,6 @@ import { PHASE } from "../sim/swarm.ts";
 import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { BOSS, PLAYER, SWARM } from "../sim/tuning.ts";
 import { buildAtlas, type Atlas } from "./atlas.ts";
-import { input } from "./input.ts";
 import { frameAt, loadSpriteArt, lookTexture, type SpriteArt } from "./art-textures.ts";
 import { prefs, type ArtStyle } from "./prefs.ts";
 import { ART_L2D, type SpriteRig } from "../art-l2d/index.ts";
@@ -750,7 +749,7 @@ export class Playfield {
     groupAlpha(this.playerLive, this.player.alpha);
     this.hitbox.position.set(p.body.x, p.body.y);
     // The hitbox and graze ring show near bullets, and always while focused (Shift).
-    const near = nearest < 170 * 170 || input.focused;
+    const near = nearest < 170 * 170 || p.ctrl.focus;
     // Live2D: the brooch she wears on her dress is the hitbox (the rig pins it to the body).
     // Drawn: the classic dot, shown near bullets or focused.
     this.hitbox.visible = near && !liveReimu;

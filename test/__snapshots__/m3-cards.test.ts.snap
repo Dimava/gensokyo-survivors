@@ -73,48 +73,48 @@ cards: spirit 2.00/3 meter 0 grazes 0 | hand: graze-ribbon
 -- the graze meter drew the second card after 12 grazes
 == play /run:1 card:play card=card#9
 card:play card=card#9
-  . player#3.spirit t0 0 -> 1128 (pay and discard)
+  . player#3.spirit t0 0 -> 1002 (pay and discard)
   . player#3.progress cardsPlayed 0 -> 1 (pay and discard)
   . card#9.in of hand#6 -> discard#7, at 1 -> 0 (pay and discard)
-  card:played card=card#9 x=120.12619920487327 y=412.55272708721 fx=-0.3817601544197929 fy=0.924261426490025
-    . +player#3.empowered {"pct":50,"until":1728,"pid":"after#13"} (Power Charm)
+  card:played card=card#9 x=144.48000000000005 y=404.05160159025564 fx=-0.924261426490025 fy=-0.3817601544197929
+    . +player#3.empowered {"pct":50,"until":1602,"pid":"after#13"} (Power Charm)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
 last run: -
-lake swarm t=0:18 fixed=1128 | hp 100/100 lv 4 xp 13/35 kills 33 | pos 120,413
+lake swarm t=0:16 fixed=1002 | hp 100/100 lv 4 xp 1/35 kills 27 | pos 144,404
 weapons: amulet2 border1 | passives: clock1
-enemies 74 [kedama 40, fairy 34] | drops 6 | shots 0 | bullets 86
+enemies 72 [kedama 39, fairy 33] | drops 6 | shots 2 | bullets 92
 cards: spirit 1.00/3 meter 8 grazes 12 | hand: graze-ribbon
--- weapon:fire after Power Charm: {"weapon":"weapon#11","dmg":10.5} (might 1, +50%)
+-- weapon:fire after Power Charm: {"weapon":"weapon#4","dmg":13.5} (might 1, +50%)
 == play /run:1 card:play card=card#8
 card:play card=card#8
-  . player#3.spirit base 1 -> 0, t0 1128 -> 1368 (pay and discard)
+  . player#3.spirit base 1 -> 0, t0 1002 -> 1242 (pay and discard)
   . player#3.progress cardsPlayed 1 -> 2 (pay and discard)
   . card#8.in of hand#6 -> discard#7, at 0 -> 1 (pay and discard)
-  card:played card=card#8 x=76.248606076066 y=377.8682076663212 fx=0 fy=-1
+  card:played card=card#8 x=171.87215587728446 y=444.6401210111453 fx=-0.924261426490025 fy=-0.3817601544197929
     . +player#3.triggers [{"on":"graze","rule":"grazeHeal","params":{"hp":1,"spirit":0.05}}] (Graze Ribbon)
     . +run#2.timed {"pids":{"grazeHeal":"after#15"}} (Graze Ribbon)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
 last run: -
-lake swarm t=0:22 fixed=1368 | hp 100/100 lv 5 xp 29/45 kills 58 | pos 76,378
+lake swarm t=0:20 fixed=1242 | hp 100/100 lv 5 xp 0/45 kills 47 | pos 172,445
 weapons: amulet2 border1 needle1 | passives: clock1
-enemies 71 [fairy 31, kedama 40] | drops 6 | shots 4 | bullets 130
-cards: spirit 0.00/3 meter 80 grazes 20 | hand: -
+enemies 71 [kedama 40, fairy 31] | drops 10 | shots 4 | bullets 100
+cards: spirit 0.00/3 meter 71 grazes 19 | hand: -
 -- a graze under Graze Ribbon ran the trigger row's rule:
--- graze player=player#3 n=1 x=80.8 y=342.8
-  . player#3.progress grazes 20 -> 21 (apply graze)
-  . player#3.meter graze 80 -> 89 (apply graze)
-  . player#3.spirit base 0 -> 0.1125, t0 1368 -> 1383 (grazeHeal)
+-- graze player=player#3 n=1 x=173.8 y=452.2
+  . player#3.progress grazes 19 -> 20 (apply graze)
+  . player#3.meter graze 71 -> 80 (apply graze)
+  . player#3.spirit base 0 -> 0.16666666666666669, t0 1242 -> 1270 (grazeHeal)
 -- meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal(out) barrier(out) healing(out) power-charm graze-ribbon | pity 0
 last run: -
-lake swarm t=0:57 fixed=3483 | hp 113/120 lv 10 xp 22/95 kills 242 | pos 532,-385
+lake swarm t=0:56 fixed=3370 | hp 112/120 lv 10 xp 14/95 kills 224 | pos 107,-168
 weapons: amulet3 border1 needle4 | passives: clock1 heart1
-enemies 158 [kedama 110, fairy 43, sunflower 5] | drops 48 | shots 8 | bullets 175
-cards: spirit 3.00/3 meter 26 grazes 114 | hand: graze-ribbon, power-charm
+enemies 157 [fairy 43, kedama 110, sunflower 4] | drops 37 | shots 6 | bullets 206
+cards: spirit 3.00/3 meter 33 grazes 137 | hand: graze-ribbon, power-charm
 "
 `;

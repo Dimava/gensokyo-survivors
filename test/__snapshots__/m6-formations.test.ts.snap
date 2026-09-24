@@ -55,95 +55,95 @@ cards: spirit 2.60/3 meter 0 grazes 0 | hand: -
 |                     k                     |
 |                             k             |
 +-------------------------------------------+
--- 20 s: 125 spawned, 54 shot down, 62 on the field, 9 flew away
+-- 20 s: 125 spawned, 55 shot down, 62 on the field, 8 flew away
 == tick /run:1 fixed x1
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:26 fixed=1590 | hp 190/190 lv 6 xp 37/55 kills 86 | pos 649,-371
+lake swarm t=0:26 fixed=1590 | hp 190/190 lv 6 xp 55/55 kills 85 | pos 613,-159
 weapons: amulet3 needle2 | passives: tome1
-enemies 70 [kedama 39, fairy 29, sunflower 2] | drops 23 | shots 6 | bullets 133
-cards: spirit 3.00/3 meter 45 grazes 22 | hand: healing
+enemies 71 [kedama 39, fairy 30, sunflower 2] | drops 15 | shots 4 | bullets 100
+cards: spirit 3.00/3 meter 56 grazes 23 | hand: healing
 -- 26.5 s: sunflower fairies (s) holding their posts above the player:
 +-------------------------------------------+
-|               f**f f f  f f f             |
-|                            k         f    |
-|           **                        f     |
-|                    k .    k         f     |
-|               -  .  s  s     .   ***      |
-|              --   *        .*k*   * k     |
-|                    *@****   * ** f  f*f f |
-|            *    *k**k*f**    * *     *    |
-|          k    f f* f f * *   * *   k. k   |
-|      **   *  k ***  k -**          **     |
-|           *    *f***  **    **     .k     |
-|           *    .* f  *      *     **      |
-|      ** k**   .  . f*  *      ..-   .  k  |
+|   k          *    *   *    *         f    |
+|                   k  .$  k                |
+|              *  kk           k k    .     |
+|               *    s s f   k              |
+|             --f f  f fff    f             |
+|            **   *  *****  -          k    |
+|       **        ** *@ ** *    *f f f f kf |
+|k     k     *   *    **   *  *  *   *      |
+|        .   **     ** **  *   *       k    |
+|        *         * *f      *  .   *   k   |
+|             **    k   ff.*    k *         |
+|     k    k .          kk  *   k k* k      |
+|         *                   .             |
 +-------------------------------------------+
 == tick /run:1 fixed x1
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=1:46 fixed=6368 | hp 210/210 lv 21 xp 98/225 kills 1140 | pos 760,-148
-weapons: amulet8 needle5 orbs2 border2 | passives: tome1 grimoire1 heart1 power1
-enemies 29 [kedama 24, fairy 4, sunflower 1] | drops 410 | shots 28 | bullets 0
-cards: spirit 2.41/3 meter 8 grazes 171 | hand: healing
--- Daiyousei held the stage for 6.1 s and was defeated (every bullet turned into points):
+lake swarm t=1:44 fixed=6254 | hp 210/210 lv 20 xp 70/195 kills 1089 | pos 1376,222
+weapons: amulet8 needle4 orbs2 border2 | passives: tome1 grimoire1 heart1 power1
+enemies 51 [kedama 41, fairy 8, sunflower 2] | drops 458 | shots 26 | bullets 0
+cards: spirit 3.00/3 meter 67 grazes 253 | hand: healing
+-- Daiyousei held the stage for 4.2 s and was defeated (every bullet turned into points):
 +-------------------------------------------+
-|             . .        .. -   . .. .. . . |
-|    -        ....-.  -.   . .. .$ ...      |
-|.         . . -   .     -.. .-.-... .$.. ..|
-|           - .     .--- .. -...-.  .  .... |
-|             ...    -- --. . ...- k  k  .. |
-|  .          .  .-- ..-- .   ...-. k .....k|
-|                     @ .    .....-  .  kk  |
-|                               .  .   ..  .|
-|    .      .                    .k       .k|
-|            +      .  .            ..    . |
-| .   .   .    . .  k kk        .     .    .|
-|..    .      ..k        k    .            .|
-|   .        ..   .  .                      |
+|   .      .... .   --- -- -. .. .    .     |
+|...    .... ... ..   . . .  ..f .k   .    .|
+| . .$   ....      -- .....        .        |
+|   ..  ... .     .  .---.. ...f..    .     |
+|.   . . .  . ..   . -.. ..  . f .          |
+|  ...  .. .          ...      . .  .       |
+|... .  .   ...      .@  .     f.  . ..   . |
+|     ..      .      . .     .              |
+|. ..       . .   .         .   .           |
+|.   . .      ..   ... ..      f        .k  |
+| ..      . .... .  s  ..... .k .    ..     |
+|.....      . .  . ....  s... .   .   .     |
+|.    ... .   .            k....  k.        |
 +-------------------------------------------+
 == tick /run:1 fixed x1
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake warning t=3:26 fixed=12394 | hp 210/210 lv 33 xp 64/585 kills 4084 | pos 2285,-115
-weapons: amulet8 needle7 orbs8 border5 | passives: tome1 grimoire1 heart1 power2
-enemies 0 [] | drops 2006 | shots 46 | bullets 0
-cards: spirit 0.82/3 meter 40 grazes 380 | hand: healing, fantasy-seal
--- the boss approaches at 206.3 s: the field turned into points that fly to the player:
+lake warning t=3:24 fixed=12274 | hp 210/210 lv 30 xp 374/495 kills 4120 | pos 892,3071
+weapons: amulet8 needle6 orbs6 border5 | passives: tome1 grimoire1 heart1 power2
+enemies 0 [] | drops 2493 | shots 22 | bullets 0
+cards: spirit 2.66/3 meter 67 grazes 486 | hand: healing
+-- the boss approaches at 204.3 s: the field turned into points that fly to the player:
 +-------------------------------------------+
-|. ... ..... .    .  -. - .- ...... ... .. .|
-|. .. .   .. .. .-.     . - . --.-.... .. . |
-|.. .. ...    .. .. . .. .......   . .   ...|
-|   .. ....     ..-.--.-.--. ..  . -$ ... . |
-|.    .....    .   .-    -.-... ... . ... . |
-|.-.- ... ..   ... .       . -.......-.. . .|
-|....... . ... ..$  .-@     .-$.. . .. . ...|
-|....... ... .. ..                   .   ...|
-| -. ... .........             .. ..  . ....|
-|. -................. ..        .      ... .|
-|. -.  ........ ..  .      .     .       .  |
-|... .... ...... .......   .    .   ..... ..|
-|.. .--    . . . ... ..    . .     .....  ..|
+|       .        .. . ........ ...... . .   |
+|     .      .   .............. ..    .... .|
+|        .  .  .. ................    .... .|
+|.     .    ...........- - ....    -. .. .. |
+|       .    .-..  .. .  . -.. .       ..   |
+|           .-  . . ....-.   -   .    .   ..|
+|. .      .. -...    .@      -     .-.... ..|
+|     . .  ..-         ..    -        .   . |
+|     .       -.            .      .- .. ...|
+|          . .  . ..         .  . .    ..   |
+|          . ..                . .  ...    .|
+|   .     . .   .      . . .   .      .  ...|
+|           $  ...  .    . .  . ..... . .. .|
 +-------------------------------------------+
 == play / run:abandon
 run:abandon
   run:forfeit @/run:1
     run:over outcome=quit
       . clock:game.scale 1/1 -> 0/1 (apply run:over)
-      . run#2.run phase warning -> over, outcome none -> quit, endedAt 0 -> 12381 (apply run:over)
+      . run#2.run phase warning -> over, outcome none -> quit, endedAt 0 -> 12261 (apply run:over)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake over(quit) t=3:26 fixed=12394 | hp 210/210 lv 33 xp 64/585 kills 4084 | pos 2285,-115
-weapons: amulet8 needle7 orbs8 border5 | passives: tome1 grimoire1 heart1 power2
-enemies 0 [] | drops 2006 | shots 46 | bullets 0
-cards: spirit 0.82/3 meter 40 grazes 380 | hand: healing, fantasy-seal
+lake over(quit) t=3:24 fixed=12274 | hp 210/210 lv 30 xp 374/495 kills 4120 | pos 892,3071
+weapons: amulet8 needle6 orbs6 border5 | passives: tome1 grimoire1 heart1 power2
+enemies 0 [] | drops 2493 | shots 22 | bullets 0
+cards: spirit 2.66/3 meter 67 grazes 486 | hand: healing
 "
 `;
