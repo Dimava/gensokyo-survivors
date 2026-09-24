@@ -140,6 +140,12 @@ export class Playfield {
   /** Live rigs by character id (Live2D style only). */
   private live: Record<string, LiveSprite> = {};
   private playerLive = new Container();
+  /**
+   * Over the world, in its space: the live player moves here while she is
+   * knocked out (playerKO), so the death's grey and darkening (on the world)
+   * leave her bright and its burst stays under her.
+   */
+  private playerTop = new Container();
   private bossLive = new Container();
   ready = false;
   private world = new Container();
@@ -188,17 +194,27 @@ export class Playfield {
    * Death and revive on the Live2D player (fx-death.ts): `down` 0..1 knocks
    * her over (the rig's slack pose, the whole rig tipping about her feet),
    * `recoil` 0..1 is the flinch of the hit. Null: standing as usual.
+   * Optional, for a knock-back: `turn` the rig's tilt in radians toward the
+   * side she falls to (default from down and recoil), `lift` and `slide`
+   * world px up and toward that side, `rate` her rig's time scale (0 freezes
+   * her, a hit-stop; under 1 is slow motion).
    */
-  playerKO: { down: number; recoil: number } | null = null;
+  playerKO: { down: number; recoil: number; turn?: number; lift?: number; slide?: number; rate?: number } | null = null;
+  /** Camera punch-in while fx-death.ts plays (1: none); the camera also leans toward where she was knocked. */
+  koZoom = 1;
   /** Which way she falls (+1 to her right), picked when she goes down. */
   private koSide = 1;
+  /** The side a knock-out sends her toward (+1: +x). */
+  get knockSide(): number {
+    return this.koSide;
+  }
   /** The player is a live rig (it can act a death instead of vanishing). */
   get livePlayer(): boolean {
     return !!this.live.reimu;
   }
   /** What fx-death.ts dresses: the field (ground, world) and the player (sprite, live rig). */
   get fxNodes(): { world: Container; scene: Container[]; player: Container[] } {
-    return { world: this.world, scene: [this.ground, this.world], player: [this.player, this.playerLive] };
+    return { world: this.world, scene: [this.ground, this.world], player: [this.player, this.playerTop] };
   }
 
   async init(host: HTMLElement): Promise<void> {
@@ -260,7 +276,7 @@ export class Playfield {
       this.floatLayer,
       this.hitDebug,
     );
-    this.app.stage.addChild(this.ground, this.world, this.screenG);
+    this.app.stage.addChild(this.ground, this.world, this.playerTop, this.screenG);
     this.ready = true;
   }
 
@@ -381,25 +397,31 @@ export class Playfield {
    * Down: the rig tips over about her feet onto her side (about 83 degrees)
    * and jolts on the recoil; standing: upright.
    */
-  private tipOver(l: LiveSprite, ko: { down: number; recoil: number } | null): void {
+  private tipOver(l: LiveSprite, ko: Playfield["playerKO"]): void {
     const h = l.holder;
-    if (!ko || (ko.down <= 0 && ko.recoil <= 0)) {
+    if (!ko || (ko.down <= 0 && ko.recoil <= 0 && !ko.turn && !ko.lift && !ko.slide)) {
       if (h.rotation !== 0 || h.pivot.x !== 0 || h.pivot.y !== 0) {
         h.rotation = 0;
         h.pivot.set(0, 0);
       }
       return;
     }
-    // The feet (model space, chibis are 200x200 with feet at y 188) stay put.
+    // She turns about her middle (so a knock-back tumbles her), placed so her
+    // feet (model space: chibis are 200x200, feet at y 188) stay on the ground
+    // unless lifted: lying down is a turn about the feet.
     const s = l.view.scale.x;
-    const fx = 100 * s;
-    const fy = 188 * s;
-    h.position.set(h.position.x + fx, h.position.y + fy);
-    h.pivot.set(fx, fy);
-    const d = ko.down;
-    h.rotation = this.koSide * (d * 1.45 - ko.recoil * 0.12);
-    // The hit lifts her a little off her feet.
-    h.position.y -= ko.recoil * 24 * s;
+    const cx = 100 * s;
+    const cy = 120 * s;
+    const leg = (188 - 120) * s;
+    const side = this.koSide;
+    const turn = side * (ko.turn ?? ko.down * 1.45 - ko.recoil * 0.12);
+    // By default the hit lifts her a little off her feet.
+    const lift = ko.lift ?? ko.recoil * 24 * s;
+    const fx = h.position.x + cx;
+    const fy = h.position.y + 188 * s;
+    h.pivot.set(cx, cy);
+    h.rotation = turn;
+    h.position.set(fx + side * (ko.slide ?? 0) + leg * Math.sin(turn), fy - lift - leg * Math.cos(turn));
   }
 
   private drawLive(l: LiveSprite, x: number, y: number, lx: number, ly: number, ax: number, ay: number, dt: number, move = { x: 0, y: 0 }, slow = false, pin?: string): void {
@@ -454,6 +476,7 @@ export class Playfield {
     if (!v || !v.q("run")[0]) {
       this.ground.tilePosition.set(-this.time * 20, -this.time * 12);
       this.world.visible = false;
+      this.playerTop.visible = false;
       this.ground.tint = 0xffffff;
       this.drawScreen(W, H, fdt, opts.dim ?? 0);
       return;
@@ -471,13 +494,19 @@ export class Playfield {
     this.shakeAmt = Math.max(0, this.shakeAmt - fdt * 30);
     const sx = (Math.random() * 2 - 1) * this.shakeAmt;
     const sy = (Math.random() * 2 - 1) * this.shakeAmt;
-    const camX = p.body.x;
-    const camY = p.body.y;
+    // Knocked out: the camera punches in and leans toward where she flies.
+    const kc = this.playerKO && this.live.reimu ? this.playerKO : null;
+    this.zoom *= this.koZoom;
+    const camX = p.body.x + (kc ? this.koSide * (kc.slide ?? 0) * 1.1 : 0);
+    const camY = p.body.y - (kc ? (kc.lift ?? 0) * 0.6 : 0);
     this.world.scale.set(this.zoom);
     this.world.position.set(W / 2 - camX * this.zoom + sx, H / 2 - camY * this.zoom + sy);
+    this.playerTop.visible = true;
+    this.playerTop.scale.set(this.zoom);
+    this.playerTop.position.copyFrom(this.world.position);
     this.ground.tileScale.set(this.zoom);
     this.ground.tilePosition.set(-camX * this.zoom + sx + W / 2, -camY * this.zoom + sy + H / 2);
-    this.playerScreen = { x: W / 2, y: H / 2 };
+    this.playerScreen = { x: W / 2 + (p.body.x - camX) * this.zoom, y: H / 2 + (p.body.y - camY) * this.zoom };
     const viewR = Math.sqrt(W * W + H * H) / 2 / this.zoom + 40;
 
     // Boss arena and the spell-card background.
@@ -694,10 +723,19 @@ export class Playfield {
     // Standing, walking, or walking slowly with focus held: the rig blends between them.
     if (liveReimu) {
       const ko = this.playerKO;
-      if (!ko) this.koSide = p.ctrl.mx < 0 ? -1 : 1;
+      // A hit knocks her back: away from where she was heading (or facing, standing still).
+      if (!ko) this.koSide = (p.ctrl.mx || look.x) > 0 ? -1 : 1;
       liveReimu.anim.down = ko?.down ?? 0;
       liveReimu.anim.recoil = ko?.recoil ?? 0;
-      this.drawLive(liveReimu, p.body.x, p.body.y, look.x, look.y, 0.5, 0.55, fdt, { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 }, p.ctrl.focus && !ko, HITBOX_PART);
+      liveReimu.anim.knock = ko ? this.koSide : 0;
+      // Knocked out she lies over the world, out of the death's grey (playerTop).
+      const top = ko ? this.playerTop : this.world;
+      if (this.playerLive.parent !== top) {
+        if (ko) top.addChild(this.playerLive);
+        else top.addChildAt(this.playerLive, top.getChildIndex(this.player) + 1);
+      }
+      const move = ko ? { x: 0, y: 0 } : { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 };
+      this.drawLive(liveReimu, p.body.x, p.body.y, look.x, look.y, 0.5, 0.55, fdt * (ko?.rate ?? 1), move, p.ctrl.focus && !ko, HITBOX_PART);
       this.tipOver(liveReimu, ko);
     }
     else if (reimu) {

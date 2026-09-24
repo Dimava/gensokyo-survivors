@@ -35,6 +35,8 @@ export class Animator {
    */
   down = 0;
   recoil = 0;
+  /** The side a hit knocks her toward (+1: +x; 0: none): on the recoil her sleeves, ribbon and hair fly the other way. */
+  knock = 0;
   /** Blend weights of walking and slow walking (standing is the rest), and the eased move direction. */
   private walkW = 0;
   private slowW = 0;
@@ -148,6 +150,15 @@ export class Animator {
     add("HairFront", trail * 0.4);
     add("Ribbon", trail * 1.1 + swing(0.25, 1.1));
     r.set("Sleeve", trail * 0.9 + swing(0.35, 0.9));
+    // The hit flings her sleeves, ribbon and hair back from where she is knocked.
+    if (recoil > 0 && this.knock) {
+      const k = -this.knock * recoil;
+      add("Sleeve", k * 0.95);
+      add("Ribbon", k * 0.8);
+      add("HairSide", k * 0.6);
+      add("HairBack", k * 0.5);
+      add("HairFront", k * 0.3);
+    }
     // Down: sleeves, ribbon and hair hang slack toward the ground she fell to.
     if (down > 0) {
       add("Sleeve", down * 0.7 - (r.params.Sleeve ?? 0) * down * 0.5);
