@@ -17,6 +17,7 @@
     "vue": "^3.5.0"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/bun": "^1.2.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "oxlint": "^1.85.0",
