@@ -12,6 +12,8 @@ import { passiveDef } from "../../content/passives.ts";
 import { formatBonus } from "../../content/stats.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
+import { keyLabels } from "../keys.ts";
+import Keys from "./Keys.vue";
 
 const offer = computed(() => {
   void state.frame;
@@ -123,14 +125,14 @@ function hover(): void {
   <Transition name="lvlbg">
     <div v-if="open && offer" class="lvlbg"></div>
   </Transition>
-  <div v-for="L in layers" :key="L.id" v-keynav="L.mode === 'live' && { autofocus: false }" class="lvl" :class="[L.mode, { chained: L.chained }]">
+  <div v-for="L in layers" :key="L.id" class="lvl" :class="[L.mode, { chained: L.chained }]">
     <div class="head">
       <h2>Level {{ L.level }}!</h2>
       <p class="muted">
         Choose one upgrade<span v-if="L.pending > 1"> ({{ L.pending }} level-ups waiting)</span>
       </p>
       <p v-if="prefs.hints && !prefs.seen.includes('levelup')" class="hint">
-        Press <span class="key">1</span> <span class="key">2</span> <span class="key">3</span> or click a card. The run is paused while you choose.
+        Press <Keys for="Action:pick1" :max="1" /> <Keys for="Action:pick2" :max="1" /> <Keys for="Action:pick3" :max="1" /> or click a card. The run is paused while you choose.
       </p>
     </div>
     <div class="choices">
@@ -144,7 +146,7 @@ function hover(): void {
         @mouseenter="L.mode === 'live' && hover()"
         @click="L.mode === 'live' && pick(i)"
       >
-        <span class="key num">{{ i + 1 }}</span>
+        <span class="key num">{{ keyLabels(`Action:pick${i + 1}`, 1)[0] }}</span>
         <span class="icon"></span>
         <span class="kind">{{ c.kind }}</span>
         <span class="name">{{ c.name }}</span>
@@ -156,7 +158,7 @@ function hover(): void {
       </button>
     </div>
     <div class="foot">
-      <button v-if="L.rerolls > 0" class="btn" :tabindex="L.mode === 'live' ? undefined : -1" @click="L.mode === 'live' && host.reroll()">Reroll ({{ L.rerolls }} left) <span class="key">R</span></button>
+      <button v-if="L.rerolls > 0" class="btn" :tabindex="L.mode === 'live' ? undefined : -1" @click="L.mode === 'live' && host.reroll()">Reroll ({{ L.rerolls }} left) <Keys for="Action:reroll" /></button>
     </div>
   </div>
 </template>

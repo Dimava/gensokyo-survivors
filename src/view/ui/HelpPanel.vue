@@ -21,7 +21,7 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
           <tr><td><Keys for="Move" /></td><td>Move (or hold the mouse button on the field and point)</td></tr>
           <tr><td>Hold <Keys for="Focus" /></td><td>Focus: move slowly and see your hitbox, for threading through bullets. Your shots gather in too: tighter fans, knives thrown ahead, orbs closer, the border shoves enemies back harder, a narrower, stronger beam</td></tr>
           <tr><td><Keys for="Action:card1" :max="1" />–<Keys for="Action:card5" :max="1" /> or click</td><td>Play a skill card from your hand</td></tr>
-          <tr><td><Keys for="Action:pick1" :max="1" /><Keys for="Action:pick2" :max="1" /><Keys for="Action:pick3" :max="1" /></td><td>Pick a level-up upgrade (or select one with the arrows and confirm); <Keys for="Action:reroll" /> rerolls if you have rerolls</td></tr>
+          <tr><td><Keys for="Action:pick1" :max="1" /><Keys for="Action:pick2" :max="1" /><Keys for="Action:pick3" :max="1" /></td><td>Pick a level-up upgrade; <Keys for="Action:reroll" /> rerolls if you have rerolls</td></tr>
           <tr><td><Keys for="Action:confirm" /></td><td>Advance dialogue; <Keys for="Action:skip" /> skips it</td></tr>
           <tr><td><Keys for="Action:pause" /></td><td>Pause (the run also pauses when the tab is hidden)</td></tr>
           <tr><td><Keys :for="['ArrowY', 'ArrowX']" /> <Keys for="Confirm" :max="2" /> <Keys for="Back" /></td><td>Menus: select, confirm, back. The mouse works everywhere too</td></tr>
