@@ -4,7 +4,7 @@
 import { watch } from "vue";
 import { Music, type Song } from "./music.ts";
 import { prefs } from "./prefs.ts";
-import { cirnoSong, clearSong, forestSong, lakeSong, menuSong, rumiaSong } from "./songs.ts";
+import { cirnoSong, clearSong, forestSong, lakeSong, menuSong, overSong, rumiaSong, shopSong, TRACKS } from "./songs.ts";
 
 export type Sfx =
   | "ui"
@@ -45,8 +45,27 @@ export type Sfx =
   | "revive"
   | "pichuun";
 
-/** What plays: the title theme, the stage theme, the boss theme (both per stage), the clear fanfare, or silence. */
-export type Track = "menu" | "stage" | "boss" | "clear" | null;
+/**
+ * What plays: the title theme, the calm menu/shop theme, the stage theme, the
+ * boss theme (both per stage), the clear fanfare, the game over sting, a hush
+ * (the stage theme fading out for the boss's warning), or silence. "results"
+ * lets a fanfare or sting ring out, then goes to the shop theme; "keep" leaves
+ * whatever is playing.
+ */
+export type Track = "menu" | "shop" | "stage" | "boss" | "clear" | "over" | "hush" | "results" | "keep" | null;
+
+/** How far (0..1) and how long (seconds) the music dips under a big sound. */
+const DUCK: Partial<Record<Sfx, [number, number]>> = {
+  spell: [0.45, 0.9],
+  spellBreak: [0.3, 0.5],
+  bossDown: [0.55, 1.4],
+  warning: [0.4, 1.2],
+  pichuun: [0.7, 1.2],
+  death: [0.4, 0.8],
+  timestop: [0.35, 0.6],
+  revealSSR: [0.4, 1],
+  revive: [0.3, 0.8],
+};
 
 /** Minimum milliseconds between two plays of the same sound (bulk events would otherwise stack). */
 const THROTTLE: Partial<Record<Sfx, number>> = { shoot: 70, hit: 45, pop: 40, pickup: 35, graze: 50, coin: 60, aura: 150, text: 40 };
@@ -73,18 +92,29 @@ class Synth {
     }
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
+    // One per page: a second (a hot update re-ran the game) reloads the page.
+    if ((window as any).__gsAudio) return location.reload();
+    (window as any).__gsAudio = true;
     const ctx = new Ctor();
     this.ctx = ctx;
     this.master = ctx.createGain();
     this.sfxBus = ctx.createGain();
     this.musicBus = ctx.createGain();
+    // Glue compressor, then a brickwall-ish limiter: music under SFX never clips.
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -14;
     comp.ratio.value = 6;
+    const limit = ctx.createDynamicsCompressor();
+    limit.threshold.value = -2;
+    limit.knee.value = 0;
+    limit.ratio.value = 20;
+    limit.attack.value = 0.001;
+    limit.release.value = 0.1;
     this.sfxBus.connect(this.master);
     this.musicBus.connect(this.master);
     this.master.connect(comp);
-    comp.connect(ctx.destination);
+    comp.connect(limit);
+    limit.connect(ctx.destination);
     this.noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const data = this.noiseBuf.getChannelData(0);
     let seed = 12345;
@@ -94,14 +124,14 @@ class Synth {
     }
     this.applyVolumes();
     this.songs = new Music(ctx, this.musicBus, this.noiseBuf);
-    this.songs.play(this.song);
+    this.songs.play(this.previewing ? this.preview : this.song);
   }
 
   applyVolumes(): void {
     if (!this.ctx) return;
     this.master.gain.value = prefs.master;
     this.sfxBus.gain.value = prefs.sfx * 0.55;
-    this.musicBus.gain.value = prefs.music * 0.32;
+    this.musicBus.gain.value = prefs.music * 0.4;
   }
 
   private tone(freq: number, dur: number, type: OscillatorType, vol: number, slide?: number, delay = 0): void {
@@ -151,6 +181,8 @@ class Synth {
     this.last.set(name, now);
     const p = opts.pitch ?? 1;
     const v = opts.vol ?? 1;
+    const duck = DUCK[name];
+    if (duck) this.songs?.duck(duck[0] * Math.min(1, v), duck[1]);
     switch (name) {
       case "ui":
         return this.tone(880 * p, 0.05, "square", 0.08 * v);
@@ -260,19 +292,67 @@ class Synth {
 
   // ---------- music (music.ts plays, songs.ts holds the notes) ----------
 
+  /** The music room has the music: its track (null: stopped, silence) instead of the game's choice. */
+  private previewing = false;
+  private preview: Song | null = null;
+
   /** Picks the song for a track; stage and boss tracks have one per stage (the lake's by default). */
   music(track: Track, stage = "lake"): void {
-    const key = track && `${track}:${stage}`;
+    if (track === "keep") return;
+    if (track === "results") {
+      // A fanfare or sting rings out first; after it (or with none), the calm theme.
+      const oneShot = this.track === "clear" || this.track === "over";
+      if (oneShot && !(this.songs?.done ?? false)) return;
+      track = "shop";
+    }
+    const key = track && (track === "stage" || track === "boss" ? `${track}:${stage}` : track);
     if (key === this.track) return;
     this.track = key;
     this.song = songFor(track, stage);
-    this.songs?.play(this.song);
+    if (!this.previewing) this.songs?.play(this.song, track === "hush" ? 2.5 : undefined);
+  }
+
+  /** How hard the run is going (0..1): extra layers (a busier drum kit) come in above a song's thresholds. */
+  intensity(x: number): void {
+    this.songs?.intensity(x);
+  }
+
+  /** The game is paused: the music sinks behind a lowpass. */
+  paused(on: boolean): void {
+    if (this.isPaused === on) return;
+    this.isPaused = on;
+    this.songs?.paused(on);
+  }
+  private isPaused = false;
+
+  /** Music room: plays a track by id instead of the game's music ("" stops it: silence); null hands the music back. */
+  listen(id: string | null): void {
+    this.previewing = id !== null;
+    this.preview = id ? (TRACKS.find((t) => t.id === id)?.song ?? null) : null;
+    this.songs?.play(this.previewing ? this.preview : this.song, 0.4);
+  }
+
+  /** Music room: jumps the track playing to `bar`. */
+  seek(bar: number): void {
+    if (this.previewing) this.songs?.seek(bar);
+  }
+
+  /** The music-room track playing, if any. */
+  get listening(): string | null {
+    return (this.preview && TRACKS.find((t) => t.song === this.preview)?.id) ?? null;
+  }
+
+  /** Where the playing song is (for the music room's now-playing view). */
+  position(): ReturnType<Music["position"]> {
+    return this.songs?.position() ?? null;
   }
 }
 
 const SONGS: Record<string, Song> = {
   menu: menuSong,
+  shop: shopSong,
   clear: clearSong,
+  over: overSong,
   "stage:lake": lakeSong,
   "boss:lake": cirnoSong,
   "stage:forest": forestSong,
@@ -280,7 +360,7 @@ const SONGS: Record<string, Song> = {
 };
 
 function songFor(track: Track, stage: string): Song | null {
-  if (!track) return null;
+  if (!track || track === "hush") return null;
   return SONGS[`${track}:${stage}`] ?? SONGS[track] ?? SONGS[`${track}:lake`] ?? null;
 }
 
