@@ -100,3 +100,20 @@ export const ITEM_ICONS: Readonly<Record<string, string>> = {
 export function itemIcon(id: string): string {
   return ITEM_ICONS[id] ?? `<circle cx="12" cy="12" r="7"/>`;
 }
+
+/** The Duplex Tome with `copies` books, each further copy behind and down-left of the last, fainter. */
+function tomeStack(copies: number): string {
+  if (copies <= 2) return ITEM_ICONS.tome!;
+  // Three books: the same diagonal as the pair, stepped tighter to fit the 24-unit box.
+  return (
+    `<rect x="1" y="7.5" width="11.5" height="15" rx="1.2" opacity="0.35"/>` +
+    `<rect x="5.5" y="5" width="12" height="16" rx="1.2" opacity="0.6"/>` +
+    `<rect x="10.5" y="2.5" width="12.5" height="17" rx="1.2"/>` +
+    `<path d="M16.7 7.5v7M13.2 11h7" ${HOLE_LINE} stroke-width="2"/>`
+  );
+}
+
+/** An item's icon at a level: the Duplex Tome shows one more copy per level (a pair at 1, three at 2); the rest are the same at every level. */
+export function itemIconAt(id: string, level: number): string {
+  return id === "tome" ? tomeStack(level + 1) : itemIcon(id);
+}

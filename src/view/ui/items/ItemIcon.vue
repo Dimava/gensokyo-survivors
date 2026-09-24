@@ -3,7 +3,7 @@
 // in the item's colour, the level in small pips under it. The onigiri and the
 // offering: their icon alone.
 import { computed } from "vue";
-import { itemIcon } from "../itemIcons.ts";
+import { itemIconAt } from "../itemIcons.ts";
 
 const props = defineProps<{ id: string; color: string; level?: number; max?: number; active: boolean }>();
 
@@ -15,7 +15,7 @@ const pips = computed(() => {
 
 <template>
   <div class="ipv" :style="{ color }">
-    <svg class="art" viewBox="0 0 24 24" fill="currentColor" width="60" height="60" v-html="itemIcon(id)"></svg>
+    <svg class="art" viewBox="0 0 24 24" fill="currentColor" width="60" height="60" v-html="itemIconAt(id, level ?? 1)"></svg>
     <svg v-if="pips.length" class="pips" viewBox="-40 -4 80 8" width="80" height="8">
       <circle v-for="(p, i) in pips" :key="i" :cx="p.x" cy="0" r="2.6" :fill="p.lit ? '#ffcf5a' : 'rgba(255,255,255,0.18)'" />
     </svg>
