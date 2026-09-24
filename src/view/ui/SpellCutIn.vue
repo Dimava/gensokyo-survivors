@@ -1,14 +1,14 @@
 <script setup lang="ts">
 // The spell card cut-in (refs/spellcards/STYLE.md §6): as a boss declares a
 // card, a slanted band in her colour sweeps across the field carrying the
-// sign's kanji, and her portrait glides through it from lower right to upper
+// card's sign in English ("ICE SIGN"), and her portrait glides through it from lower right to upper
 // left and fades. Plays once per declared card, during the card's intro.
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { CHARACTERS } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
 import { hud } from "./useRun.ts";
 import { state } from "../host.ts";
-import { signKanji, splitSpell } from "./spellName.ts";
+import { splitSpell } from "./spellName.ts";
 import Portrait from "./Portrait.vue";
 
 const boss = computed(() => hud.value?.boss ?? null);
@@ -25,14 +25,18 @@ watch(key, (k) => {
   timer = setTimeout(() => (shown.value = ""), 1800);
 });
 onBeforeUnmount(() => clearTimeout(timer));
-const kanji = computed(() => (boss.value ? signKanji(splitSpell(boss.value.spell).sign) : ""));
+// The sign, or the name for cards without one ("Barrier Talisman").
+const sign = computed(() => {
+  const s = boss.value ? splitSpell(boss.value.spell) : null;
+  return s ? s.sign || s.name : "";
+});
 const ac = computed(() => (boss.value ? hex(CHARACTERS[boss.value.who].color) : "#fff"));
 </script>
 
 <template>
   <div v-if="shown && boss" :key="shown" class="cutin" :style="{ '--ac': ac }" aria-hidden="true">
     <div class="band">
-      <span class="kanji">{{ kanji }}</span>
+      <span class="sign">{{ sign }}</span>
     </div>
     <div class="who"><Portrait :who="boss.who" /></div>
   </div>
@@ -62,9 +66,10 @@ const ac = computed(() => (boss.value ? hex(CHARACTERS[boss.value.who].color) : 
   justify-content: center;
   animation: band calc(1.8s * var(--anim, 1)) cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
-.kanji {
-  font: 900 120px/1 "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif;
-  letter-spacing: 0.3em;
+.sign {
+  font: 900 96px/1 Georgia, "Times New Roman", serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
   color: #fff;
   opacity: 0.16;
   white-space: nowrap;
