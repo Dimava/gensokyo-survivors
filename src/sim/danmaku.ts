@@ -11,20 +11,27 @@
 import type { Ctx } from "gamebones";
 import { BULLET_STYLES, styleIndex, type EmitterDef } from "../content/patterns.ts";
 import type { RS0 } from "./run.ts";
-import { BULLET_CULL, PLAYER } from "./tuning.ts";
+import { BULLET_CULL, PLAYER, SLOW_BULLET } from "./tuning.ts";
 
 type C = Ctx<RS0>;
 const TAU = 6.283185307179586;
 const pos = { x: 0, y: 0 };
 
-/** Fires one volley of an emitter from (ox, oy); `volley` counts volleys so far (spins and spirals use it). */
-export function emitPattern(ctx: C, em: EmitterDef, ox: number, oy: number, volley: number): void {
+/**
+ * Fires one volley of an emitter from (ox, oy); `volley` counts volleys so far
+ * (spins and spirals use it). Given a `life`, slow bullets fade out after that
+ * many ticks: the view follows the player, so a slow bullet would otherwise
+ * drift about the screen for ages. Fast ones leave the view on their own.
+ */
+export function emitPattern(ctx: C, em: EmitterDef, ox: number, oy: number, volley: number, life = 0, aim?: number): void {
   const b = ctx.packed("bullets");
   const t0 = ctx.now("danmaku");
   const { body } = ctx.derived("player");
-  const aimAt = (): number => Math.atan2(body.y - oy, body.x - ox);
+  // Aimed patterns aim at the player, or along `aim` when the shooter locked one (a salvo).
+  const aimAt = (): number => aim ?? Math.atan2(body.y - oy, body.x - ox);
   const add = (a: number, speed: number, style: string, accel?: number, vEnd?: number): void => {
-    b.add({ x: ox, y: oy, t0, dx: Math.cos(a), dy: Math.sin(a), speed, accel, vEnd, style: styleIndex(style) });
+    const slow = Math.max(speed, vEnd ?? speed) < SLOW_BULLET;
+    b.add({ x: ox, y: oy, t0, dx: Math.cos(a), dy: Math.sin(a), speed, accel, vEnd, style: styleIndex(style), life: slow ? life : 0 });
   };
   switch (em.pattern) {
     case "ring": {
@@ -70,6 +77,7 @@ export function emitPattern(ctx: C, em: EmitterDef, ox: number, oy: number, voll
           dy: 1 / len,
           speed: p.speedMin + r.float() * (p.speedMax - p.speedMin),
           style: styleIndex(p.style),
+          life,
         });
       }
       return;
@@ -96,6 +104,7 @@ export function emitPattern(ctx: C, em: EmitterDef, ox: number, oy: number, voll
           v2: p.v2,
           style: styleIndex(p.style),
           style2: styleIndex(p.frozenStyle ?? p.style),
+          life,
         });
       }
       return;
@@ -111,8 +120,8 @@ export interface DanmakuResult {
   checked: number;
 }
 
-/** Checks due bullets against the player; culls far ones. Grazes flag the bullet so each grazes once. */
-export function stepBullets(ctx: C, grazeScale: number, playerSpeed: number): DanmakuResult {
+/** Checks due bullets against the player; culls far and expired ones. Grazes flag the bullet so each grazes once. */
+export function stepBullets(ctx: C, playerSpeed: number): DanmakuResult {
   const b = ctx.packed("bullets");
   const t = ctx.now("danmaku");
   const { body, life } = ctx.derived("player");
@@ -120,13 +129,16 @@ export function stepBullets(ctx: C, grazeScale: number, playerSpeed: number): Da
   const check = b.col("check");
   const grazed = b.col("grazed");
   const style = b.col("style");
-  const grazeR = PLAYER.graze * grazeScale;
+  const grazeR = PLAYER.graze;
   let hit = false;
   let grazes = 0;
   let checked = 0;
   for (let i = b.count - 1; i >= 0; i--) {
     if (check[i]! > t) continue;
-    if (!b.pos(i, t, pos)) continue;
+    if (!b.pos(i, t, pos)) {
+      if (t >= b.endsAt(i)) b.remove(i);
+      continue;
+    }
     checked++;
     const ddx = pos.x - body.x;
     const ddy = pos.y - body.y;
@@ -151,7 +163,7 @@ export function stepBullets(ctx: C, grazeScale: number, playerSpeed: number): Da
     }
     const gap = d - grazeR - br;
     const closing = b.maxSpeed(i, t) + playerSpeed;
-    check[i] = t + Math.max(1, Math.floor(gap / Math.max(closing, 0.01)));
+    check[i] = Math.min(t + Math.max(1, Math.floor(gap / Math.max(closing, 0.01))), b.endsAt(i));
   }
   return { hit, grazes, checked };
 }

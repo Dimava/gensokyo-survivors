@@ -90,7 +90,13 @@ ${renderField(k, path)}`);
     h.note(`20 s: ${spawned} spawned, ${killed} shot down, ${alive} on the field, ${spawned - killed - alive} flew away`);
 
     // 24 s: sunflower fairies fly to posts above the player, hold them, and fire fans from there.
+    // They trail a moving player, so arrival time depends on the bot's path: wait for it (at most 5 s).
     advance(k, path, 24 * 60 + 150 - t());
+    const holding = (): boolean => {
+      const s = rows(k, path, "sunflower");
+      return s.length > 0 && s.every((r) => r.phase === PHASE.holding);
+    };
+    advance(k, path, 300, holding);
     const posts = rows(k, path, "sunflower");
     expect(posts.length).toBeGreaterThan(0);
     const { body } = v.derived("player");
@@ -101,7 +107,7 @@ ${renderField(k, path)}`);
       expect(Math.hypot(body.x - s.x, body.y - s.y)).toBeLessThan(FORMATION.postRadius * 2);
     }
     h.tick(path, "fixed");
-    h.note(`26.5 s: sunflower fairies (s) holding their posts above the player:
+    h.note(`${(t() / 60).toFixed(1)} s: sunflower fairies (s) holding their posts above the player:
 ${renderField(k, path)}`);
 
     // 100 s: Daiyousei arrives, and nothing else spawns while she holds the stage.

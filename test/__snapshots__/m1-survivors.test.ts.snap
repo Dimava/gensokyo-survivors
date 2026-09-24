@@ -44,19 +44,19 @@ enemies 50 [kedama 36, fairy 14] | drops 4 | shots 1 | bullets 0
 cards: spirit 2.25/3 meter 0 grazes 0 | hand: barrier
 -- the field after five seconds of walking right (the first formation and a few fuzzballs):
 +-------------------------------------------+
-|                          kk               |
+|                                         k |
 |             .                             |
 |                                           |
 |                                           |
+|                         .                 |
 |                                           |
-|                          $                |
-|                     @                     |
-|                                         k |
-|                   -                       |
+|                     @  -   k              |
 |                                           |
-|               .             k             |
-|                                          k|
-|                 k                         |
+|                                           |
+|                                  k        |
+|               .                k          |
+|                                           |
+|                 k         k               |
 +-------------------------------------------+
 == tick /run:1 fixed x60
 > before tick 301: move x=0 y=100
@@ -75,16 +75,16 @@ cards: fantasy-seal barrier healing | pity 0
 last run: -
 lake swarm t=0:07 fixed=420 | hp 100/100 lv 1 xp 2/5 kills 7 | pos 720,288
 weapons: amulet1 | passives: -
-enemies 53 [kedama 39, fairy 14] | drops 8 | shots 1 | bullets 0
+enemies 54 [kedama 40, fairy 14] | drops 8 | shots 1 | bullets 0
 cards: spirit 2.75/3 meter 0 grazes 0 | hand: barrier
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:08 fixed=480 | hp 100/100 lv 1 xp 2/5 kills 8 | pos 720,432
+lake swarm t=0:08 fixed=480 | hp 100/100 lv 1 xp 2/5 kills 9 | pos 720,432
 weapons: amulet1 | passives: -
-enemies 61 [kedama 40, fairy 21] | drops 9 | shots 1 | bullets 0
+enemies 61 [kedama 40, fairy 21] | drops 10 | shots 0 | bullets 0
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
 == tick /run:1 fixed x60
 > before tick 481: move x=-100 y=0
@@ -92,18 +92,9 @@ meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:09 fixed=540 | hp 100/100 lv 1 xp 4/5 kills 9 | pos 576,432
+lake swarm t=0:08 fixed=540 | hp 100/100 lv 2 xp 1/15 kills 10 | pos 631,432
 weapons: amulet1 | passives: -
-enemies 60 [kedama 39, fairy 21] | drops 9 | shots 1 | bullets 4
-cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
-== tick /run:1 fixed x60
-meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: (none)
-cards: fantasy-seal barrier healing | pity 0
-last run: -
-lake swarm t=0:09 fixed=600 | hp 100/100 lv 2 xp 1/15 kills 10 | pos 516,432
-weapons: amulet1 | passives: -
-enemies 61 [kedama 40, fairy 21] | drops 9 | shots 0 | bullets 8
+enemies 60 [kedama 39, fairy 21] | drops 9 | shots 0 | bullets 12
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
 overlay: levelup
 -- the first level-up offer:
@@ -116,9 +107,9 @@ meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:09 fixed=605 | hp 100/100 lv 2 xp 1/15 kills 10 | pos 516,432
+lake swarm t=0:08 fixed=545 | hp 100/100 lv 2 xp 1/15 kills 10 | pos 631,432
 weapons: amulet1 | passives: -
-enemies 61 [kedama 40, fairy 21] | drops 9 | shots 0 | bullets 8
+enemies 60 [kedama 39, fairy 21] | drops 9 | shots 0 | bullets 12
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
 overlay: levelup
 == play /run:1/levelup levelup:pick index=0
@@ -135,18 +126,27 @@ meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:09 fixed=605 | hp 120/120 lv 2 xp 1/15 kills 10 | pos 516,432
+lake swarm t=0:08 fixed=545 | hp 120/120 lv 2 xp 1/15 kills 10 | pos 631,432
 weapons: amulet1 | passives: heart1
-enemies 61 [kedama 40, fairy 21] | drops 9 | shots 0 | bullets 8
+enemies 60 [kedama 39, fairy 21] | drops 9 | shots 0 | bullets 12
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:10 fixed=665 | hp 115/120 lv 2 xp 3/15 kills 12 | pos 384,432
+lake swarm t=0:09 fixed=605 | hp 115/120 lv 2 xp 3/15 kills 11 | pos 499,432
 weapons: amulet1 | passives: heart1
-enemies 60 [kedama 39, fairy 21] | drops 10 | shots 0 | bullets 16
+enemies 61 [kedama 40, fairy 21] | drops 9 | shots 0 | bullets 24
+cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:10 fixed=665 | hp 110/120 lv 2 xp 7/15 kills 13 | pos 367,432
+weapons: amulet1 | passives: heart1
+enemies 60 [kedama 39, fairy 21] | drops 9 | shots 0 | bullets 24
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
 == tick /run:1 fixed x60
 > before tick 666: move x=0 y=-100
@@ -154,57 +154,48 @@ meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:11 fixed=725 | hp 115/120 lv 2 xp 7/15 kills 13 | pos 384,288
+lake swarm t=0:11 fixed=725 | hp 110/120 lv 2 xp 9/15 kills 14 | pos 367,288
 weapons: amulet1 | passives: heart1
-enemies 70 [kedama 40, fairy 30] | drops 9 | shots 0 | bullets 30
+enemies 70 [kedama 40, fairy 30] | drops 9 | shots 0 | bullets 51
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: barrier
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:12 fixed=785 | hp 115/120 lv 2 xp 7/15 kills 14 | pos 384,144
+lake swarm t=0:12 fixed=785 | hp 110/120 lv 2 xp 9/15 kills 15 | pos 367,144
 weapons: amulet1 | passives: heart1
-enemies 70 [kedama 40, fairy 30] | drops 10 | shots 0 | bullets 50
-cards: spirit 3.00/3 meter 9 grazes 1 | hand: barrier
+enemies 70 [kedama 40, fairy 30] | drops 10 | shots 1 | bullets 60
+cards: spirit 3.00/3 meter 18 grazes 2 | hand: barrier
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:13 fixed=845 | hp 101/120 lv 2 xp 11/15 kills 16 | pos 384,12
+lake swarm t=0:13 fixed=845 | hp 96/120 lv 2 xp 13/15 kills 17 | pos 367,12
 weapons: amulet1 | passives: heart1
-enemies 69 [kedama 39, fairy 30] | drops 10 | shots 0 | bullets 66
-cards: spirit 3.00/3 meter 27 grazes 3 | hand: barrier
+enemies 70 [kedama 40, fairy 30] | drops 10 | shots 0 | bullets 61
+cards: spirit 3.00/3 meter 36 grazes 4 | hand: barrier
 == tick /run:1 fixed x60
 > before tick 846: move x=100 y=0
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:14 fixed=905 | hp 87/120 lv 2 xp 13/15 kills 17 | pos 516,12
+lake swarm t=0:13 fixed=905 | hp 96/120 lv 3 xp 0/25 kills 18 | pos 437,12
 weapons: amulet1 | passives: heart1
-enemies 77 [kedama 40, fairy 37] | drops 10 | shots 0 | bullets 72
-cards: spirit 3.00/3 meter 45 grazes 5 | hand: barrier
-== tick /run:1 fixed x60
-meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: (none)
-cards: fantasy-seal barrier healing | pity 0
-last run: -
-lake swarm t=0:14 fixed=965 | hp 82/120 lv 3 xp 0/25 kills 18 | pos 578,12
-weapons: amulet1 | passives: heart1
-enemies 76 [kedama 39, fairy 37] | drops 10 | shots 0 | bullets 75
-cards: spirit 3.00/3 meter 63 grazes 7 | hand: barrier
+enemies 69 [kedama 39, fairy 30] | drops 10 | shots 0 | bullets 67
+cards: spirit 3.00/3 meter 36 grazes 4 | hand: barrier
 overlay: levelup
 == tick /run:1 fixed x5
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:14 fixed=970 | hp 82/120 lv 3 xp 0/25 kills 18 | pos 578,12
+lake swarm t=0:13 fixed=910 | hp 96/120 lv 3 xp 0/25 kills 18 | pos 437,12
 weapons: amulet1 | passives: heart1
-enemies 76 [kedama 39, fairy 37] | drops 10 | shots 0 | bullets 75
-cards: spirit 3.00/3 meter 63 grazes 7 | hand: barrier
+enemies 69 [kedama 39, fairy 30] | drops 10 | shots 0 | bullets 67
+cards: spirit 3.00/3 meter 36 grazes 4 | hand: barrier
 overlay: levelup
 == play /run:1/levelup levelup:pick index=0
 levelup:pick index=0
@@ -212,53 +203,62 @@ levelup:pick index=0
   levelup:picked index=0 @/run:1
     . -/run:1/levelup.scope (next offer or resume)
     . clock:game.scale 0/1 -> 1/1 (next offer or resume)
-    . +passive#17 {passive} (apply levelup:picked)
+    . +passive#16 {passive} (apply levelup:picked)
     . player#3.progress pending 1 -> 0 (apply levelup:picked)
     . run#2.run overlay levelup -> none (next offer or resume)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:14 fixed=970 | hp 82/120 lv 3 xp 0/25 kills 18 | pos 578,12
+lake swarm t=0:13 fixed=910 | hp 96/120 lv 3 xp 0/25 kills 18 | pos 437,12
 weapons: amulet1 | passives: heart1 power1
-enemies 76 [kedama 39, fairy 37] | drops 10 | shots 0 | bullets 75
-cards: spirit 3.00/3 meter 63 grazes 7 | hand: barrier
+enemies 69 [kedama 39, fairy 30] | drops 10 | shots 0 | bullets 67
+cards: spirit 3.00/3 meter 36 grazes 4 | hand: barrier
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:15 fixed=1030 | hp 82/120 lv 3 xp 0/25 kills 19 | pos 722,12
+lake swarm t=0:14 fixed=970 | hp 91/120 lv 3 xp 2/25 kills 19 | pos 569,12
 weapons: amulet1 | passives: heart1 power1
-enemies 77 [kedama 40, fairy 37] | drops 11 | shots 0 | bullets 96
-cards: spirit 3.00/3 meter 63 grazes 7 | hand: barrier
+enemies 77 [kedama 40, fairy 37] | drops 10 | shots 0 | bullets 68
+cards: spirit 3.00/3 meter 90 grazes 10 | hand: barrier
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:15 fixed=1030 | hp 91/120 lv 3 xp 4/25 kills 20 | pos 713,12
+weapons: amulet1 | passives: heart1 power1
+enemies 77 [kedama 40, fairy 37] | drops 10 | shots 0 | bullets 60
+cards: spirit 3.00/3 meter 90 grazes 10 | hand: barrier
 == tick /run:1 fixed x60
 > before tick 1031: move x=0 y=100
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:16 fixed=1090 | hp 77/120 lv 3 xp 4/25 kills 20 | pos 722,144
+lake swarm t=0:16 fixed=1090 | hp 91/120 lv 3 xp 8/25 kills 22 | pos 713,156
 weapons: amulet1 | passives: heart1 power1
-enemies 77 [kedama 40, fairy 37] | drops 10 | shots 0 | bullets 112
-cards: spirit 3.00/3 meter 63 grazes 7 | hand: barrier
+enemies 77 [kedama 40, fairy 37] | drops 10 | shots 0 | bullets 66
+cards: spirit 3.00/3 meter 90 grazes 10 | hand: barrier
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:17 fixed=1150 | hp 77/120 lv 3 xp 8/25 kills 22 | pos 722,288
+lake swarm t=0:17 fixed=1150 | hp 91/120 lv 3 xp 10/25 kills 23 | pos 713,300
 weapons: amulet1 | passives: heart1 power1
-enemies 85 [kedama 39, fairy 46] | drops 10 | shots 0 | bullets 135
-cards: spirit 3.00/3 meter 99 grazes 11 | hand: barrier
+enemies 85 [kedama 39, fairy 46] | drops 10 | shots 0 | bullets 85
+cards: spirit 3.00/3 meter 8 grazes 12 | hand: barrier, healing
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:18 fixed=1210 | hp 77/120 lv 3 xp 8/25 kills 22 | pos 722,432
+lake swarm t=0:18 fixed=1210 | hp 91/120 lv 3 xp 10/25 kills 24 | pos 713,444
 weapons: amulet1 | passives: heart1 power1
-enemies 83 [kedama 40, fairy 43] | drops 10 | shots 1 | bullets 146
+enemies 81 [kedama 40, fairy 41] | drops 11 | shots 1 | bullets 91
 cards: spirit 3.00/3 meter 17 grazes 13 | hand: barrier, healing
 == tick /run:1 fixed x60
 > before tick 1211: move x=-100 y=0
@@ -266,95 +266,76 @@ meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:19 fixed=1270 | hp 63/120 lv 3 xp 10/25 kills 23 | pos 590,432
+lake swarm t=0:19 fixed=1270 | hp 84/120 lv 3 xp 14/25 kills 26 | pos 581,444
 weapons: amulet1 | passives: heart1 power1
-enemies 77 [kedama 40, fairy 37] | drops 10 | shots 0 | bullets 157
-cards: spirit 3.00/3 meter 44 grazes 16 | hand: barrier, healing
-== tick /run:1 fixed x60
-!! tick 1273: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
-meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: (none)
-cards: fantasy-seal barrier healing | pity 0
-last run: -
-lake swarm t=0:20 fixed=1330 | hp 56/120 lv 3 xp 10/25 kills 24 | pos 458,432
-weapons: amulet1 | passives: heart1 power1
-enemies 75 [kedama 39, fairy 36] | drops 11 | shots 0 | bullets 158
-cards: spirit 3.00/3 meter 44 grazes 16 | hand: barrier, healing
+enemies 75 [kedama 39, fairy 36] | drops 11 | shots 0 | bullets 91
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:21 fixed=1390 | hp 56/120 lv 3 xp 12/25 kills 25 | pos 314,432
+lake swarm t=0:20 fixed=1330 | hp 84/120 lv 3 xp 14/25 kills 26 | pos 437,444
 weapons: amulet1 | passives: heart1 power1
-enemies 76 [kedama 40, fairy 36] | drops 11 | shots 0 | bullets 168
-cards: spirit 3.00/3 meter 44 grazes 16 | hand: barrier, healing
+enemies 76 [kedama 40, fairy 36] | drops 11 | shots 1 | bullets 91
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:21 fixed=1390 | hp 84/120 lv 3 xp 14/25 kills 28 | pos 293,444
+weapons: amulet1 | passives: heart1 power1
+enemies 74 [kedama 39, fairy 35] | drops 13 | shots 0 | bullets 92
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
 == tick /run:1 fixed x60
 > before tick 1391: move x=0 y=-100
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:22 fixed=1450 | hp 51/120 lv 3 xp 16/25 kills 27 | pos 314,300
+lake swarm t=0:22 fixed=1450 | hp 79/120 lv 3 xp 20/25 kills 29 | pos 293,312
 weapons: amulet1 | passives: heart1 power1
-enemies 75 [kedama 39, fairy 36] | drops 11 | shots 0 | bullets 171
-cards: spirit 3.00/3 meter 53 grazes 17 | hand: barrier, healing
+enemies 74 [kedama 39, fairy 35] | drops 11 | shots 0 | bullets 79
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:23 fixed=1510 | hp 51/120 lv 3 xp 18/25 kills 28 | pos 314,156
+lake swarm t=0:23 fixed=1510 | hp 79/120 lv 3 xp 22/25 kills 30 | pos 293,168
 weapons: amulet1 | passives: heart1 power1
-enemies 82 [kedama 39, fairy 43] | drops 11 | shots 0 | bullets 173
-cards: spirit 3.00/3 meter 53 grazes 17 | hand: barrier, healing
+enemies 82 [kedama 40, fairy 42] | drops 11 | shots 1 | bullets 76
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:24 fixed=1570 | hp 51/120 lv 3 xp 22/25 kills 29 | pos 314,12
+lake swarm t=0:24 fixed=1570 | hp 79/120 lv 3 xp 24/25 kills 32 | pos 293,24
 weapons: amulet1 | passives: heart1 power1
-enemies 82 [kedama 40, fairy 40, sunflower 2] | drops 10 | shots 0 | bullets 151
-cards: spirit 3.00/3 meter 53 grazes 17 | hand: barrier, healing
+enemies 77 [kedama 39, fairy 36, sunflower 2] | drops 12 | shots 0 | bullets 76
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
 == tick /run:1 fixed x60
 > before tick 1571: move x=100 y=0
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:25 fixed=1630 | hp 51/120 lv 3 xp 22/25 kills 31 | pos 458,12
+lake swarm t=0:24 fixed=1630 | hp 79/120 lv 4 xp 1/35 kills 32 | pos 302,24
 weapons: amulet1 | passives: heart1 power1
-enemies 77 [kedama 39, fairy 36, sunflower 2] | drops 12 | shots 0 | bullets 140
-cards: spirit 3.00/3 meter 62 grazes 18 | hand: barrier, healing
-== tick /run:1 fixed x60
-meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: (none)
-cards: fantasy-seal barrier healing | pity 0
-last run: -
-lake swarm t=0:26 fixed=1690 | hp 37/120 lv 3 xp 22/25 kills 31 | pos 590,12
-weapons: amulet1 | passives: heart1 power1
-enemies 84 [kedama 40, fairy 42, sunflower 2] | drops 12 | shots 0 | bullets 131
-cards: spirit 3.00/3 meter 71 grazes 19 | hand: barrier, healing
-== tick /run:1 fixed x60
-meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: (none)
-cards: fantasy-seal barrier healing | pity 0
-last run: -
-lake swarm t=0:27 fixed=1750 | hp 37/120 lv 4 xp 1/35 kills 33 | pos 734,12
-weapons: amulet1 | passives: heart1 power1
-enemies 81 [kedama 39, fairy 40, sunflower 2] | drops 12 | shots 0 | bullets 147
-cards: spirit 3.00/3 meter 16 grazes 24 | hand: barrier, healing, fantasy-seal
+enemies 77 [kedama 40, fairy 35, sunflower 2] | drops 11 | shots 0 | bullets 75
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
 overlay: levelup
 == tick /run:1 fixed x5
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:27 fixed=1755 | hp 37/120 lv 4 xp 1/35 kills 33 | pos 734,12
+lake swarm t=0:24 fixed=1635 | hp 79/120 lv 4 xp 1/35 kills 32 | pos 302,24
 weapons: amulet1 | passives: heart1 power1
-enemies 81 [kedama 39, fairy 40, sunflower 2] | drops 12 | shots 0 | bullets 147
-cards: spirit 3.00/3 meter 16 grazes 24 | hand: barrier, healing, fantasy-seal
+enemies 77 [kedama 40, fairy 35, sunflower 2] | drops 11 | shots 0 | bullets 75
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
 overlay: levelup
 == play /run:1/levelup levelup:pick index=0
 levelup:pick index=0
@@ -362,33 +343,51 @@ levelup:pick index=0
   levelup:picked index=0 @/run:1
     . -/run:1/levelup.scope (next offer or resume)
     . clock:game.scale 0/1 -> 1/1 (next offer or resume)
-    . passive#17.passive level 1 -> 2 (apply levelup:picked)
+    . passive#16.passive level 1 -> 2 (apply levelup:picked)
     . player#3.progress pending 1 -> 0 (apply levelup:picked)
     . run#2.run overlay levelup -> none (next offer or resume)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:27 fixed=1755 | hp 37/120 lv 4 xp 1/35 kills 33 | pos 734,12
+lake swarm t=0:24 fixed=1635 | hp 79/120 lv 4 xp 1/35 kills 32 | pos 302,24
 weapons: amulet1 | passives: heart1 power2
-enemies 81 [kedama 39, fairy 40, sunflower 2] | drops 12 | shots 0 | bullets 147
-cards: spirit 3.00/3 meter 16 grazes 24 | hand: barrier, healing, fantasy-seal
+enemies 77 [kedama 40, fairy 35, sunflower 2] | drops 11 | shots 0 | bullets 75
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:25 fixed=1695 | hp 79/120 lv 4 xp 1/35 kills 33 | pos 446,24
+weapons: amulet1 | passives: heart1 power2
+enemies 74 [kedama 40, fairy 32, sunflower 2] | drops 12 | shots 0 | bullets 86
+cards: spirit 3.00/3 meter 35 grazes 15 | hand: barrier, healing
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:26 fixed=1755 | hp 65/120 lv 4 xp 1/35 kills 33 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 80 [kedama 40, fairy 38, sunflower 2] | drops 12 | shots 0 | bullets 101
+cards: spirit 3.00/3 meter 71 grazes 19 | hand: barrier, healing
 -- level-ups taken: 3
--- the field at 27s:
+-- the field at 26s:
 +-------------------------------------------+
-|           k       k                       |
-|        f  f f f* f f f                    |
-|             *   k                         |
-|              * *  s  s                    |
-|     *  **      *         $                |
-|      * *******   k*      .                |
-|   *** *  *fkk*******@ k* * *              |
-|  * *    k*kkff**f*f  f f f *f             |
-| *   ***** ffkk *             k            |
-|*  *  *f*   kk****       k $             f |
-|  *f f*ff f* f*f*                          |
-|  *     f        f *                       |
-|**     *  f   .  *     *                   |
+|           f* f f f *f f f                 |
+|                                           |
+|                s                          |
+|                   s                       |
+|                      k       .            |
+|            * * * f                        |
+|           *  *  f** @  *       .          |
+|        *     kkffk  f  f f f *f f  f      |
+|        **** . kfkk *                      |
+|         **   f* k**             .         |
+|       f f**f f fk*ff      .  .            |
+|       *    *   ff   k.$      k            |
+|       ** *        f                       |
 +-------------------------------------------+
 == tick /run:1 fixed x60
 > before tick 1756: move x=0 y=0
@@ -396,56 +395,124 @@ meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:28 fixed=1815 | hp 23/120 lv 4 xp 3/35 kills 34 | pos 734,12
+lake swarm t=0:27 fixed=1815 | hp 65/120 lv 4 xp 3/35 kills 34 | pos 578,24
 weapons: amulet1 | passives: heart1 power2
-enemies 79 [kedama 40, fairy 37, sunflower 2] | drops 12 | shots 0 | bullets 170
-cards: spirit 3.00/3 meter 43 grazes 27 | hand: barrier, healing, fantasy-seal
+enemies 79 [kedama 40, fairy 37, sunflower 2] | drops 12 | shots 0 | bullets 123
+cards: spirit 3.00/3 meter 98 grazes 22 | hand: barrier, healing
 == tick /run:1 fixed x60
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:29 fixed=1875 | hp 18/120 lv 4 xp 3/35 kills 34 | pos 734,12
+lake swarm t=0:28 fixed=1875 | hp 60/120 lv 4 xp 5/35 kills 35 | pos 578,24
 weapons: amulet1 | passives: heart1 power2
-enemies 86 [kedama 40, fairy 44, sunflower 2] | drops 12 | shots 0 | bullets 182
+enemies 74 [kedama 40, fairy 32, sunflower 2] | drops 12 | shots 1 | bullets 121
+cards: spirit 3.00/3 meter 34 grazes 26 | hand: barrier, healing, fantasy-seal
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:29 fixed=1935 | hp 55/120 lv 4 xp 9/35 kills 37 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 82 [kedama 40, fairy 40, sunflower 2] | drops 12 | shots 0 | bullets 124
 cards: spirit 3.00/3 meter 100 grazes 38 | hand: barrier, healing, fantasy-seal
 == tick /run:1 fixed x60
+!! tick 1953: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:29 fixed=1935 | hp 11/120 lv 4 xp 5/35 kills 35 | pos 734,12
+lake swarm t=0:30 fixed=1995 | hp 50/120 lv 4 xp 11/35 kills 38 | pos 578,24
 weapons: amulet1 | passives: heart1 power2
-enemies 81 [kedama 40, fairy 39, sunflower 2] | drops 12 | shots 0 | bullets 211
+enemies 81 [kedama 40, fairy 39, sunflower 2] | drops 12 | shots 0 | bullets 116
+cards: spirit 3.00/3 meter 100 grazes 42 | hand: barrier, healing, fantasy-seal
+== tick /run:1 fixed x60
+!! tick 2008: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:31 fixed=2055 | hp 45/120 lv 4 xp 13/35 kills 39 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 81 [kedama 40, fairy 39, sunflower 2] | drops 12 | shots 0 | bullets 108
+cards: spirit 3.00/3 meter 100 grazes 43 | hand: barrier, healing, fantasy-seal
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:32 fixed=2115 | hp 40/120 lv 4 xp 17/35 kills 41 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 87 [kedama 39, fairy 46, sunflower 2] | drops 12 | shots 0 | bullets 120
 cards: spirit 3.00/3 meter 100 grazes 46 | hand: barrier, healing, fantasy-seal
 == tick /run:1 fixed x60
+!! tick 2173: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:30 fixed=1995 | hp 6/120 lv 4 xp 7/35 kills 36 | pos 734,12
+lake swarm t=0:33 fixed=2175 | hp 30/120 lv 4 xp 19/35 kills 42 | pos 578,24
 weapons: amulet1 | passives: heart1 power2
-enemies 81 [kedama 40, fairy 39, sunflower 2] | drops 12 | shots 0 | bullets 238
-cards: spirit 3.00/3 meter 100 grazes 56 | hand: barrier, healing, fantasy-seal
+enemies 84 [kedama 39, fairy 43, sunflower 2] | drops 12 | shots 0 | bullets 124
+cards: spirit 3.00/3 meter 100 grazes 50 | hand: barrier, healing, fantasy-seal
 == tick /run:1 fixed x60
+!! tick 2228: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:31 fixed=2055 | hp 1/120 lv 4 xp 9/35 kills 37 | pos 734,12
+lake swarm t=0:33 fixed=2235 | hp 25/120 lv 4 xp 21/35 kills 43 | pos 578,24
 weapons: amulet1 | passives: heart1 power2
-enemies 76 [kedama 40, fairy 34, sunflower 2] | drops 12 | shots 0 | bullets 256
+enemies 78 [kedama 39, fairy 37, sunflower 2] | drops 12 | shots 0 | bullets 108
+cards: spirit 3.00/3 meter 100 grazes 52 | hand: barrier, healing, fantasy-seal
+== tick /run:1 fixed x60
+!! tick 2283: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:34 fixed=2295 | hp 20/120 lv 4 xp 23/35 kills 45 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 76 [kedama 39, fairy 35, sunflower 2] | drops 13 | shots 0 | bullets 96
 cards: spirit 3.00/3 meter 100 grazes 58 | hand: barrier, healing, fantasy-seal
 == tick /run:1 fixed x60
-!! tick 2089: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake over(dead) t=0:32 fixed=2115 | hp 0/120 lv 4 xp 11/35 kills 38 | pos 734,12
+lake swarm t=0:35 fixed=2355 | hp 15/120 lv 4 xp 27/35 kills 46 | pos 578,24
 weapons: amulet1 | passives: heart1 power2
-enemies 82 [kedama 39, fairy 41, sunflower 2] | drops 12 | shots 0 | bullets 233
-cards: spirit 3.00/3 meter 100 grazes 60 | hand: barrier, healing, fantasy-seal
+enemies 82 [kedama 39, fairy 42, sunflower 1] | drops 12 | shots 0 | bullets 87
+cards: spirit 3.00/3 meter 100 grazes 63 | hand: barrier, healing, fantasy-seal
+== tick /run:1 fixed x60
+!! tick 2393: player:hurt player=player#3 dmg=14 cause=bullet: invulnerable
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:36 fixed=2415 | hp 10/120 lv 4 xp 29/35 kills 47 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 78 [kedama 40, fairy 38] | drops 12 | shots 0 | bullets 69
+cards: spirit 3.00/3 meter 100 grazes 67 | hand: barrier, healing, fantasy-seal
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake swarm t=0:37 fixed=2475 | hp 5/120 lv 4 xp 31/35 kills 48 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 73 [kedama 40, fairy 33] | drops 12 | shots 0 | bullets 77
+cards: spirit 3.00/3 meter 100 grazes 74 | hand: barrier, healing, fantasy-seal
+== tick /run:1 fixed x60
+meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
+lake over(dead) t=0:38 fixed=2535 | hp 0/120 lv 4 xp 33/35 kills 49 | pos 578,24
+weapons: amulet1 | passives: heart1 power2
+enemies 75 [kedama 40, fairy 35] | drops 12 | shots 0 | bullets 73
+cards: spirit 3.00/3 meter 100 grazes 75 | hand: barrier, healing, fantasy-seal
 -- the run closed and reported to the meta scope
 "
 `;

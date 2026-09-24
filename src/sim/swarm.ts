@@ -41,6 +41,8 @@ export const ENEMY_FIELDS = [
   "ay",
   "phase",
   "until",
+  // Last, for the v1 -> v2 save migration: the direction a salvo locked on its first volley.
+  "aim",
 ] as const;
 export type EnemyCols = Columns<(typeof ENEMY_FIELDS)[number]>;
 
@@ -64,7 +66,12 @@ interface Job {
   ax?: number;
   ay?: number;
   until?: number;
+  /** Ticks from spawn to the first volley (default FORMATION.enterShot). */
+  fireIn?: number;
 }
+
+/** A first-shot delay for enemies that never fire. */
+const NEVER = 1e9;
 
 /** Adds one enemy (nothing if the store is full); returns its row or -1. */
 export function spawnEnemy(ctx: C, kind: number, x: number, y: number, job: Job = {}): number {
@@ -85,8 +92,7 @@ export function spawnEnemy(ctx: C, kind: number, x: number, y: number, job: Job 
     uid,
     hitAt: -100,
     orbAt: -100,
-    // Shooters wait a random part of their period before the first volley.
-    fireAt: first ? t + 30 + ctx.rng("spawn").int(first.every) : 0,
+    fireAt: first ? t + (job.fireIn ?? FORMATION.enterShot) : 0,
     kx: 0,
     ky: 0,
     volley: 0,
@@ -96,6 +102,7 @@ export function spawnEnemy(ctx: C, kind: number, x: number, y: number, job: Job 
     ay: job.ay ?? 0,
     phase: PHASE.active,
     until: job.until ?? 0,
+    aim: 0,
   });
 }
 
@@ -152,7 +159,11 @@ export function spawnFormation(ctx: C, beat: Beat, kind: number): void {
           across = (i % 2 ? 1 : -1) * j * FORMATION.veeGap;
           back = j * FORMATION.veeGap * 0.8;
         }
-        spawnEnemy(ctx, kind, bx + qx * across + sx * back, by + qy * across + sy * back, { vx: hx, vy: hy });
+        // Only every few fairies (every few ranks of a V) shoot. Ranks further back fire when they reach
+        // the spot the front fired from, so the volley ripples down the formation.
+        const shooter = (beat.form === "vee" ? Math.ceil(i / 2) : i) % FORMATION.shooterEvery === 0;
+        const fireIn = shooter ? FORMATION.enterShot + Math.round(back / def.speed) : NEVER;
+        spawnEnemy(ctx, kind, bx + qx * across + sx * back, by + qy * across + sy * back, { vx: hx, vy: hy, fireIn });
       }
       return;
     }
@@ -175,7 +186,8 @@ export function spawnFormation(ctx: C, beat: Beat, kind: number): void {
       for (let i = 0; i < beat.n; i++) {
         const a = (i / beat.n) * Math.PI * 2;
         const r = FORMATION.circleRadius;
-        spawnEnemy(ctx, kind, body.x + Math.cos(a) * r, body.y + Math.sin(a) * r, { vx: beat.spin ?? 1, ax: a, ay: r, until: t + def.move.life });
+        const fireIn = i % FORMATION.shooterEvery === 0 ? FORMATION.enterShot : NEVER;
+        spawnEnemy(ctx, kind, body.x + Math.cos(a) * r, body.y + Math.sin(a) * r, { vx: beat.spin ?? 1, ax: a, ay: r, until: t + def.move.life, fireIn });
       }
       return;
     }
@@ -227,6 +239,12 @@ export function enemyVelocity(e: EnemyCols, i: number, px: number, py: number, t
     case "chase":
       break;
     case "snipe":
+      // A sniper stands still through a salvo (from just before its first volley to its last), so it reads as one barrage.
+      if (phase === PHASE.holding && def.salvo && (e.col("volley")[i]! % def.salvo.volleys !== 0 || t >= e.col("fireAt")[i]! - FORMATION.windup)) {
+        out.x = 0;
+        out.y = 0;
+        return;
+      }
       tx = px + e.col("ax")[i]!;
       ty = py + e.col("ay")[i]!;
       // Arriving: fast enough to reach a post that moves with the player. Holding: a slow drift, not a chase.
@@ -465,7 +483,7 @@ export function contactDamage(ctx: C): number {
 /**
  * Shooters fire their emitters in turn when due: crossers and chasers when in
  * range, snipers only from their post, a midboss once she is in place;
- * nobody fires while leaving.
+ * nobody fires while leaving. Mobs fire in salvos and rest between them.
  */
 export function enemyFire(ctx: C): void {
   const e = ctx.packed("enemies");
@@ -490,8 +508,12 @@ export function enemyFire(ctx: C): void {
     const em = list[volley[i]! % list.length]!;
     fireAt[i] = t + em.every;
     if (d2 > SWARM.shootRange * SWARM.shootRange) continue;
-    emitPattern(ctx, em, x[i]!, y[i]!, volley[i]!);
+    // A salvo aims once, on its first volley; the rest fire the same way, so its gaps stay put.
+    const aim = e.col("aim");
+    if (!def.salvo || volley[i]! % def.salvo.volleys === 0) aim[i] = Math.atan2(body.y - y[i]!, body.x - x[i]!);
+    emitPattern(ctx, em, x[i]!, y[i]!, volley[i]!, def.midboss ? 0 : FORMATION.bulletLife, aim[i]!);
     volley[i] = volley[i]! + 1;
+    if (def.salvo && volley[i]! % def.salvo.volleys === 0) fireAt[i] = t + def.salvo.rest;
   }
 }
 
@@ -500,6 +522,8 @@ function round1(v: number): number {
 }
 
 const OLD_ENEMY_FIELDS = 11;
+/** Enemy columns in run save v1 (before `aim`). */
+const V1_ENEMY_FIELDS = 17;
 
 /**
  * Run save v0 -> v1 (formations): enemy rows gain the job columns, and the
@@ -515,7 +539,7 @@ export function migrateToFormations(data: ScopeData): ScopeData {
   const old = fromBase64(packed.enemies!);
   const n = new DataView(old.buffer, old.byteOffset, old.byteLength).getUint32(0, true);
   const oldCols = new Float64Array(old.slice(8).buffer);
-  const F = ENEMY_FIELDS.length;
+  const F = V1_ENEMY_FIELDS;
   const bytes = new Uint8Array(8 + n * 8 * F);
   new DataView(bytes.buffer).setUint32(0, n, true);
   const cols = new Float64Array(bytes.buffer, 8, n * F);
@@ -544,4 +568,15 @@ export function migrateToFormations(data: ScopeData): ScopeData {
     .filter((p) => !(p.type === "director" && p.state === "boss"))
     .map((p) => (p.type === "director" && p.state === "swarm" ? { ...p, state: "script", locals: { beat, held: 0, heldFrom: 0, waveAt: 0 } } : p));
   return { ...data, packed, sys: { ...sys, procs } as unknown as ScopeData["sys"] };
+}
+
+/** Run save v1 -> v2 (salvos): enemy rows gain `aim`, the locked direction of a salvo (0 until the next salvo sets it). */
+export function migrateSalvoAim(data: ScopeData): ScopeData {
+  const old = fromBase64(data.packed.enemies!);
+  const n = new DataView(old.buffer, old.byteOffset, old.byteLength).getUint32(0, true);
+  const bytes = new Uint8Array(8 + n * 8 * ENEMY_FIELDS.length);
+  new DataView(bytes.buffer).setUint32(0, n, true);
+  // Columns are stored one after another, so the new last column is zeros past the old ones.
+  new Float64Array(bytes.buffer, 8, n * ENEMY_FIELDS.length).set(new Float64Array(old.slice(8).buffer, 0, n * V1_ENEMY_FIELDS));
+  return { ...data, packed: { ...data.packed, enemies: toBase64(bytes) } };
 }

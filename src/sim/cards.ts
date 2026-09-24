@@ -24,6 +24,24 @@ export function handCards(v: View<RS0>) {
   return v.related("inPile", v.derived("piles").hand);
 }
 
+/**
+ * The hand as fixed slots (one per hand size): a card's `at` in the hand is
+ * its slot, so playing a card leaves a gap instead of sliding the others
+ * over. Cards whose `at` is not a free slot (saves from before slots) take
+ * the free ones in order.
+ */
+export function handSlots(v: View<RS0>): (ReturnType<typeof handCards>[number] | null)[] {
+  const cards = handCards(v);
+  const slots: (typeof cards[number] | null)[] = Array.from({ length: Math.max(v.derived("stats").hand, cards.length) }, () => null);
+  const loose: typeof cards = [];
+  for (const c of cards) {
+    if (c.in.at < slots.length && !slots[c.in.at]) slots[c.in.at] = c;
+    else loose.push(c);
+  }
+  for (const c of loose) slots[slots.indexOf(null)] = c;
+  return slots;
+}
+
 function topAt(v: View<RS0>, pileId: string): number {
   const cards = v.related("inPile", pileId);
   return cards.length ? cards[cards.length - 1]!.in.at + 1 : 0;
@@ -123,7 +141,9 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
         top = ctx.related("inPile", piles.deck)[0];
         if (!top) return;
       }
-      moveCard(ctx, top.id, piles.hand);
+      // The drawn card takes the first empty slot (read before writing: related() sees this node's writes).
+      const slot = handSlots(ctx).indexOf(null);
+      Object.assign(ctx.mut(top.id, "in"), { of: piles.hand, at: slot });
       ctx.emit("card:drawn", { card: top.id });
     }),
 

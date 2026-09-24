@@ -16,7 +16,7 @@ import { stageDef } from "../content/stages.ts";
 import { TREE } from "../content/tree.ts";
 import { weaponDef, weaponLevelDelta } from "../content/weapons.ts";
 import { bossPos } from "../sim/boss.ts";
-import { handCards, spiritAt } from "../sim/cards.ts";
+import { handCards, handSlots, spiritAt } from "../sim/cards.ts";
 import { activeRun, runView, type Game, type RunPath } from "../sim/game.ts";
 import { LevelUp } from "../sim/levelup.ts";
 import { nodeState } from "../sim/meta.ts";
@@ -258,10 +258,11 @@ export function renderHand(k: Game, path: RunPath): string {
   const v = runView(k, path);
   const t = v.now("action");
   const spirit = spiritAt(v, t);
-  const rows = handCards(v).map((c, i) => {
+  const rows = handSlots(v).flatMap((c, i) => {
+    if (!c) return [];
     const card = v.req(c.id, "card").card;
     const def = cardDef(card.id);
-    return { key: i + 1, name: def.name, cost: def.cost, playable: spirit + 1e-9 >= def.cost, does: cardText(def, card.level) };
+    return [{ key: i + 1, name: def.name, cost: def.cost, playable: spirit + 1e-9 >= def.cost, does: cardText(def, card.level) }];
   });
   return `hand (spirit ${r(spirit, 2)}):\n${trimmed(rows)}`;
 }

@@ -45,6 +45,11 @@ export interface EnemyDef {
   move: EnemyMove;
   /** Enemies that shoot: bullet emitters fired from the enemy in turn, one per volley (see patterns.ts). */
   shoots?: readonly EmitterDef[];
+  /**
+   * Fire in salvos: `volleys` volleys (spaced by each emitter's `every`), then
+   * `rest` ticks of silence. Without it the emitters fire back to back.
+   */
+  salvo?: { volleys: number; rest: number };
   /** A midboss: its defeat turns every bullet into points, and the stage waits for it. Its HP does not grow with run time. */
   midboss?: boolean;
   /** Knockback resistance 0..1 (bosses and elites shrug hits off). */
@@ -83,7 +88,8 @@ export const ENEMIES: readonly EnemyDef[] = [
     shape: "fairy",
     glyph: "f",
     move: { kind: "cross" },
-    shoots: [{ pattern: "aimed", every: 100, params: { n: 2, spread: 0.3, speed: 2.6, style: "rice" } }],
+    shoots: [{ pattern: "aimed", every: 16, params: { n: 3, spread: 0.3, speed: 2.6, style: "rice" } }],
+    salvo: { volleys: 2, rest: 450 },
   },
   {
     id: "icefairy",
@@ -100,7 +106,8 @@ export const ENEMIES: readonly EnemyDef[] = [
     shape: "fairy",
     glyph: "i",
     move: { kind: "cross" },
-    shoots: [{ pattern: "aimed", every: 120, params: { n: 3, spread: 0.35, speed: 2.3, style: "ice" } }],
+    shoots: [{ pattern: "aimed", every: 18, params: { n: 3, spread: 0.35, speed: 2.3, style: "ice" } }],
+    salvo: { volleys: 2, rest: 450 },
   },
   {
     id: "phantom",
@@ -117,7 +124,8 @@ export const ENEMIES: readonly EnemyDef[] = [
     shape: "ghost",
     glyph: "p",
     move: { kind: "orbit", inward: 0.9, min: 150, life: 720 },
-    shoots: [{ pattern: "ring", every: 150, params: { n: 5, speed: 1.4, style: "orb", spin: 0.6 } }],
+    shoots: [{ pattern: "ring", every: 16, params: { n: 5, speed: 1.4, style: "orb", spin: 0.6 } }],
+    salvo: { volleys: 2, rest: 300 },
   },
   {
     id: "sunflower",
@@ -134,7 +142,8 @@ export const ENEMIES: readonly EnemyDef[] = [
     shape: "flower",
     glyph: "s",
     move: { kind: "snipe", hold: 300 },
-    shoots: [{ pattern: "aimed", every: 95, params: { n: 5, spread: 0.7, speed: 2.1, style: "rice" } }],
+    shoots: [{ pattern: "aimed", every: 14, params: { n: 3, spread: 0.7, speed: 2.1, style: "rice" } }],
+    salvo: { volleys: 2, rest: 240 },
   },
   {
     id: "yinyang",
@@ -169,7 +178,8 @@ export const ENEMIES: readonly EnemyDef[] = [
     shape: "ghost",
     glyph: "d",
     move: { kind: "snipe", hold: 200 },
-    shoots: [{ pattern: "aimed", every: 110, params: { n: 5, spread: 0.9, speed: 1.9, style: "star" } }],
+    shoots: [{ pattern: "aimed", every: 16, params: { n: 5, spread: 0.9, speed: 1.9, style: "star" } }],
+    salvo: { volleys: 2, rest: 200 },
   },
   {
     id: "bigfairy",
@@ -187,7 +197,8 @@ export const ENEMIES: readonly EnemyDef[] = [
     glyph: "F",
     heavy: 0.85,
     move: { kind: "snipe", hold: 720 },
-    shoots: [{ pattern: "spiral", every: 30, params: { arms: 3, speed: 1.9, step: 0.35, style: "star" } }],
+    shoots: [{ pattern: "spiral", every: 8, params: { arms: 3, speed: 1.9, step: 0.35, style: "star" } }],
+    salvo: { volleys: 12, rest: 200 },
   },
   {
     id: "daiyousei",

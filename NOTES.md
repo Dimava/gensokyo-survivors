@@ -192,13 +192,16 @@ Pieces the kernel's stdlib should own, with where they live here:
 | Log per minute of play | about 190 KB (expert bot, `bun scripts/numbers.ts`: 1.22 MB, 14,503 records over a 6-minute run) |
 | Whole test suite | 11 tests, about 30 s (M2's playthrough and its replay dominate) |
 
-Balance (bot runs, `STAGE=forest bun scripts/balance.ts 5 <seed>` over seeds
-`a`, `b`, `bal`, `s1`, after the formations rework): the novice bot dies at
-1:40-3:30 on its first lake runs and clears the lake on its second or third
-run; it clears the forest on its first or second try there. The expert bot
-clears the lake on its first run and dies in the forest on its first try
-(fresh tree). With the midboss, the boss arrives at about 3:30-3:50 and a
-clear takes 5-8 minutes. A run pays 50-220 donations when lost and 400-1,200
+Balance (bot runs, `bun scripts/balance.ts 3 <seed>` over seeds `a`, `b`,
+`bal`, `s1`, after mobs moved to salvos with only every other fairy firing):
+**open.** Mob fire is now sparse and readable (60-170 bullets in view instead
+of about 385, `bun scripts/field-png.ts`), and the novice bot reaches the lake
+boss at full HP and clears on its first run with every seed; raising bullet
+damage by 40% changed nothing, since the lookahead bot is no longer hit. The
+mob phase used to be the wall through sheer volume; where difficulty should
+come from now (boss, faster aimed shots, contact pressure) is the owner's call.
+The boss arrives at about 3:35-3:50 and a clear
+takes 5-8 minutes. A run pays 40-300 donations when lost and 350-1,100
 when cleared (kills now pay one donation per 20, as there are fewer of
 them); the tree totals 9,140.
 

@@ -45,7 +45,7 @@ export const STAT_DEFS: Record<StatKey, StatDef> = {
   magnet: { label: "Magnet", format: "pct", base: 1, help: "Radius in which items fly to you." },
   growth: { label: "Growth", format: "pct", base: 1, help: "Experience gained." },
   greed: { label: "Greed", format: "pct", base: 1, help: "Donations gained." },
-  graze: { label: "Graze", format: "pct", base: 1, help: "Graze radius and how fast grazing fills the card meter." },
+  graze: { label: "Graze", format: "pct", base: 1, help: "How fast grazing fills the card meter." },
   spiritRegen: { label: "Spirit Regen", format: "pct", base: 1, help: "How fast Spirit refills (cards cost Spirit)." },
   spiritMax: { label: "Max Spirit", format: "flat", base: 3, help: "Spirit you can hold." },
   hand: { label: "Hand Size", format: "flat", base: 3, help: "Skill cards you can hold at once." },

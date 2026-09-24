@@ -14,7 +14,7 @@ import type { Ctx } from "gamebones";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
-import { collectDead, contactDamage, enemyFire, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
+import { collectDead, contactDamage, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
 import { applyVolley, damageArea, damageLine, fireWeapons, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, pullAll, stepDrops } from "./drops.ts";
@@ -198,8 +198,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   }),
   r.on("tick:action").as("danmaku").apply((_, ctx) => {
     const p = ctx.derived("player");
-    const stats = ctx.derived("stats");
-    const res = stepBullets(ctx, stats.graze, playerSpeedBound(ctx));
+    const res = stepBullets(ctx, playerSpeedBound(ctx));
     if (res.hit && ctx.derived("state").run.phase !== "over") {
       const boss = ctx.derived("boss");
       ctx.emit("player:hurt", { player: p.id, dmg: boss ? bossDef(boss.boss.id).bulletDmg : stageDef(ctx.derived("state").run.stage).bulletDmg, cause: "bullet" });
@@ -562,7 +561,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("run:finish", (_, ctx) => ctx.send("/", Meta, "run:ended", summary(ctx))),
 
   ...cardRules(r),
-]).migrations([migrateToFormations]);
+]).migrations([migrateToFormations, migrateSalvoAim]);
 
 function r1(v: number): number {
   return Math.round(v * 10) / 10;

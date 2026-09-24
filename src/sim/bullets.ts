@@ -8,7 +8,8 @@
 // Motion per bullet: from (x0, y0) at t0 along (dx, dy) with speed v0,
 // accelerating by `acc` per tick until speed `vEnd` (reached at `tc` ticks,
 // having covered `sc` pixels). Optionally, at `turnAt` ticks it continues
-// from where it is along (dx2, dy2) at constant speed v2.
+// from where it is along (dx2, dy2) at constant speed v2. A bullet with a
+// `life` is gone (pos() says it does not exist) that many ticks after t0.
 
 import type { PackedStore } from "gamebones";
 
@@ -31,6 +32,8 @@ const FIELDS = [
   "style2",
   "check",
   "grazed",
+  // Last, so a snapshot from before it existed still restores (see restore()).
+  "life",
 ] as const;
 
 export type BulletField = (typeof FIELDS)[number];
@@ -51,6 +54,8 @@ export interface BulletSpawn {
   style: number;
   /** Style drawn between the bullet stopping and turning (a frozen bullet). */
   style2?: number;
+  /** Ticks the bullet lives; 0 or absent: until it leaves the field. */
+  life?: number;
 }
 
 const LITTLE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
@@ -102,6 +107,7 @@ export class BulletStore implements PackedStore {
     c.style2[i] = b.style2 ?? b.style;
     c.check[i] = b.t0;
     c.grazed[i] = 0;
+    c.life[i] = b.life ?? 0;
     return i;
   }
 
@@ -124,11 +130,17 @@ export class BulletStore implements PackedStore {
     return c.sc[i]! + c.vEnd[i]! * (dt - tc);
   }
 
-  /** Position at time t (fractional t is fine). Writes into `out`; returns false before the bullet exists. */
+  /** Ticks after t0 when the bullet is gone (Infinity if it lives until it leaves the field). */
+  endsAt(i: number): number {
+    const life = this.cols.life[i]!;
+    return life > 0 ? this.cols.t0[i]! + life : Infinity;
+  }
+
+  /** Position at time t (fractional t is fine). Writes into `out`; returns false before the bullet exists or after its life. */
   pos(i: number, t: number, out: { x: number; y: number }): boolean {
     const c = this.cols;
     const dt = t - c.t0[i]!;
-    if (dt < 0) return false;
+    if (dt < 0 || t >= this.endsAt(i)) return false;
     const turn = c.turnAt[i]!;
     if (turn > 0 && dt > turn) {
       const s = this.dist(i, turn);
@@ -183,15 +195,18 @@ export class BulletStore implements PackedStore {
   restore(bytes: Uint8Array): void {
     const n = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(0, true);
     if (n > this.capacity) throw new Error(`bullets: snapshot holds ${n} rows but capacity is ${this.capacity}`);
-    if (bytes.byteLength !== 8 + n * 8 * FIELDS.length) {
+    // Snapshots from before `life` existed hold one field fewer; their bullets live until they leave.
+    const width = bytes.byteLength === 8 + n * 8 * (FIELDS.length - 1) ? FIELDS.length - 1 : FIELDS.length;
+    if (bytes.byteLength !== 8 + n * 8 * width) {
       throw new Error(`bullets: snapshot size ${bytes.byteLength} does not match ${FIELDS.length} fields x ${n} rows`);
     }
-    const src = new Float64Array(bytes.slice(8).buffer, 0, n * FIELDS.length);
+    const src = new Float64Array(bytes.slice(8).buffer, 0, n * width);
     let o = 0;
-    for (const f of FIELDS) {
+    for (const f of FIELDS.slice(0, width)) {
       this.cols[f].set(src.subarray(o, o + n));
       o += n;
     }
+    if (width < FIELDS.length) this.cols.life.fill(0, 0, n);
     this.n = n;
   }
 

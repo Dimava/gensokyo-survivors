@@ -13,8 +13,8 @@ export const PLAYER = {
   body: 11,
   /** Danmaku hitbox radius (Touhou style: tiny). */
   hitbox: 3,
-  /** Base graze radius (scaled by the graze stat). */
-  graze: 20,
+  /** Graze radius. Fixed: the graze stat speeds up the card meter instead. */
+  graze: 32,
   /** Ticks of invulnerability after a hit. */
   invuln: 50,
   /** Bullets erased around the player after a bullet hit, so a hit is not a chain. */
@@ -65,6 +65,14 @@ export const FORMATION = {
   /** A sniper is at its post within this distance; its first shot comes this many ticks later. */
   arrived: 14,
   firstShot: 20,
+  /** Everyone else's first volley comes this many ticks after spawning: about when a formation enters the view. The whole formation fires together. */
+  enterShot: 30,
+  /** A sniper stops this many ticks before a salvo and stands still until its last volley. */
+  windup: 20,
+  /** In lines, streams and circles every this many enemies shoots; in a V, every this many ranks. */
+  shooterEvery: 2,
+  /** Mobs' slow bullets fade out after this many ticks (a midboss's live until they leave the field). */
+  bulletLife: 270,
   /** Holding snipers drift after the player at this fraction of their speed. */
   holdDrift: 0.5,
   /** Orbit rings start at this radius. Orbiters, and snipers flying to their posts, may move this many times their speed to keep up. */
@@ -119,6 +127,8 @@ export const REWARD = { perSeconds: 8, perKills: 20 } as const;
 
 /** Bullets further than this from the player (or the arena) are culled when checked. */
 export const BULLET_CULL = 900;
+/** Bullets slower than this (px per tick) are "slow": given a life, they fade out (danmaku.ts). */
+export const SLOW_BULLET = 2;
 
 /** Slots for weapons and passives in a run. */
 export const SLOTS = { weapons: 4, passives: 4 } as const;
