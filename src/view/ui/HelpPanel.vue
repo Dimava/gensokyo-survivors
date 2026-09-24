@@ -4,6 +4,7 @@ import { CURRENCY } from "../../content/names.ts";
 import { STAGES } from "../../content/stages.ts";
 import { bossDef } from "../../content/bosses.ts";
 import { fmtTime, hex } from "./useGame.ts";
+import Keys from "./Keys.vue";
 const first = STAGES[0]!;
 const spells = bossDef(first.boss).spells.length;
 const mid = first.script.find((b) => b.form === "midboss");
@@ -17,11 +18,13 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
       <h3>Controls</h3>
       <table>
         <tbody>
-          <tr><td><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> or arrows</td><td>Move (or hold the mouse button on the field and point)</td></tr>
-          <tr><td><span class="key">1</span>–<span class="key">5</span> or click</td><td>Play a skill card from your hand</td></tr>
-          <tr><td><span class="key">1</span><span class="key">2</span><span class="key">3</span></td><td>Pick a level-up upgrade; <span class="key">R</span> rerolls if you have rerolls</td></tr>
-          <tr><td><span class="key">Space</span> / <span class="key">Enter</span></td><td>Advance dialogue; <span class="key">X</span> skips it</td></tr>
-          <tr><td><span class="key">Esc</span> / <span class="key">P</span></td><td>Pause (the run also pauses when the tab is hidden)</td></tr>
+          <tr><td><Keys for="Move" /></td><td>Move (or hold the mouse button on the field and point)</td></tr>
+          <tr><td>Hold <Keys for="Focus" /></td><td>Focus: move slowly and see your hitbox, for threading through bullets. Your shots gather in too: tighter fans, knives thrown ahead, orbs closer, the border shoves enemies back harder, a narrower, stronger beam</td></tr>
+          <tr><td><Keys for="Action:card1" :max="1" />–<Keys for="Action:card5" :max="1" /> or click</td><td>Play a skill card from your hand</td></tr>
+          <tr><td><Keys for="Action:pick1" :max="1" /><Keys for="Action:pick2" :max="1" /><Keys for="Action:pick3" :max="1" /></td><td>Pick a level-up upgrade (or select one with the arrows and confirm); <Keys for="Action:reroll" /> rerolls if you have rerolls</td></tr>
+          <tr><td><Keys for="Action:confirm" /></td><td>Advance dialogue; <Keys for="Action:skip" /> skips it</td></tr>
+          <tr><td><Keys for="Action:pause" /></td><td>Pause (the run also pauses when the tab is hidden)</td></tr>
+          <tr><td><Keys :for="['ArrowY', 'ArrowX']" /> <Keys for="Confirm" :max="2" /> <Keys for="Back" /></td><td>Menus: select, confirm, back. The mouse works everywhere too</td></tr>
         </tbody>
       </table>
     </section>
