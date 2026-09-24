@@ -19,6 +19,11 @@ import { Vn } from "../sim/vn.ts";
 
 /** The ?bot=1 player's pace on screens a person reads (ms). */
 const BOT_PACE = { levelUp: 1600, typeMs: 28, readMs: 900, readPerChar: 30 };
+/**
+ * A level-up offer shares the card keys: for `cast` ms after it opens a card key
+ * still casts, and until `block` ms no pick is taken (keys or clicks).
+ */
+const LEVELUP_GUARD = { cast: 100, block: 600 };
 
 export type Screen = "title" | "menu" | "run" | "results" | "tree" | "cards" | "packs" | "expeditions" | "records" | "gallery" | "settings" | "help";
 
@@ -58,6 +63,12 @@ class Host {
   private demo: { k: Game; presenter: Presenter; last: { x: number; y: number } } | null = null;
   private tickCost = 0;
   private frames: number[] = [];
+  /**
+   * When the current level-up offer appeared (wall clock, ms). Its picks share
+   * the card keys (1-3), so a key meant as a spell must not pick: see LEVELUP_GUARD.
+   */
+  private levelUpAt = 0;
+  private wasLevelUp = false;
   /** Level-ups the bot has picked (keys its wait per level-up). */
   private levelups = 0;
   /** Debug: the bot plays the run (?bot=1). */
@@ -269,6 +280,9 @@ class Host {
       this.runEnded();
       return;
     }
+    const levelUp = runView(this.k, path).derived("state").run.overlay === "levelup";
+    if (levelUp && !this.wasLevelUp) this.levelUpAt = performance.now();
+    this.wasLevelUp = levelUp;
     if (++this.sinceSave >= 600) this.save();
   }
 
@@ -449,10 +463,13 @@ class Host {
     this.k.queue(path, "card:play", { card: card.id });
   }
 
+  /** Ignored while the offer is fresh (LEVELUP_GUARD), keys and clicks alike. */
   pickLevelUp(index: number): void {
     const path = this.path();
-    if (!path) return;
+    if (!path || performance.now() - this.levelUpAt < LEVELUP_GUARD.block) return;
     this.dispatchRun(`${path}/levelup`, "levelup:pick", { index });
+    // A chained level-up opens a fresh offer: it gets its own guard.
+    this.levelUpAt = performance.now();
   }
 
   reroll(): void {
@@ -521,7 +538,9 @@ class Host {
     }
     if (state.paused) return;
     if (overlay === "levelup") {
-      if (a === "pick1" || a === "pick2" || a === "pick3") this.pickLevelUp(Number(a.slice(4)) - 1);
+      // A card key just as the offer opens was meant for the hand: it still casts (resolving when the run goes on).
+      if (a.startsWith("card") && performance.now() - this.levelUpAt < LEVELUP_GUARD.cast) this.playCard(Number(a.slice(4)) - 1);
+      else if (a === "pick1" || a === "pick2" || a === "pick3") this.pickLevelUp(Number(a.slice(4)) - 1);
       if (a === "reroll") this.reroll();
       return;
     }
