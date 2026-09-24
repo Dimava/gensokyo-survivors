@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // A rigged character (src/art-l2d) drawn live into its own canvas (through
 // the one shared Pixi renderer, see pixi-model.ts):
-// it looks toward `look` when given, else toward the cursor, and blinks,
-// breathes and sways on its own. Mirrored portraits mirror the look too.
+// it looks toward `look` when given, else toward the cursor if `follow` (the
+// gallery), else straight ahead, and blinks, breathes and sways on its own.
+// Mirrored portraits mirror the look too.
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { Container } from "pixi.js";
 import type { Look } from "../../art/drawing.ts";
@@ -12,7 +13,7 @@ import { Animator } from "../../art-l2d/animator.ts";
 import { drawInto, partImages, RigView, sharedRenderer } from "../../art-l2d/pixi-model.ts";
 import { prefs } from "../prefs.ts";
 
-const props = defineProps<{ model: Model; width: number; height: number; look?: Look; flip?: boolean; talking?: boolean; rate?: number }>();
+const props = defineProps<{ model: Model; width: number; height: number; look?: Look; flip?: boolean; talking?: boolean; rate?: number; follow?: boolean }>();
 
 const canvas = ref<HTMLCanvasElement>();
 /** The cursor this far away (px) makes the model look fully that way. */
@@ -31,7 +32,8 @@ function onMove(e: PointerEvent): void {
 function target(): Look {
   if (props.look) return props.flip ? { x: -props.look.x, y: props.look.y } : props.look;
   const el = canvas.value;
-  if (!el || mouse.x < 0) return { x: 0, y: 0 };
+  // Not following: back to the neutral look (the animator eases there).
+  if (!props.follow || !el || mouse.x < 0) return { x: 0, y: 0 };
   const r = el.getBoundingClientRect();
   // The eyes sit at about 42% of the model's height.
   let dx = mouse.x - (r.left + r.width / 2);

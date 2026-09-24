@@ -110,7 +110,7 @@ function draw(d: Drawing, key: string, px: number): string {
               class="portrait"
               v-html="draw(c.portrait, c.key + ':p', 1)"
             ></div>
-            <LivePortrait v-if="c.live && style !== 'drawn'" class="portrait live" :model="c.live" v-bind="liveSize" />
+            <LivePortrait v-if="c.live && style !== 'drawn'" class="portrait live" :model="c.live" v-bind="liveSize" follow />
             <div
               v-if="c.sprite && (style !== 'live2d' || !c.liveSprite)"
               :ref="(el) => setEl(c.key + ':s', el)"
@@ -124,6 +124,7 @@ function draw(d: Drawing, key: string, px: number): string {
               :width="c.liveSprite.w * SPRITE_ZOOM"
               :height="c.liveSprite.h * SPRITE_ZOOM"
               :rate="c.liveSprite.rate"
+              follow
             />
           </div>
           <div class="name">{{ c.name }}</div>
@@ -142,6 +143,7 @@ function draw(d: Drawing, key: string, px: number): string {
               :width="e.liveSprite.w * SPRITE_ZOOM"
               :height="e.liveSprite.h * SPRITE_ZOOM"
               :rate="e.liveSprite.rate"
+              follow
             />
           </div>
           <div class="name">{{ e.name }}</div>
