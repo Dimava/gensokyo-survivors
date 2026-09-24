@@ -118,6 +118,18 @@ export class RigView extends Container {
   }
 
   /**
+   * Put `obj` into the view just over a part's mesh, so it draws in that
+   * part's place in the layer order (a glow on a jewel, still under the parts
+   * above it). False if no such part.
+   */
+  addOver(id: string, obj: Container): boolean {
+    const m = this.meshes.get(id);
+    if (!m || m.mesh.parent !== this) return false;
+    this.addChildAt(obj, this.getChildIndex(m.mesh) + 1);
+    return true;
+  }
+
+  /**
    * Take a part's mesh out of the view (to draw it in another layer, e.g. above
    * the bullets); `update()` keeps deforming it. Place its new parent with this
    * view's world transform. Null if no such part.

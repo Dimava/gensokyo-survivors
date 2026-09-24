@@ -140,6 +140,8 @@ export class Playfield {
   private flashColor = 0xffffff;
   private flashAlpha = 0;
   private time = 0;
+  /** The glow behind Reimu's brooch, in her rig's layer order (under her face); lit by grazes. */
+  private broochGlow: Sprite | null = null;
   /** Graze ring strength: 1 on a graze, decaying to 0 (grazeFlash). */
   private grazeA = 0;
   /** Time of the rigged art's idle cycles: runs at the animation-speed setting. */
@@ -245,6 +247,18 @@ export class Playfield {
   }
 
   /** A graze happened: the graze ring lights up and fades. */
+  private glowTex: Texture | null = null;
+  /** A soft rose-white glow in rig units (the brooch orb is 11.5 across its radius), made once. */
+  private glowTexture(): Texture {
+    if (this.glowTex) return this.glowTex;
+    const g = new Graphics();
+    for (let r = 44; r > 10; r -= 2) g.circle(0, 0, r).fill({ color: 0xff7a9c, alpha: 0.1 });
+    for (let r = 22; r > 8; r -= 2) g.circle(0, 0, r).fill({ color: 0xffffff, alpha: 0.16 });
+    this.glowTex = this.app.renderer.generateTexture({ target: g, resolution: 2, antialias: true });
+    g.destroy();
+    return this.glowTex;
+  }
+
   grazeFlash(): void {
     this.grazeA = 1;
   }
@@ -292,6 +306,16 @@ export class Playfield {
       }
     }
     for (const l of Object.values(this.live)) l.holder.destroy({ children: true });
+    // A graze lights the brooch: the glow sits in the rig just over the brooch mesh (under her face).
+    this.broochGlow = null;
+    if (live.reimu) {
+      const glow = new Sprite(this.glowTexture());
+      glow.anchor.set(0.5);
+      glow.blendMode = "add";
+      glow.alpha = 0;
+      if (live.reimu.view.addOver(HITBOX_PART, glow)) this.broochGlow = glow;
+      else glow.destroy();
+    }
     this.playerLive.removeChildren();
     this.bossLive.removeChildren();
     if (live.reimu) this.playerLive.addChild(live.reimu.holder);
@@ -578,6 +602,12 @@ export class Playfield {
     this.fxG.clear();
     // The graze ring lights up on an actual graze and fades out; it is not shown passively.
     this.grazeA *= Math.exp(-dt * 7);
+    if (this.broochGlow && liveReimu) {
+      const c = liveReimu.view.partCenter(HITBOX_PART);
+      if (c) this.broochGlow.position.set(c[0], c[1]);
+      this.broochGlow.alpha = this.grazeA;
+      this.broochGlow.scale.set(0.8 + 0.4 * this.grazeA);
+    }
     if (this.grazeA > 0.02) {
       this.fxG.circle(p.body.x, p.body.y, PLAYER.graze).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 * this.grazeA });
     }
