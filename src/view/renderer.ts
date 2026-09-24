@@ -5,6 +5,7 @@
 // trace events and live only here.
 
 import {
+  AlphaFilter,
   Application,
   Container,
   Graphics,
@@ -81,6 +82,22 @@ interface Floater {
 }
 
 const pos = { x: 0, y: 0 };
+
+/**
+ * See-through for a layered rig as one picture: container alpha would fade
+ * each mesh on its own, so overlapping parts (hair over face, sleeves over
+ * dress) would show through each other. An AlphaFilter flattens it first; it
+ * is only attached while the alpha is below 1.
+ */
+function groupAlpha(c: Container, alpha: number): void {
+  if (alpha >= 0.999) {
+    if (c.filters) c.filters = null;
+    return;
+  }
+  let f = (c.filters as AlphaFilter[] | null)?.[0];
+  if (!(f instanceof AlphaFilter)) c.filters = [(f = new AlphaFilter())];
+  f.alpha = alpha;
+}
 /**
  * The graze ring's three modes: hidden; circle, a plain steady ring (a UI cue,
  * not an effect: no easing) while a grazeable bullet is within `near` px
@@ -597,7 +614,7 @@ export class Playfield {
     } else this.player.scale.set(p.body.fx < -0.1 ? -1 : 1, 1);
     this.player.alpha = run.phase === "over" && run.outcome === "dead" ? Math.max(0, 1 - (t - run.endedAt) / 30) : invuln ? (Math.floor(this.time * 20) % 2 ? 0.35 : 0.9) : 1;
     if (this.playerAlpha !== null) this.player.alpha = this.playerAlpha;
-    this.playerLive.alpha = this.player.alpha;
+    groupAlpha(this.playerLive, this.player.alpha);
     this.hitbox.position.set(p.body.x, p.body.y);
     // The hitbox and graze ring show near bullets, and always while focused (Shift).
     const near = nearest < 170 * 170 || input.focused;
