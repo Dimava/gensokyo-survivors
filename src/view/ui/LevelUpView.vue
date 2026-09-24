@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { host, state } from "../host.ts";
-import { prefs, markSeen } from "../prefs.ts";
+import { prefs, markSeen, anim } from "../prefs.ts";
+import { ui } from "../presenter.ts";
 import { audio } from "../audio.ts";
 import { LevelUp } from "../../sim/levelup.ts";
 import { runView } from "../../sim/game.ts";
@@ -54,6 +55,61 @@ const choices = computed(() =>
   }),
 );
 
+/** Shown: the overlay is up and the pause menu isn't over it (RunView decides). */
+const props = defineProps<{ open: boolean }>();
+
+type Choice = (typeof choices.value)[number];
+interface Layer {
+  id: string;
+  level: number;
+  pending: number;
+  rerolls: number;
+  choices: Choice[];
+  /** live: the offer being chosen; the others are short-lived copies of an offer the sim already closed. */
+  mode: "live" | "pick" | "reroll" | "fade";
+  picked: number;
+  /** Another offer replaced this one at once (chained level-up, reroll): its title and buttons stay hidden. */
+  chained: boolean;
+}
+
+// The sim resolves a pick at once and the run goes on; the exit is played by a
+// copy of the old cards, so the view never holds the game paused.
+const offerKey = computed(() => (offer.value ? `${offer.value.level}|${offer.value.rerolls}|${choices.value.map((c) => c.name).join(",")}` : ""));
+const ghosts = ref<Layer[]>([]);
+let current: Omit<Layer, "id" | "mode" | "picked" | "chained"> | null = null;
+let seenPick = ui.levelPick?.id ?? 0;
+let nextGhost = 0;
+const timers = new Set<number>();
+
+watch(
+  offerKey,
+  (key) => {
+    const prev = current;
+    current = key ? { level: offer.value!.level, pending: pending.value, rerolls: offer.value!.rerolls, choices: choices.value } : null;
+    if (!prev || state.paused) return;
+    const ev = ui.levelPick && ui.levelPick.id > seenPick ? ui.levelPick : null;
+    if (ev) seenPick = ev.id;
+    const mode = !ev ? "fade" : ev.index === null ? "reroll" : "pick";
+    const ghost: Layer = { ...prev, id: `g${nextGhost++}`, mode, picked: ev?.index ?? -1, chained: !!key };
+    ghosts.value = [...ghosts.value.slice(-2), ghost];
+    const t = window.setTimeout(
+      () => {
+        timers.delete(t);
+        ghosts.value = ghosts.value.filter((g) => g.id !== ghost.id);
+      },
+      anim(0.6) * 1000,
+    );
+    timers.add(t);
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => timers.forEach((t) => clearTimeout(t)));
+
+const layers = computed<Layer[]>(() => {
+  const live: Layer[] = props.open && offer.value ? [{ id: "live", level: offer.value.level, pending: pending.value, rerolls: offer.value.rerolls, choices: choices.value, mode: "live", picked: -1, chained: false }] : [];
+  return [...live, ...ghosts.value];
+});
+
 function pick(i: number): void {
   markSeen("levelup");
   host.pickLevelUp(i);
@@ -64,18 +120,30 @@ function hover(): void {
 </script>
 
 <template>
-  <div class="lvl" v-if="offer">
+  <Transition name="lvlbg">
+    <div v-if="open && offer" class="lvlbg"></div>
+  </Transition>
+  <div v-for="L in layers" :key="L.id" class="lvl" :class="[L.mode, { chained: L.chained }]">
     <div class="head">
-      <h2>Level {{ offer.level }}!</h2>
+      <h2>Level {{ L.level }}!</h2>
       <p class="muted">
-        Choose one upgrade<span v-if="pending > 1"> ({{ pending }} level-ups waiting)</span>
+        Choose one upgrade<span v-if="L.pending > 1"> ({{ L.pending }} level-ups waiting)</span>
       </p>
       <p v-if="prefs.hints && !prefs.seen.includes('levelup')" class="hint">
         Press <span class="key">1</span> <span class="key">2</span> <span class="key">3</span> or click a card. The run is paused while you choose.
       </p>
     </div>
     <div class="choices">
-      <button v-for="(c, i) in choices" :key="offer.level + '-' + i + c.name" class="choice" :style="{ '--c': c.color, animationDelay: `calc(${i * 0.07}s * var(--anim))` }" @mouseenter="hover" @click="pick(i)">
+      <button
+        v-for="(c, i) in L.choices"
+        :key="L.level + '-' + i + c.name"
+        class="choice"
+        :class="{ picked: i === L.picked }"
+        :style="{ '--c': c.color, '--i': i, animationDelay: L.mode === 'live' ? `calc(${i * 0.07}s * var(--anim))` : undefined }"
+        :tabindex="L.mode === 'live' ? undefined : -1"
+        @mouseenter="L.mode === 'live' && hover()"
+        @click="L.mode === 'live' && pick(i)"
+      >
         <span class="key num">{{ i + 1 }}</span>
         <span class="icon"></span>
         <span class="kind">{{ c.kind }}</span>
@@ -88,22 +156,64 @@ function hover(): void {
       </button>
     </div>
     <div class="foot">
-      <button v-if="offer.rerolls > 0" class="btn" @click="host.reroll()">Reroll ({{ offer.rerolls }} left) <span class="key">R</span></button>
+      <button v-if="L.rerolls > 0" class="btn" :tabindex="L.mode === 'live' ? undefined : -1" @click="L.mode === 'live' && host.reroll()">Reroll ({{ L.rerolls }} left) <span class="key">R</span></button>
     </div>
   </div>
 </template>
 
 <style scoped>
+.lvlbg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(10, 16, 40, 0.75), rgba(4, 6, 16, 0.9));
+}
+.lvlbg-enter-active {
+  transition: opacity calc(0.25s * var(--anim)) ease;
+}
+.lvlbg-leave-active {
+  transition: opacity calc(0.4s * var(--anim)) ease calc(0.05s * var(--anim));
+}
+.lvlbg-enter-from,
+.lvlbg-leave-to {
+  opacity: 0;
+}
 .lvl {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 18px;
-  background: radial-gradient(ellipse at center, rgba(10, 16, 40, 0.75), rgba(4, 6, 16, 0.9));
+}
+.lvl.live {
   animation: fadein calc(0.25s * var(--anim)) both;
+}
+/* The leaving copies: never clickable, never over the live offer. */
+.lvl:not(.live) {
+  pointer-events: none !important;
+  z-index: 1;
+}
+.lvl:not(.live) .choice {
+  animation: drop calc(0.3s * var(--anim)) ease-in calc(var(--i) * 0.04s * var(--anim)) both;
+}
+.lvl:not(.live) .head,
+.lvl:not(.live) .foot {
+  animation: rise calc(0.3s * var(--anim)) ease-in both;
+}
+.lvl.chained .head,
+.lvl.chained .foot {
+  visibility: hidden;
+}
+.lvl.pick .choice.picked {
+  animation: taken calc(0.45s * var(--anim)) cubic-bezier(0.3, 0, 0.5, 1) both;
+  z-index: 1;
+}
+.lvl.reroll .choice {
+  animation: flip calc(0.25s * var(--anim)) ease-in calc(var(--i) * 0.04s * var(--anim)) both;
+}
+.lvl.fade .choice {
+  animation: fadeout calc(0.3s * var(--anim)) ease both;
 }
 .head {
   text-align: center;
@@ -124,7 +234,7 @@ h2 {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: safe center;
 }
 .choice {
   position: relative;
@@ -196,6 +306,51 @@ ul {
   from {
     opacity: 0;
     transform: translateY(40px) rotate(-4deg);
+  }
+}
+@keyframes drop {
+  to {
+    opacity: 0;
+    transform: translateY(46px) rotate(calc((var(--i) - 1) * 4deg)) scale(0.94);
+  }
+}
+@keyframes rise {
+  to {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+@keyframes taken {
+  0% {
+    transform: translateY(-6px) scale(1.03);
+  }
+  35% {
+    transform: translateY(-10px) scale(1.12);
+    border-color: #fff;
+    filter: brightness(1.5);
+    box-shadow:
+      0 0 36px 6px var(--c),
+      0 0 90px 10px color-mix(in srgb, var(--c) 60%, transparent);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-34px) scale(1.3);
+    filter: brightness(2.2) blur(3px);
+    box-shadow:
+      0 0 60px 16px var(--c),
+      0 0 140px 30px color-mix(in srgb, var(--c) 40%, transparent);
+    opacity: 0;
+  }
+}
+@keyframes flip {
+  to {
+    opacity: 0;
+    transform: perspective(700px) rotateY(80deg) scale(0.9);
+  }
+}
+@keyframes fadeout {
+  to {
+    opacity: 0;
   }
 }
 @keyframes fadein {

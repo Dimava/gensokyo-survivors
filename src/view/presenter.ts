@@ -29,7 +29,13 @@ export interface Toast {
 }
 
 /** UI messages the Vue shell renders; each expires on its own. */
-export const ui = reactive({ banners: [] as Banner[], toasts: [] as Toast[], cardFlash: null as null | { id: number; card: string } });
+export const ui = reactive({
+  banners: [] as Banner[],
+  toasts: [] as Toast[],
+  cardFlash: null as null | { id: number; card: string },
+  /** The last level-up choice resolved by the sim (a pick index, or null for a reroll): LevelUpView animates the old cards out with it. */
+  levelPick: null as null | { id: number; index: number | null },
+});
 
 let nextId = 1;
 
@@ -249,7 +255,11 @@ export class Presenter {
         if (p.outcome === "dead") f.flash(0x000000, 0.4);
         break;
       case "levelup:pick":
+        if (!this.quiet) ui.levelPick = { id: nextId++, index: p.index as number };
         this.sfx("ui");
+        break;
+      case "levelup:reroll":
+        if (!this.quiet) ui.levelPick = { id: nextId++, index: null };
         break;
       case "vn:next":
         this.sfx("text");

@@ -24,9 +24,7 @@ const h = computed(() => hud.value);
       </TransitionGroup>
     </div>
     <HintBar v-if="h && !state.paused" />
-    <Transition name="fade">
-      <LevelUpView v-if="h && h.overlay === 'levelup' && !state.paused" />
-    </Transition>
+    <LevelUpView v-if="h" :open="h.overlay === 'levelup' && !state.paused" />
     <Transition name="fade">
       <DialogueView v-if="h && h.overlay === 'vn' && !state.paused" />
     </Transition>
