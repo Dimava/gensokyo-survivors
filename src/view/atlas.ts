@@ -11,6 +11,8 @@ export interface Atlas {
   enemy: Texture[];
   enemyWhite: Texture[];
   bullet: Texture[];
+  /** The same bullets with their inner glow put out, drawn once grazed. */
+  bulletSpent: Texture[];
   drop: { gem: Texture; gemGreen: Texture; gemRed: Texture; coin: Texture; heart: Texture };
   shot: Texture[];
   spark: Texture;
@@ -88,6 +90,12 @@ function drawEnemy(g: Graphics, cx: number, cy: number, shape: EnemyShape, r: nu
   }
 }
 
+/** A grazed bullet's core: its own colour, dark (the inner glow put out). */
+function spentCore(c: number): number {
+  const ch = (v: number) => Math.round(v * 0.3);
+  return (ch((c >> 16) & 255) << 16) | (ch((c >> 8) & 255) << 8) | ch(c & 255);
+}
+
 function drawBullet(g: Graphics, cx: number, cy: number, shape: string, size: number, color: number, core: number): void {
   const r = size / 2;
   switch (shape) {
@@ -129,6 +137,8 @@ export function buildAtlas(renderer: Renderer): Atlas {
   BULLET_STYLES.forEach((b, i) => {
     const s = Math.ceil(b.size + 6);
     cells.push({ name: `bullet${i}`, w: s, h: s, draw: (g, cx, cy) => drawBullet(g, cx, cy, b.shape, b.size, b.color, b.core) });
+    // Grazed ("spent"): the coloured glow stays, the white inner glow goes out. Tint only multiplies, so this is its own texture.
+    cells.push({ name: `bulletS${i}`, w: s, h: s, draw: (g, cx, cy) => drawBullet(g, cx, cy, b.shape, b.size, b.color, spentCore(b.color)) });
   });
   const gem = (color: number) => (g: Graphics, cx: number, cy: number) => {
     g.poly([cx, cy - 8, cx + 6, cy, cx, cy + 8, cx - 6, cy]).fill(color);
@@ -336,6 +346,7 @@ export function buildAtlas(renderer: Renderer): Atlas {
     enemy: ENEMIES.map((_, i) => f(`enemy${i}`)),
     enemyWhite: ENEMIES.map((_, i) => f(`enemyW${i}`)),
     bullet: BULLET_STYLES.map((_, i) => f(`bullet${i}`)),
+    bulletSpent: BULLET_STYLES.map((_, i) => f(`bulletS${i}`)),
     drop: { gem: f("gem"), gemGreen: f("gemGreen"), gemRed: f("gemRed"), coin: f("coin"), heart: f("heart") },
     shot: WEAPONS.map((_, i) => f(`shot${i}`)),
     spark: f("spark"),

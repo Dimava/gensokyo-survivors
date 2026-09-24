@@ -69,6 +69,15 @@ function erase(): void {
         <input v-model="prefs.fps" type="checkbox" />
         <span>Show frame rate and simulation cost</span>
       </label>
+      <label>
+        <span>Art style</span>
+        <select v-model="prefs.artStyle">
+          <option value="drawn">Drawn</option>
+          <option value="live2d">Live2D (animated)</option>
+        </select>
+        <b></b>
+      </label>
+      <p class="help muted">Live2D animates every character and enemy: rigged portraits in dialogue, flapping, blinking sprites in the field.</p>
       <button class="btn small" @click="resetHints">Replay the tutorial hints</button>
     </section>
     <section v-if="!inRun">

@@ -69,11 +69,11 @@ const speakers = computed(() => {
   <div class="vn" v-if="scene && speaker" @click="advance">
     <div class="portraits">
       <div class="portrait left" :class="{ dim: !speakers.left }">
-        <Portrait :who="cast.left" />
+        <Portrait :who="cast.left" :talking="!!speakers.left && typing" />
         <div class="pname">{{ CHARACTERS[cast.left].short }}</div>
       </div>
       <div class="portrait right" :class="{ dim: !speakers.right }">
-        <Portrait :who="cast.right" flip />
+        <Portrait :who="cast.right" flip :talking="!!speakers.right && typing" />
         <div class="pname">{{ CHARACTERS[cast.right].short }}</div>
       </div>
     </div>

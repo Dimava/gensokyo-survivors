@@ -1,10 +1,24 @@
 <script setup lang="ts">
-// A placeholder VN portrait: a bust drawn in SVG from the character's colour.
+// A VN portrait: the character's drawing (src/art) when there is one, else a
+// placeholder bust drawn from the character's colour. `look` turns the head.
+// With the Live2D art style, characters with a rigged model animate instead
+// (they follow the cursor when no look is given, and move their lips while talking).
 import { computed } from "vue";
+import { livePortrait } from "../art-set.ts";
+import LivePortrait from "./LivePortrait.vue";
+import { ART } from "../../art/index.ts";
+import { AHEAD, svgOf, type Look } from "../../art/drawing.ts";
 import { CHARACTERS, type CharacterId } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
 
-const props = defineProps<{ who: CharacterId; flip?: boolean }>();
+const props = defineProps<{ who: CharacterId; flip?: boolean; look?: Look; talking?: boolean }>();
+const live = computed(() => livePortrait(props.who));
+const drawn = computed(() => {
+  const d = ART[props.who]?.portrait;
+  // Mirrored portraits look the other way, so mirror the look too.
+  const look = props.look ?? AHEAD;
+  return d ? svgOf(d, 1, props.flip ? { x: -look.x, y: look.y } : look) : null;
+});
 const c = computed(() => hex(CHARACTERS[props.who].color));
 const hair = computed(() => {
   const map: Partial<Record<CharacterId, string>> = { reimu: "#3a2418", marisa: "#f2d36b", sakuya: "#d8dde8", yukari: "#f2e2a0", cirno: "#6fb6ff", rumia: "#f2e27a", daiyousei: "#7bd88f" };
@@ -14,7 +28,9 @@ const wings = computed(() => props.who === "cirno" || props.who === "daiyousei")
 </script>
 
 <template>
-  <svg class="portrait" viewBox="0 0 220 320" :style="{ transform: flip ? 'scaleX(-1)' : undefined }">
+  <LivePortrait v-if="live" class="portrait" :model="live" :width="240" :height="340" :flip="flip" :look="look" :talking="talking" />
+  <div v-else-if="drawn" class="portrait drawn" :style="{ transform: flip ? 'scaleX(-1)' : undefined }" v-html="drawn"></div>
+  <svg v-else class="portrait" viewBox="0 0 220 320" :style="{ transform: flip ? 'scaleX(-1)' : undefined }">
     <defs>
       <radialGradient :id="`glow-${who}`" cx="50%" cy="45%" r="60%">
         <stop offset="0%" :stop-color="c" stop-opacity="0.45" />
@@ -56,5 +72,9 @@ const wings = computed(() => props.who === "cirno" || props.who === "daiyousei")
   width: 240px;
   height: 340px;
   filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.5));
+}
+.portrait.drawn :deep(svg) {
+  width: 100%;
+  height: 100%;
 }
 </style>

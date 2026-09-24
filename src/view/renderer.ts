@@ -21,13 +21,29 @@ import { stageDef } from "../content/stages.ts";
 import { weaponDef } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
 import { bossPos } from "../sim/boss.ts";
-import { weaponStats } from "../sim/weapons.ts";
+import { focusAmount, orbitRadius, weaponStats } from "../sim/weapons.ts";
 import { PHASE } from "../sim/swarm.ts";
 import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { BOSS, PLAYER, SWARM } from "../sim/tuning.ts";
 import { buildAtlas, type Atlas } from "./atlas.ts";
-import { prefs } from "./prefs.ts";
+import { input } from "./input.ts";
+import { frameAt, loadSpriteArt, lookTexture, type SpriteArt } from "./art-textures.ts";
+import { prefs, type ArtStyle } from "./prefs.ts";
+import { ART_L2D, type SpriteRig } from "../art-l2d/index.ts";
+import { HITBOX_PART } from "../art-l2d/chibis.ts";
+import { Rig } from "../art-l2d/rig.ts";
+import { partImages, RigView } from "../art-l2d/pixi-model.ts";
+import { Animator } from "../art-l2d/animator.ts";
 import { CHARACTERS } from "../content/names.ts";
+
+/** A character drawn by its live rig (the player and the bosses in the Live2D style). */
+interface LiveSprite {
+  sr: SpriteRig;
+  view: RigView;
+  anim: Animator;
+  /** Holds the rig at game size; positioned so the cell's anchor sits on the entity. */
+  holder: Container;
+}
 
 interface Fx {
   kind: "ring" | "beam" | "wave";
@@ -79,6 +95,21 @@ function pool(pc: ParticleContainer, n: number, tex: Texture): Particle[] {
 export class Playfield {
   app = new Application();
   atlas!: Atlas;
+  /** Character art by ART key (src/art); kinds without art use the atlas. */
+  private art: Record<string, SpriteArt> = {};
+  /**
+   * Enemies draw from the art sheet only when every kind has a drawing: a
+   * particle container reads one texture source, so drawn and procedural
+   * enemies can't mix in it.
+   */
+  private enemyArt = false;
+  /** The art style the sheet was built for; a change of preference rebuilds it. */
+  private style: ArtStyle = "drawn";
+  private reloading = false;
+  /** Live rigs by character id (Live2D style only). */
+  private live: Record<string, LiveSprite> = {};
+  private playerLive = new Container();
+  private bossLive = new Container();
   ready = false;
   private world = new Container();
   private ground!: TilingSprite;
@@ -92,6 +123,19 @@ export class Playfield {
   private sparkPC!: ParticleContainer;
   private player!: Sprite;
   private hitbox!: Sprite;
+  /**
+   * The Live2D player's hitbox: the jewel on her ascot (chibis.ts CHARM),
+   * redrawn above the bullets exactly where the rig puts it, which is pinned
+   * to the collision point. A crisp core the size of PLAYER.hitbox and a glow
+   * that lights up near bullets or while focused.
+   */
+  private gem = new Container();
+  /** Reimu's brooch (the rig's own charm mesh), lifted above the bullets; transformed like her rig. */
+  private gemItem = new Container();
+  private gemGlow!: Sprite;
+  /** ?hitdebug=1: the true hitbox circle drawn over everything. */
+  private hitDebug = new Graphics();
+  private readonly debugHit = new URLSearchParams(location.search).has("hitdebug");
   private boss!: Sprite;
   private bossCircle!: Sprite;
   private orbs: Sprite[] = [];
@@ -106,9 +150,19 @@ export class Playfield {
   private flashColor = 0xffffff;
   private flashAlpha = 0;
   private time = 0;
+  /** Graze ring strength: 1 on a graze, decaying to 0 (grazeFlash). */
+  private grazeA = 0;
+  /** Time of the rigged art's idle cycles: runs at the animation-speed setting. */
+  private artTime = 0;
   private zoom = 1;
   /** Screen position of the player, for pointer steering. */
   playerScreen = { x: 0, y: 0 };
+  /** The player's alpha while fx-death.ts plays (null: the renderer's own). */
+  playerAlpha: number | null = null;
+  /** What fx-death.ts dresses: the field (ground, world) and the player (sprite, live rig). */
+  get fxNodes(): { world: Container; scene: Container[]; player: Container[] } {
+    return { world: this.world, scene: [this.ground, this.world], player: [this.player, this.playerLive] };
+  }
 
   async init(host: HTMLElement): Promise<void> {
     await this.app.init({
@@ -121,6 +175,7 @@ export class Playfield {
     });
     host.appendChild(this.app.canvas);
     this.atlas = buildAtlas(this.app.renderer);
+    await this.loadArt(prefs.artStyle);
     const a = this.atlas;
     const tile = new Graphics();
     tile.rect(0, 0, 96, 96).fill(0x1d2b3a);
@@ -135,13 +190,21 @@ export class Playfield {
     this.spellBg.visible = false;
     const props = { position: true, rotation: true, color: true, uvs: true, vertex: true };
     this.dropPC = new ParticleContainer({ texture: a.spark, dynamicProperties: props });
-    this.enemyPC = new ParticleContainer({ texture: a.spark, dynamicProperties: props });
+    this.enemyPC = new ParticleContainer({ texture: this.enemyArt ? this.art[ENEMIES[0]!.id]!.white : a.spark, dynamicProperties: props });
     this.shotPC = new ParticleContainer({ texture: a.spark, dynamicProperties: props });
     this.bulletPC = new ParticleContainer({ texture: a.spark, dynamicProperties: props });
     this.sparkPC = new ParticleContainer({ texture: a.spark, dynamicProperties: props });
     this.player = new Sprite(a.player);
     this.player.anchor.set(0.5, 0.55);
     this.hitbox = new Sprite(a.hitbox);
+    const glow = new Graphics();
+    // The brooch's aura: a soft rose glow and a thin bright halo just outside its rim.
+    for (let r = 11; r > PLAYER.hitbox + 2; r -= 0.75) glow.circle(0, 0, r).fill({ color: 0xff5a86, alpha: 0.07 });
+    glow.circle(0, 0, PLAYER.hitbox + 2.6).stroke({ width: 1.1, color: 0xffffff, alpha: 0.95 });
+    glow.circle(0, 0, PLAYER.hitbox + 3.6).stroke({ width: 0.6, color: 0xff5a86, alpha: 0.8 });
+    this.gemGlow = new Sprite(this.app.renderer.generateTexture({ target: glow, resolution: 4, antialias: true }));
+    this.gemGlow.anchor.set(0.5);
+    this.gem.addChild(this.gemGlow, this.gemItem);
     this.hitbox.anchor.set(0.5);
     this.boss = new Sprite(a.boss.cirno);
     this.boss.anchor.set(0.5);
@@ -157,13 +220,17 @@ export class Playfield {
       this.enemyPC,
       this.shotPC,
       this.boss,
+      this.bossLive,
       this.player,
+      this.playerLive,
       this.fxG,
       this.bulletPC,
       this.hitbox,
+      this.gem,
       this.sparkPC,
       this.over,
       this.floatLayer,
+      this.hitDebug,
     );
     this.app.stage.addChild(this.ground, this.world, this.screenG);
     this.ready = true;
@@ -196,6 +263,11 @@ export class Playfield {
     this.flashAlpha = Math.max(this.flashAlpha, alpha);
   }
 
+  /** A graze happened: the graze ring lights up and fades. */
+  grazeFlash(): void {
+    this.grazeA = 1;
+  }
+
   shake(amount: number): void {
     this.shakeAmt = Math.max(this.shakeAmt, amount * prefs.shake);
   }
@@ -217,6 +289,76 @@ export class Playfield {
     this.shakeAmt = 0;
   }
 
+  // ---------- art ----------
+
+  /** Build the sprite sheet and the live rigs for an art style. */
+  private async loadArt(style: ArtStyle): Promise<void> {
+    const art = await loadSpriteArt(this.app.renderer, style);
+    const live: Record<string, LiveSprite> = {};
+    if (style === "live2d") {
+      for (const [id, set] of Object.entries(ART_L2D)) {
+        const sr = set.sprite;
+        if (!sr || ENEMIES.some((e) => e.id === id)) continue;
+        const rig = new Rig(sr.model);
+        const view = new RigView(rig, await partImages(sr.model));
+        view.scale.set(Math.min(sr.w / sr.model.w, sr.h / sr.model.h));
+        const holder = new Container();
+        holder.addChild(view);
+        const anim = new Animator(rig);
+        anim.rate = sr.rate;
+        anim.snap();
+        live[id] = { sr, view, anim, holder };
+      }
+    }
+    this.gemItem.removeChildren();
+    for (const l of Object.values(this.live)) l.holder.destroy({ children: true });
+    // The brooch leaves her sprite for the layer above the bullets (the rig still deforms it).
+    const charm = live.reimu?.view.detach(HITBOX_PART);
+    if (charm) this.gemItem.addChild(charm);
+    this.playerLive.removeChildren();
+    this.bossLive.removeChildren();
+    if (live.reimu) this.playerLive.addChild(live.reimu.holder);
+    for (const [id, l] of Object.entries(live)) if (id !== "reimu") this.bossLive.addChild(l.holder);
+    this.live = live;
+    this.art = art;
+    this.style = style;
+    this.enemyArt = ENEMIES.every((e) => art[e.id]);
+    if (this.enemyPC) this.enemyPC.texture = this.enemyArt ? art[ENEMIES[0]!.id]!.white : this.atlas.spark;
+  }
+
+  /**
+   * Step a live rig toward a look and place it with its cell anchor at (x, y).
+   * `move` is its motion (length = speed fraction; zero: standing), `slow` a careful walk.
+   */
+  private drawLive(l: LiveSprite, x: number, y: number, lx: number, ly: number, ax: number, ay: number, dt: number, move = { x: 0, y: 0 }, slow = false, pin?: string): void {
+    const len = Math.hypot(lx, ly);
+    const k = len > 1 ? 1 / len : 1;
+    l.anim.target = { x: lx * k, y: ly * k };
+    l.anim.move = move;
+    l.anim.slow = slow;
+    l.anim.step(dt);
+    l.view.update();
+    // Pinned: the part's centre (as the rig drew it this frame) lands exactly on (x, y).
+    const c = pin ? l.view.partCenter(pin) : null;
+    if (c) l.holder.position.set(x - c[0] * l.view.scale.x, y - c[1] * l.view.scale.y);
+    else l.holder.position.set(x - l.sr.w * ax, y - l.sr.h * ay);
+  }
+
+  private bossLast = { x: 0, y: 0, v: { x: 0, y: 0 } };
+  /** The boss's velocity as a speed fraction, smoothed (bosses glide; frame jitter must not read as steps). */
+  private bossVel(x: number, y: number, dt: number): { x: number; y: number } {
+    const b = this.bossLast;
+    const k = dt > 0 ? 1 / (dt * 120) : 0;
+    const vx = Math.abs(x - b.x) > 200 ? 0 : (x - b.x) * k;
+    const vy = Math.abs(y - b.y) > 200 ? 0 : (y - b.y) * k;
+    const e = 1 - Math.exp(-dt * 6);
+    b.v.x += (vx - b.v.x) * e;
+    b.v.y += (vy - b.v.y) * e;
+    b.x = x;
+    b.y = y;
+    return b.v;
+  }
+
   // ---------- the frame ----------
 
   /** Draws the run at `path` of kernel `k` (or an empty field). dt in seconds of wall time. */
@@ -224,6 +366,11 @@ export class Playfield {
     if (!this.ready) return;
     const fdt = dt * prefs.animSpeed;
     this.time += dt;
+    this.artTime += fdt;
+    if (prefs.artStyle !== this.style && !this.reloading) {
+      this.reloading = true;
+      void this.loadArt(prefs.artStyle).finally(() => (this.reloading = false));
+    }
     const W = this.app.screen.width;
     const H = this.app.screen.height;
     this.zoom = Math.max(0.55, Math.min(1.6, Math.min(W / 1280, H / 760)));
@@ -271,11 +418,21 @@ export class Playfield {
     const boss = v.derived("boss");
     this.spellBg.visible = !!boss;
     this.boss.visible = !!boss;
+    this.bossLive.visible = !!boss;
     this.bossCircle.visible = !!boss;
     if (boss) {
       const def = bossDef(boss.boss.id);
       bossPos(boss, t, pos);
-      this.boss.texture = this.atlas.boss[boss.boss.id] ?? this.atlas.boss.cirno!;
+      const bossArt = this.art[def.character];
+      const bossLive = this.live[def.character];
+      for (const [id, l] of Object.entries(this.live)) if (id !== "reimu") l.holder.visible = l === bossLive;
+      this.boss.visible = !bossLive;
+      if (bossLive) {
+        // Hover or move: the boss's speed (full at 120 px/s) from its last drawn position.
+        const bv = this.bossVel(pos.x, pos.y, dt);
+        this.drawLive(bossLive, pos.x, pos.y, (p.body.x - pos.x) / 200, (p.body.y - pos.y) / 200, 0.5, 0.5, fdt, bv);
+      }
+      else this.boss.texture = bossArt ? lookTexture(bossArt, p.body.x - pos.x, p.body.y - pos.y) : (this.atlas.boss[boss.boss.id] ?? this.atlas.boss.cirno!);
       this.bossCircle.tint = CHARACTERS[def.character].color === 0x2b2238 ? 0xb9a6ff : CHARACTERS[def.character].color;
       this.boss.position.set(pos.x, pos.y + Math.sin(this.time * 2.5) * 3);
       this.bossCircle.position.set(pos.x, pos.y);
@@ -314,13 +471,14 @@ export class Playfield {
 
     // Enemies.
     const e = v.packed("enemies");
-    const ep = pool(this.enemyPC, e.count, this.atlas.enemy[0]!);
+    const ep = pool(this.enemyPC, e.count, this.enemyArt ? this.art[ENEMIES[0]!.id]!.white : this.atlas.enemy[0]!);
     const ex = e.col("x");
     const ey = e.col("y");
     const ek = e.col("kind");
     const ehit = e.col("hitAt");
     const euid = e.col("uid");
     const evx = e.col("vx");
+    const evy = e.col("vy");
     const ephase = e.col("phase");
     for (let i = 0; i < e.count; i++) {
       const q = ep[i]!;
@@ -328,16 +486,32 @@ export class Playfield {
       q.y = ey[i]!;
       const kind = ek[i]!;
       const flash = t - ehit[i]! < SWARM.flash;
-      q.texture = flash ? this.atlas.enemyWhite[kind]! : this.atlas.enemy[kind]!;
-      const wob = Math.sin(this.time * 6 + euid[i]!) * 0.06;
+      const def = ENEMIES[kind]!;
+      // Face the way it flies (crossing or leaving), else the player.
+      const heading = def.move.kind === "cross" || ephase[i] === PHASE.leaving;
+      const art = this.enemyArt ? this.art[def.id] : undefined;
+      if (art) {
+        // Rigged art animates: each enemy runs the idle cycle at its own phase and blinks now and then.
+        const uid = euid[i]!;
+        // Mobs on the move flap faster (1.6x); a held post keeps the calm rate.
+        const moving = def.speed > 0 && ephase[i] !== PHASE.holding;
+        const frame = frameAt(art, this.artTime * (moving ? 1.6 : 1), (uid * 0.618034) % 1);
+        const blink = !!art.blink && (this.artTime * 0.9 + uid * 0.7131) % 4.4 < 0.16;
+        q.texture = flash
+          ? art.white
+          : heading
+            ? lookTexture(art, evx[i]!, evy[i]!, frame, blink)
+            : lookTexture(art, p.body.x - q.x, p.body.y - q.y, frame, blink);
+      }
+      else q.texture = flash ? this.atlas.enemyWhite[kind]! : this.atlas.enemy[kind]!;
+      // The procedural blobs squash; rigged art already bobs in its frames.
+      const wob = art ? 0 : Math.sin(this.time * 6 + euid[i]!) * 0.06;
       const sc = flash ? 1.12 : 1;
       q.scaleX = sc + wob;
       q.scaleY = sc - wob;
-      q.rotation = ENEMIES[kind]!.shape === "orb" ? this.time * 2 + euid[i]! : 0;
-      // Face the way it flies (crossing or leaving), else the player.
-      const def = ENEMIES[kind]!;
-      const heading = def.move.kind === "cross" || ephase[i] === PHASE.leaving ? evx[i]! : 0;
-      if (heading ? heading < 0 : q.x > p.body.x) q.scaleX = -q.scaleX;
+      q.rotation = def.shape === "orb" && !art ? this.time * 2 + euid[i]! : 0;
+      // Procedural sprites only face left or right; drawn ones look the way they face.
+      if (!art && (heading ? evx[i]! < 0 : q.x > p.body.x)) q.scaleX = -q.scaleX;
     }
 
     // Player shots (computable: evaluated at t).
@@ -361,6 +535,7 @@ export class Playfield {
     const b = v.packed("bullets");
     const bp = pool(this.bulletPC, b.count, this.atlas.bullet[0]!);
     const frozen = v.has(v.derived("state"), "timestop");
+    const grazed = b.col("grazed");
     let nearest = 1e9;
     let shown = 0;
     for (let i = 0; i < b.count; i++) {
@@ -375,10 +550,12 @@ export class Playfield {
       const ddy = pos.y - p.body.y;
       const dd = ddx * ddx + ddy * ddy;
       if (dd < nearest) nearest = dd;
-      q.alpha = dd < viewR * viewR ? 1 : 0;
+      // Bullets with a life fade out over their last half second.
+      q.alpha = dd < viewR * viewR ? Math.min(1, (b.endsAt(i) - td) / 30) : 0;
       if (q.alpha) shown++;
       const style = b.styleAt(i, td);
-      q.texture = this.atlas.bullet[style]!;
+      // Grazed bullets are drawn spent (dark core): they still hit, but can't be grazed again.
+      q.texture = (grazed[i] ? this.atlas.bulletSpent : this.atlas.bullet)[style]!;
       const shape = BULLET_STYLES[style]!.shape;
       if (shape === "star") q.rotation = this.time * 4;
       else if (shape === "orb" || shape === "big") q.rotation = 0;
@@ -394,16 +571,49 @@ export class Playfield {
     // Player, hitbox, graze ring, orbiting orbs.
     const invuln = t < p.life.invulnUntil && run.phase !== "over";
     this.player.position.set(p.body.x, p.body.y);
-    this.player.scale.set(p.body.fx < -0.1 ? -1 : 1, 1);
+    // Drawn Reimu looks where she moves (ahead when still); the procedural one only flips.
+    const reimu = this.art.reimu;
+    const liveReimu = this.live.reimu;
+    this.player.visible = !liveReimu;
+    // Standing, walking, or walking slowly with focus held: the rig blends between them.
+    if (liveReimu) this.drawLive(liveReimu, p.body.x, p.body.y, p.ctrl.mx, p.ctrl.my, 0.5, 0.55, fdt, { x: p.ctrl.mx / 100, y: p.ctrl.my / 100 }, p.ctrl.focus, HITBOX_PART);
+    else if (reimu) {
+      this.player.texture = lookTexture(reimu, p.ctrl.mx, p.ctrl.my);
+      this.player.scale.set(1, 1);
+    } else this.player.scale.set(p.body.fx < -0.1 ? -1 : 1, 1);
     this.player.alpha = run.phase === "over" && run.outcome === "dead" ? Math.max(0, 1 - (t - run.endedAt) / 30) : invuln ? (Math.floor(this.time * 20) % 2 ? 0.35 : 0.9) : 1;
+    if (this.playerAlpha !== null) this.player.alpha = this.playerAlpha;
+    this.playerLive.alpha = this.player.alpha;
     this.hitbox.position.set(p.body.x, p.body.y);
-    const near = nearest < 170 * 170;
-    this.hitbox.visible = near;
+    // The hitbox and graze ring show near bullets, and always while focused (Shift).
+    const near = nearest < 170 * 170 || input.focused;
+    // Live2D: the worn brooch is the hitbox, always shown, its glow brighter near bullets or focused.
+    // Drawn: the classic dot, shown near bullets or focused.
+    this.gem.visible = !!liveReimu && this.player.alpha > 0.02;
+    this.hitbox.visible = near && !liveReimu;
+    if (liveReimu) {
+      // The brooch sits exactly where the rig put it (its centre pinned to the body); the glow is on it.
+      this.gemItem.position.copyFrom(liveReimu.holder.position);
+      this.gemItem.scale.copyFrom(liveReimu.view.scale);
+      this.gemGlow.position.set(p.body.x, p.body.y);
+      const pulse = Math.sin(this.time * 6);
+      this.gemGlow.alpha = near ? 0.8 + 0.2 * pulse : 0.12;
+      this.gemGlow.scale.set(near ? 1.2 + 0.15 * pulse : 0.9);
+      this.gem.alpha = run.phase === "over" ? this.player.alpha : 1;
+    }
+    this.hitDebug.clear();
+    if (this.debugHit) {
+      const hx = p.body.x;
+      const hy = p.body.y;
+      this.hitDebug.circle(hx, hy, PLAYER.hitbox).stroke({ width: 0.35, color: 0x00ffff });
+      this.hitDebug.moveTo(hx - 6, hy).lineTo(hx + 6, hy).moveTo(hx, hy - 6).lineTo(hx, hy + 6).stroke({ width: 0.25, color: 0x00ffff });
+    }
     this.hitbox.rotation = this.time * 3;
     this.fxG.clear();
-    if (near) {
-      const gr = PLAYER.graze * v.derived("stats").graze;
-      this.fxG.circle(p.body.x, p.body.y, gr).stroke({ width: 1.5, color: 0xffffff, alpha: 0.25 + 0.15 * Math.sin(this.time * 8) });
+    // The graze ring lights up on an actual graze and fades out; it is not shown passively.
+    this.grazeA *= Math.exp(-dt * 7);
+    if (this.grazeA > 0.02) {
+      this.fxG.circle(p.body.x, p.body.y, PLAYER.graze).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 * this.grazeA });
     }
     let orbN = 0;
     const stats = v.derived("stats");
@@ -411,7 +621,7 @@ export class Playfield {
       if (weaponDef(w.weapon.id).behaviour !== "orbit") continue;
       const ws = weaponStats(w.weapon.id, w.weapon.level);
       const count = (ws.count ?? 1) + stats.amount;
-      const dist = (ws.radius ?? 70) * stats.area;
+      const dist = orbitRadius(ws, stats.area, focusAmount(p.ctrl, t));
       for (let k2 = 0; k2 < count; k2++) {
         let o = this.orbs[orbN];
         if (!o) {

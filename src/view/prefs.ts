@@ -4,6 +4,9 @@
 
 import { reactive, watch } from "vue";
 
+/** Character art: the drawn SVG art or the rigged, animated models (the default). */
+export type ArtStyle = "drawn" | "live2d";
+
 export interface Prefs {
   master: number;
   sfx: number;
@@ -18,18 +21,21 @@ export interface Prefs {
   seen: string[];
   /** Show the frame-time readout in the corner. */
   fps: boolean;
+  artStyle: ArtStyle;
 }
 
 const KEY = "gensokyo-survivors/prefs";
 
-const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false };
+const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false, artStyle: "live2d" };
 
 function load(): Prefs {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return { ...DEFAULTS, seen: [] };
     const data = JSON.parse(raw) as Partial<Prefs>;
-    return { ...DEFAULTS, ...data, seen: Array.isArray(data.seen) ? data.seen.filter((s) => typeof s === "string") : [] };
+    // A stored choice stands; no (or an unknown) choice gets the default.
+    const artStyle: ArtStyle = data.artStyle === "drawn" || data.artStyle === "live2d" ? data.artStyle : DEFAULTS.artStyle;
+    return { ...DEFAULTS, ...data, artStyle, seen: Array.isArray(data.seen) ? data.seen.filter((s) => typeof s === "string") : [] };
   } catch {
     return { ...DEFAULTS, seen: [] };
   }
