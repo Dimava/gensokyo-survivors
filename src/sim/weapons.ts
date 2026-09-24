@@ -2,13 +2,14 @@
 // shared by weapons and cards: player shots are computable too (straight
 // lines from their spawn parameters), checked against the spatial grid.
 
-import type { Ctx, EntityOf } from "gamebones";
+import type { Ctx, EntityOf, ScopeData } from "gamebones";
 import { ENEMIES } from "../content/enemies.ts";
 import { WEAPONS, WEAPON_INDEX, weaponDef, type WeaponStats } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
 import type { RS0 } from "./run.ts";
 import { enemyGrid, hurtEnemy, rebuildGrid } from "./swarm.ts";
 import { bossPos, bossVulnerable } from "./boss.ts";
+import { FOCUS } from "./tuning.ts";
 
 type C = Ctx<RS0>;
 const TAU = 6.283185307179586;
@@ -18,6 +19,26 @@ const bp = { x: 0, y: 0 };
 export function weaponStats(id: string, level: number): WeaponStats {
   const def = weaponDef(id);
   return def.levels[Math.min(level, def.levels.length) - 1]!;
+}
+
+/** Focus (Shift) is held: the last `focus` input. */
+export function isFocused(ctx: C): boolean {
+  return ctx.derived("player").ctrl.focus;
+}
+
+/**
+ * How far focus has gathered in, 0 (open) to 1 (focused), at action tick `t`: computable from the
+ * last change, eased out over FOCUS.ease ticks from where the previous ease had got to.
+ */
+export function focusAmount(ctrl: { focus: boolean; focusAt: number; focusFrom: number }, t: number): number {
+  const u = Math.min(1, Math.max(0, (t - ctrl.focusAt) / FOCUS.ease));
+  const eased = 1 - (1 - u) ** 3;
+  return ctrl.focusFrom + ((ctrl.focus ? 1 : 0) - ctrl.focusFrom) * eased;
+}
+
+/** Orbit distance of an orbit weapon's orbs at focus amount `focus` (0..1, `focusAmount`); focus pulls them in (FOCUS.orbitRadius). Shared with the renderer. */
+export function orbitRadius(s: WeaponStats, area: number, focus: number): number {
+  return (s.radius ?? 70) * area * (1 - (1 - FOCUS.orbitRadius) * focus);
 }
 
 /** Starts volleys whose cooldown is over (computable cooldown: only `readyAt` is stored). */
@@ -39,11 +60,15 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
   const stats = ctx.derived("stats");
   const { body } = ctx.derived("player");
   const t = ctx.now("action");
+  const focus = isFocused(ctx);
   switch (def.behaviour) {
     case "fan": {
       const shots = ctx.packed("shots");
       const count = (s.count ?? 1) + stats.amount;
-      const speed = s.speed ?? 6;
+      const speed = (s.speed ?? 6) * (focus ? FOCUS.shotSpeed : 1);
+      const shotDmg = focus ? dmg * FOCUS.shotDmg : dmg;
+      // Focused, a ring folds into a fan along the facing direction.
+      const ring = def.aim === "ring" && !focus;
       let base: number;
       if (def.aim === "nearest") {
         const e = rebuildGrid(ctx);
@@ -54,14 +79,14 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
           base = Math.atan2(bp.y - body.y, bp.x - body.x);
         } else if (i >= 0) base = Math.atan2(e.col("y")[i]! - body.y, e.col("x")[i]! - body.x);
         else base = Math.atan2(body.fy, body.fx);
-      } else if (def.aim === "ring") {
+      } else if (ring) {
         base = ctx.rng("weapons").float() * TAU;
       } else {
         base = Math.atan2(body.fy, body.fx);
       }
-      const spread = def.aim === "ring" ? TAU : (s.spread ?? 0.2) * Math.max(1, count - 1);
+      const spread = ring ? TAU : def.aim === "ring" ? FOCUS.ringArc : (s.spread ?? 0.2) * Math.max(1, count - 1) * (focus ? FOCUS.spread : 1);
       for (let k = 0; k < count; k++) {
-        const a = def.aim === "ring" ? base + (TAU * k) / count : count === 1 ? base : base - spread / 2 + (spread * k) / (count - 1);
+        const a = ring ? base + (TAU * k) / count : count === 1 ? base : base - spread / 2 + (spread * k) / (count - 1);
         shots.add({
           x0: body.x,
           y0: body.y,
@@ -69,7 +94,7 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
           vy: Math.sin(a) * speed,
           t0: t,
           dieAt: t + (s.life ?? 60),
-          dmg,
+          dmg: shotDmg,
           pierce: s.pierce ?? 1,
           radius: (s.radius ?? 8) * stats.area,
           weapon: WEAPON_INDEX[def.id]!,
@@ -85,7 +110,7 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
     case "aura": {
       const r = (s.radius ?? 80) * stats.area;
       ctx.emit("aura", { x: body.x, y: body.y, radius: r, color: def.color });
-      damageArea(ctx, body.x, body.y, r, dmg, s.knock ?? 8);
+      damageArea(ctx, body.x, body.y, r, dmg, (s.knock ?? 8) * (focus ? FOCUS.auraKnock : 1));
       return;
     }
     case "beam":
@@ -94,9 +119,9 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
         y: body.y,
         dx: body.fx,
         dy: body.fy,
-        length: (s.length ?? 400) * stats.area,
-        width: (s.width ?? 24) * stats.area,
-        dmg,
+        length: (s.length ?? 400) * stats.area * (focus ? FOCUS.beamLength : 1),
+        width: (s.width ?? 24) * stats.area * (focus ? FOCUS.beamWidth : 1),
+        dmg: focus ? dmg * FOCUS.beamDmg : dmg,
         color: def.color,
         source: def.id,
       });
@@ -193,7 +218,7 @@ export function stepOrbits(ctx: C): number {
   const t = ctx.now("action");
   const stats = ctx.derived("stats");
   const e = ctx.packed("enemies");
-  const { body } = ctx.derived("player");
+  const { body, ctrl } = ctx.derived("player");
   const boss = ctx.derived("boss");
   const bossOn = boss !== undefined && bossVulnerable(boss, t);
   if (bossOn) bossPos(boss, t, bp);
@@ -203,7 +228,7 @@ export function stepOrbits(ctx: C): number {
     if (def.behaviour !== "orbit" || w.weapon.armed <= 0) continue;
     const s = weaponStats(w.weapon.id, w.weapon.level);
     const count = (s.count ?? 1) + stats.amount;
-    const dist = (s.radius ?? 70) * stats.area;
+    const dist = orbitRadius(s, stats.area, focusAmount(ctrl, t));
     const size = (s.size ?? 12) * stats.area;
     const orbAt = e.col("orbAt");
     const hp = e.col("hp");
@@ -288,3 +313,9 @@ export function damageLine(ctx: C, x: number, y: number, dx: number, dy: number,
 }
 
 export { WEAPONS };
+
+/** Run save v2 -> v3 (focus): the player's `ctrl` gains `focus` and its ease, off until the next `focus` input. */
+export function migrateFocus(data: ScopeData): ScopeData {
+  const entities = data.entities.map((e) => (e.ctrl ? { ...e, ctrl: { focus: false, focusAt: 0, focusFrom: 0, ...(e.ctrl as object) } } : e));
+  return { ...data, entities };
+}

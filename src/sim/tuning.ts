@@ -21,6 +21,31 @@ export const PLAYER = {
   mercyRadius: 90,
 } as const;
 
+/**
+ * Focus (Shift), Touhou's slow mode: the sim hears it as the `focus` input
+ * and gathers the weapons in. (The slow movement is the view's shorter `move`
+ * vector, input.ts.) Each factor multiplies the unfocused value.
+ */
+export const FOCUS = {
+  /** Fans (amulets, needles): the spread between shots. */
+  spread: 0.3,
+  /** A ring (knives) folds into a fan of this width (radians) along the facing direction. */
+  ringArc: 0.7,
+  /** Fans and rings: shots fly faster, so they reach the aim line sooner. */
+  shotSpeed: 1.15,
+  /** Fans and rings: damage per shot, so gathering in is not strictly worse at clearing. */
+  shotDmg: 1.15,
+  /** Orbs circle this much closer, easing in and out over this many ticks (an ease-out). */
+  orbitRadius: 0.55,
+  ease: 16,
+  /** Auras keep their radius and damage but shove enemies back this much harder. */
+  auraKnock: 2.5,
+  /** Beams: narrower, longer and harder. */
+  beamWidth: 0.5,
+  beamLength: 1.2,
+  beamDmg: 1.25,
+} as const;
+
 export const PICKUP = {
   /** Base magnet radius (scaled by the magnet stat). */
   magnet: 80,

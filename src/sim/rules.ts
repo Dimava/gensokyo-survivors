@@ -15,7 +15,7 @@ import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
 import { collectDead, contactDamage, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
-import { applyVolley, damageArea, damageLine, fireWeapons, stepOrbits, stepShots } from "./weapons.ts";
+import { applyVolley, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, pullAll, stepDrops } from "./drops.ts";
 import { cardRules } from "./cards.ts";
@@ -123,7 +123,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     ctx.spawn(
       {
         body: { x: 0, y: 0, fx: 1, fy: 0 },
-        ctrl: { mx: 0, my: 0 },
+        ctrl: { mx: 0, my: 0, focus: false, focusAt: 0, focusFrom: 0 },
         life: { hp: maxHp, invulnUntil: 0, revivesUsed: 0, hits: 0 },
         progress: {
           level: 1,
@@ -162,6 +162,13 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("move", (ev, ctx) => {
     const p = ctx.derived("player");
     Object.assign(ctx.mut(p, "ctrl"), { mx: ev.x, my: ev.y });
+  }),
+  r.on("focus", (ev, ctx) => {
+    const p = ctx.derived("player");
+    if (p.ctrl.focus === ev.on) return;
+    // Ease from wherever the last change had got to, so a toggle mid-ease does not jump.
+    const t = ctx.now("action");
+    Object.assign(ctx.mut(p, "ctrl"), { focus: ev.on, focusAt: t, focusFrom: focusAmount(p.ctrl, t) });
   }),
 
   // ---------- the tick ----------
@@ -561,7 +568,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("run:finish", (_, ctx) => ctx.send("/", Meta, "run:ended", summary(ctx))),
 
   ...cardRules(r),
-]).migrations([migrateToFormations, migrateSalvoAim]);
+]).migrations([migrateToFormations, migrateSalvoAim, migrateFocus]);
 
 function r1(v: number): number {
   return Math.round(v * 10) / 10;

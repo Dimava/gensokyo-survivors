@@ -335,30 +335,30 @@ meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:
 tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
-lake swarm t=0:06 fixed=600 | hp 130/130 lv 2 xp 1/15 kills 5 | pos 633,633
+lake swarm t=0:06 fixed=600 | hp 130/130 lv 2 xp 1/15 kills 6 | pos 659,659
 weapons: amulet1 | passives: -
-enemies 54 [kedama 40, fairy 14] | drops 2 | shots 0 | bullets 2
-cards: spirit 2.57/3 meter 0 grazes 0 | hand: pocket-watch
+enemies 53 [kedama 39, fairy 14] | drops 3 | shots 1 | bullets 6
+cards: spirit 2.63/3 meter 0 grazes 0 | hand: pocket-watch
 overlay: levelup
--- save size mid-run: 14400 bytes
+-- save size mid-run: 15859 bytes
 == play / run:abandon
 run:abandon
   run:forfeit @/run:1
     run:over outcome=quit
       . clock:game.scale 1/1 -> 0/1 (apply run:over)
-      . run#2.run phase swarm -> over, outcome none -> quit, endedAt 0 -> 676 (apply run:over)
+      . run#2.run phase swarm -> over, outcome none -> quit, endedAt 0 -> 686 (apply run:over)
 meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
 tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
-lake over(quit) t=0:11 fixed=900 | hp 130/130 lv 2 xp 9/15 kills 15 | pos -84,633
+lake over(quit) t=0:11 fixed=900 | hp 125/130 lv 2 xp 13/15 kills 16 | pos -47,659
 weapons: amulet2 | passives: -
-enemies 68 [kedama 38, fairy 30] | drops 8 | shots 1 | bullets 28
+enemies 70 [kedama 40, fairy 30] | drops 7 | shots 0 | bullets 30
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: pocket-watch
 == tick /run:1 fixed x1
-meta: coins 421 (lifetime 1) | runs 1 clears 0 [] best 11s/15 kills | active -
+meta: coins 421 (lifetime 1) | runs 1 clears 0 [] best 11s/16 kills | active -
 tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
-last run: lake quit at 11s, lv 2, 15 kills, +1 coins (new: time, kills, level)
+last run: lake quit at 11s, lv 2, 16 kills, +1 coins (new: time, kills, level)
 "
 `;

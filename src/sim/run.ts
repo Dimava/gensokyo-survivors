@@ -46,7 +46,11 @@ const RunDecl = defineScope("run", {
       endedAt: int,
     }),
     body: z.strictObject({ x: num, y: num, fx: num, fy: num }),
-    ctrl: z.strictObject({ mx: int, my: int }),
+    /**
+     * The last `move` and `focus` inputs: the move vector (-100..100) and whether focus (Shift) is held.
+     * Focus eases in and out (weapons.ts `focusAmount`): the action tick it last changed and how far in it was then (0..1).
+     */
+    ctrl: z.strictObject({ mx: int, my: int, focus: z.boolean(), focusAt: int, focusFrom: num }),
     life: z.strictObject({ hp: num, invulnUntil: int, revivesUsed: int, hits: int }),
     progress: z.strictObject({
       level: int,
@@ -103,6 +107,8 @@ const RunDecl = defineScope("run", {
   events: {
     // Input from the player (queued between ticks by the adapter).
     move: input({ x: int.min(-100).max(100), y: int.min(-100).max(100) }),
+    /** Focus (Shift) pressed or released: sent only on change. It narrows the weapons (weapons.ts); slow movement is the shorter `move` vector. */
+    focus: input({ on: z.boolean() }),
     "card:play": input({ card: ref() }, { subject: "card" }),
 
     // From the meta scope.
