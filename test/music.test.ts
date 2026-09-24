@@ -6,6 +6,7 @@
 import { describe, expect, test } from "bun:test";
 import { compileSong, songLength, transposeName, voiceChord, type Inst, type Song } from "../src/view/music.ts";
 import { TRACKS } from "../src/view/songs.ts";
+import { LEGACY_TRACKS } from "../src/view/songs-legacy.ts";
 
 const sine: Inst = { osc: [["sine", 0, 0, 1]], a: 0.01, d: 0.1, s: 0.5, r: 0.1 };
 const inst = { lead: sine, counter: sine, keys: sine, arp: sine, bass: sine, pad: sine };
@@ -15,8 +16,8 @@ function song(sections: Song["sections"], extra: Partial<Song> = {}): Song {
 }
 
 describe("music", () => {
-  test("every track compiles, with every part filling whole bars", () => {
-    for (const t of TRACKS) {
+  test("every track (and every earlier version) compiles, with every part filling whole bars", () => {
+    for (const t of [...TRACKS, ...LEGACY_TRACKS]) {
       const c = compileSong(t.song);
       expect(c.events.length).toBeGreaterThan(0);
       for (const [name, sec] of Object.entries(t.song.sections)) {

@@ -5,6 +5,10 @@ import { watch } from "vue";
 import { Music, type Song } from "./music.ts";
 import { prefs } from "./prefs.ts";
 import { cirnoSong, clearSong, forestSong, lakeSong, menuSong, overSong, rumiaSong, shopSong, TRACKS } from "./songs.ts";
+import { LEGACY_TRACKS } from "./songs-legacy.ts";
+
+/** Every track the music room can play: the soundtrack and its earlier versions. */
+const ROOM = [...TRACKS, ...LEGACY_TRACKS];
 
 export type Sfx =
   | "ui"
@@ -328,7 +332,7 @@ class Synth {
   /** Music room: plays a track by id instead of the game's music ("" stops it: silence); null hands the music back. */
   listen(id: string | null): void {
     this.previewing = id !== null;
-    this.preview = id ? (TRACKS.find((t) => t.id === id)?.song ?? null) : null;
+    this.preview = id ? (ROOM.find((t) => t.id === id)?.song ?? null) : null;
     this.songs?.play(this.previewing ? this.preview : this.song, 0.4);
   }
 
@@ -339,7 +343,7 @@ class Synth {
 
   /** The music-room track playing, if any. */
   get listening(): string | null {
-    return (this.preview && TRACKS.find((t) => t.song === this.preview)?.id) ?? null;
+    return (this.preview && ROOM.find((t) => t.song === this.preview)?.id) ?? null;
   }
 
   /** Where the playing song is (for the music room's now-playing view). */

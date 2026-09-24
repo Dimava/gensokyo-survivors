@@ -92,6 +92,8 @@ export interface Song {
   key?: string;
   /** Arp digits and keys stabs use the pad's voice-led voicing instead of root position. */
   voiceLead?: boolean;
+  /** Pads stacked from the root in a fixed range instead of voice-led (how the first engine voiced them; kept for the earlier versions). */
+  rootPads?: boolean;
   /** Delays every odd eighth by this fraction of an eighth (0 straight). */
   swing?: number;
   inst: Record<Melodic, Inst>;
@@ -374,7 +376,8 @@ export function compileSong(song: Song): Compiled {
         if (prev && (prev.sym === sym || sym === "~") && Math.abs(prev.to - from) < 1e-6) prev.to = to;
         else if (sym !== "N" && sym !== "~") {
           const c = parseChord(sym);
-          voicing = voiceChord(c.root, c.tones, voicing);
+          // The first engine's pads: every tone in root position from G3 up (Song.rootPads).
+          voicing = song.rootPads ? c.tones.map((iv) => BASE.pad + ((c.root + iv - BASE.pad + 120) % 12)).sort((x, y) => x - y) : voiceChord(c.root, c.tones, voicing);
           chords.push({ ...c, sym, from, to, voicing });
         }
       });
