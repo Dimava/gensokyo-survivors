@@ -53,7 +53,7 @@ for (const dir of walk(root)) {
   body += `</div></section>`;
 }
 
-const html = `<!doctype html><meta charset="utf-8"><title>Gensokyo Survivors refs (${total})</title>
+const html = `<!doctype html><html lang="en" translate="no"><meta charset="utf-8"><meta name="google" content="notranslate"><title>Gensokyo Survivors refs (${total})</title>
 <style>
 body { margin: 0; padding: 16px 24px; background: #0b1020; color: #eef1ff; font: 14px "Segoe UI", system-ui, sans-serif; }
 h1 { margin: 0 0 8px; } h2 { border-bottom: 1px solid #2a3560; padding-bottom: 4px; margin-top: 28px; }
