@@ -14,6 +14,10 @@ const active = computed(() => {
 });
 const deckSize = computed(() => owned.value.filter((o) => o.inDeck).length);
 const freshCards = computed(() => owned.value.filter((o) => o.fresh).length);
+const tripsBack = computed(() => {
+  void state.meta;
+  return host.k.view().derived("trips").filter((t) => t.expedition.back).length;
+});
 
 function start(stage: string): void {
   picking.value = false;
@@ -44,6 +48,9 @@ function hover(): void {
             Skill Cards &amp; Deck <span v-if="freshCards" class="badge">{{ freshCards }} new</span>
           </button>
           <button class="btn big" @mouseenter="hover" @click="host.go('packs')">Card Packs</button>
+          <button class="btn big" @mouseenter="hover" @click="host.go('expeditions')">
+            Expeditions <span v-if="tripsBack" class="badge">{{ tripsBack }} back</span>
+          </button>
           <button class="btn big" @mouseenter="hover" @click="host.go('records')">Records</button>
           <button class="btn big" @mouseenter="hover" @click="host.go('settings')">Settings</button>
           <button class="btn big" @mouseenter="hover" @click="host.go('help')">How to Play</button>

@@ -12,6 +12,8 @@ import { weaponDef, WEAPONS } from "../content/weapons.ts";
 import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { audio, type Sfx } from "./audio.ts";
 import type { Playfield } from "./renderer.ts";
+import { CHARACTERS, type CharacterId } from "../content/names.ts";
+import { destination } from "../content/expeditions.ts";
 
 export interface Banner {
   id: number;
@@ -89,7 +91,7 @@ export class Presenter {
     const f = this.field;
     const p = n.payload as Record<string, unknown>;
     if (n.rejected) {
-      if (n.event === "card:play" || n.event === "tree:buy" || n.event === "pack:buy" || n.event === "deck:toggle" || n.event === "levelup:reroll") {
+      if (n.event === "card:play" || n.event === "tree:buy" || n.event === "pack:buy" || n.event === "deck:toggle" || n.event === "levelup:reroll" || n.event.startsWith("expedition:")) {
         this.sfx("deny");
         if (!this.quiet) toast(n.rejected.reason);
       }
@@ -251,6 +253,24 @@ export class Presenter {
         break;
       case "vn:next":
         this.sfx("text");
+        break;
+      case "expedition:returned": {
+        const trip = k.view().get(p.trip as string) as { expedition?: { who: string; dest: string } } | undefined;
+        if (trip?.expedition && !this.quiet) {
+          const who = CHARACTERS[trip.expedition.who as CharacterId]?.short ?? trip.expedition.who;
+          toast(`${who} is back from ${destination(trip.expedition.dest).name}: claim the donations in Expeditions`, "good", 4);
+          this.sfx("chime");
+        }
+        break;
+      }
+      case "expedition:send":
+        this.sfx("whoosh");
+        break;
+      case "expedition:claim":
+        this.sfx("buy");
+        break;
+      case "expedition:recall":
+        this.sfx("back");
         break;
       case "tree:buy":
         this.sfx("buy");

@@ -1,0 +1,96 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`M5 idle expeditions send, come back after real time, claim; refusals; recall 1`] = `
+"== initial
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:send who=reimu dest=errand
+!! expedition:send who=reimu dest=errand: reimu has not joined the shrine yet (check expedition:send)
+-- refused: reimu has not joined the shrine yet
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:send who=marisa dest=village
+expedition:send who=marisa dest=village
+  . +trip#10 {expedition} (apply expedition:send)
+  process:expedition pid=expedition#11 state=away
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:send who=marisa dest=errand
+!! expedition:send who=marisa dest=errand: Marisa is already away (check expedition:send)
+-- refused: Marisa is already away
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:send who=daiyousei dest=errand
+expedition:send who=daiyousei dest=errand
+  . +trip#12 {expedition} (apply expedition:send)
+  process:expedition pid=expedition#13 state=away
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:send who=yukari dest=festival
+expedition:send who=yukari dest=festival
+  . +trip#14 {expedition} (apply expedition:send)
+  process:expedition pid=expedition#15 state=away
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / time:resumed elapsed=600
+time:resumed elapsed=600
+  process:expedition pid=expedition#13 state=back
+    expedition:returned trip=trip#12
+      . trip#12.expedition back false -> true (apply expedition:returned)
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:claim trip=trip#10
+!! expedition:claim trip=trip#10: they are not back yet (check expedition:claim)
+-- refused: they are not back yet
+meta: coins 0 (lifetime 0) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:claim trip=trip#12
+expedition:claim trip=trip#12
+  . wallet#1.wallet coins 0 -> 12, lifetime 0 -> 12 (apply expedition:claim)
+  . -trip#12 (apply expedition:claim)
+meta: coins 12 (lifetime 12) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:recall trip=trip#14
+expedition:recall trip=trip#14
+  . -trip#14 (apply expedition:recall)
+meta: coins 12 (lifetime 12) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / time:resumed elapsed=86400
+time:resumed elapsed=86400
+  process:expedition pid=expedition#11 state=back
+    expedition:returned trip=trip#10
+      . trip#10.expedition back false -> true (apply expedition:returned)
+meta: coins 12 (lifetime 12) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+== play / expedition:claim trip=trip#10
+expedition:claim trip=trip#10
+  . wallet#1.wallet coins 12 -> 102, lifetime 12 -> 102 (apply expedition:claim)
+  . -trip#10 (apply expedition:claim)
+meta: coins 102 (lifetime 102) | runs 0 clears 0 best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing power-charm gap | pity 0
+last run: -
+"
+`;

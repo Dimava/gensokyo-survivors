@@ -5,7 +5,9 @@
 // opened at `/run:<n>`; a pack opening is a child scope at `/pack`.
 
 import { z } from "zod";
-import { defineScope, event, input, type Ctx, type SpecOf, type View } from "gamebones";
+import { defineScope, done, event, input, ref, wait, type Ctx, type SpecOf, type View } from "gamebones";
+import { DESTINATIONS, MAX_ELAPSED_SECONDS, MAX_EXPEDITIONS, STARTING_COMPANIONS, destination } from "../content/expeditions.ts";
+import { CHARACTERS, PLAYER_CHARACTER } from "../content/names.ts";
 import { CARDS, MAX_CARD_LEVEL, RARITIES, RARITY_INFO, STARTER_CARDS, cardDef, type Rarity } from "../content/cards.ts";
 import { DECK_MAX, DECK_MIN, PACKS, packDef } from "../content/gacha.ts";
 import { STAGES, stageDef } from "../content/stages.ts";
@@ -33,6 +35,8 @@ const MetaDecl = defineScope("meta", {
     owned: z.strictObject({ card: z.string(), level: int, copies: int, inDeck: z.boolean(), fresh: z.boolean() }),
     gacha: z.strictObject({ sinceHigh: int, opened: int, open: z.boolean() }),
     lastRun: z.strictObject({ summary: RunSummary, records: z.array(z.string()), run: int }),
+    /** A companion away on an expedition; `endsAt` is on the idle clock (real seconds). */
+    expedition: z.strictObject({ who: z.string(), dest: z.string(), startedAt: int, endsAt: int, back: z.boolean(), pid: z.string() }),
   },
   events: {
     "run:start": input({ stage: z.string() }),
@@ -43,7 +47,15 @@ const MetaDecl = defineScope("meta", {
     "cards:seen": input(),
     "run:ended": event(RunSummary.shape),
     "pack:closed": event(),
+    // Real time enters only as input: the host reports how long the game was away (D22).
+    "time:resumed": input({ elapsed: int.min(0) }),
+    "expedition:send": input({ who: z.string(), dest: z.string() }),
+    "expedition:claim": input({ trip: ref() }, { subject: "trip" }),
+    "expedition:recall": input({ trip: ref() }, { subject: "trip" }),
+    "expedition:returned": event({ trip: ref() }, { subject: "trip" }),
   },
+  // Seconds of real time, advanced only by time:resumed; expeditions wait on it.
+  clocks: { idle: { elapsed: true } },
   rng: ["gacha"],
   children: { run: Run, pack: Pack },
 }).derive({
@@ -53,6 +65,14 @@ const MetaDecl = defineScope("meta", {
   gacha: (v) => v.q("gacha")[0]!,
   owned: (v) => v.q("owned"),
   deck: (v) => v.q("owned").filter((o) => o.owned.inDeck),
+  trips: (v) => v.q("expedition"),
+  /** Who can go: the starting companions plus the owner of every collected card, minus the player. */
+  companions: (v) => {
+    const out = new Set<string>(STARTING_COMPANIONS);
+    for (const o of v.q("owned")) out.add(cardDef(o.owned.card).owner);
+    out.delete(PLAYER_CHARACTER);
+    return [...out];
+  },
 });
 
 type MS = SpecOf<typeof MetaDecl>;
@@ -101,7 +121,7 @@ export function packsUntilPity(v: View<MS>, packId: string): number {
   return Math.max(1, pack.pity.every - v.derived("gacha").gacha.sinceHigh);
 }
 
-const MetaBase = MetaDecl.exports((v) => ({
+const MetaOpts = MetaDecl.exports((v) => ({
   coins: v.derived("wallet").wallet.coins,
   activeRun: v.derived("profile").profile.activeRun,
 }))
@@ -113,7 +133,32 @@ const MetaBase = MetaDecl.exports((v) => ({
         ? []
         : PACKS.filter((p) => v.derived("wallet").wallet.coins >= p.cost).map((p) => ({ pack: p.id })),
     "deck:toggle": (v) => v.derived("owned").map((o) => ({ card: o.owned.card })),
+    "expedition:send": (v) => {
+      const busy = new Set(v.derived("trips").map((t) => t.expedition.who));
+      if (busy.size >= MAX_EXPEDITIONS) return [];
+      return v
+        .derived("companions")
+        .filter((w) => !busy.has(w))
+        .flatMap((who) => DESTINATIONS.map((d) => ({ who, dest: d.id })));
+    },
+    "expedition:claim": (v) => v.derived("trips").filter((t) => t.expedition.back).map((t) => ({ trip: t.id })),
   });
+
+const MetaBase = MetaOpts.processes((process) => ({
+  // One per expedition: sleeps on the idle clock until the companion is back.
+  expedition: process({
+    clock: "idle",
+    start: "away",
+    locals: { trip: "", seconds: 1 },
+    states: {
+      away: (p) => wait(Math.max(1, p.locals.seconds), "back"),
+      back: (p, ctx) => {
+        if (ctx.get(p.locals.trip)) ctx.emit("expedition:returned", { trip: p.locals.trip });
+        return done();
+      },
+    },
+  }),
+}));
 
 export { MetaBase };
 
@@ -277,6 +322,37 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
     const o = ctx.derived("owned").find((x) => x.owned.card === ev.card)!;
     ctx.mut(o, "owned").inDeck = !o.owned.inDeck;
   }),
+  // ---------- idle expeditions (M5) ----------
+  r.on("time:resumed", (ev, ctx) => ctx.advance("idle", Math.min(ev.elapsed, MAX_ELAPSED_SECONDS))),
+  r.on("expedition:send").check((ev, ctx) => {
+    if (!DESTINATIONS.some((d) => d.id === ev.dest)) return `no destination "${ev.dest}"`;
+    if (!ctx.derived("companions").includes(ev.who)) return `${ev.who} has not joined the shrine yet`;
+    const trips = ctx.derived("trips");
+    const name = CHARACTERS[ev.who as keyof typeof CHARACTERS]?.short ?? ev.who;
+    if (trips.some((t) => t.expedition.who === ev.who)) return `${name} is already away`;
+    return trips.length >= MAX_EXPEDITIONS ? `at most ${MAX_EXPEDITIONS} companions can be away at once` : undefined;
+  }),
+  r.on("expedition:send", (ev, ctx) => {
+    const d = destination(ev.dest);
+    const now = ctx.now("idle");
+    const trip = ctx.spawn({ expedition: { who: ev.who, dest: d.id, startedAt: now, endsAt: now + d.seconds, back: false, pid: "" } }, "trip");
+    ctx.mut(trip, "expedition").pid = ctx.start("expedition", { trip, seconds: d.seconds });
+  }),
+  r.on("expedition:returned", (ev, ctx) => void (ctx.mut(ev.trip, "expedition").back = true)),
+  r.on("expedition:claim").check((ev, ctx) => (ctx.req(ev.trip, "expedition").expedition.back ? undefined : "they are not back yet")),
+  r.on("expedition:claim", (ev, ctx) => {
+    const d = destination(ctx.req(ev.trip, "expedition").expedition.dest);
+    const w = ctx.derived("wallet");
+    Object.assign(ctx.mut(w, "wallet"), { coins: w.wallet.coins + d.coins, lifetime: w.wallet.lifetime + d.coins });
+    ctx.despawn(ev.trip);
+  }),
+  // Calling a companion home early forfeits the reward and cancels the waiting process.
+  r.on("expedition:recall").check((ev, ctx) => (ctx.req(ev.trip, "expedition").expedition.back ? "they are already back: claim instead" : undefined)),
+  r.on("expedition:recall", (ev, ctx) => {
+    ctx.stop(ctx.req(ev.trip, "expedition").expedition.pid);
+    ctx.despawn(ev.trip);
+  }),
+
   r.on("cards:seen", (_, ctx) => {
     for (const o of ctx.derived("owned")) if (o.owned.fresh) ctx.mut(o, "owned").fresh = false;
   }),

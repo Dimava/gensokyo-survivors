@@ -2,7 +2,7 @@
 
 import { createKernel, type Kernel } from "gamebones";
 import { Meta, newProfile } from "../src/sim/meta.ts";
-import { MATH, activeRun, renderMeta, renderRun, runView, type Game, type RunPath } from "../src/sim/game.ts";
+import { MATH, activeRun, renderMeta, renderRun, type Game, type RunPath } from "../src/sim/game.ts";
 import { cardDef } from "../src/content/cards.ts";
 export { stress } from "../src/sim/stress.ts";
 

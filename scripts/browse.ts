@@ -53,6 +53,7 @@ async function run(p: Page): Promise<void> {
         ["Shrine Upgrades", "tree"],
         ["Skill Cards", "cards"],
         ["Card Packs", "packs"],
+        ["Expeditions", "expeditions"],
         ["Records", "records"],
         ["Settings", "settings"],
         ["How to Play", "help"],
@@ -129,8 +130,10 @@ async function run(p: Page): Promise<void> {
     }
     case "tour": {
       // A guided tour through every screen with a rich profile (scripts/richsave.ts).
-      const saveText = (await Bun.file(".tmp/save-rich.json").text()).replaceAll("\\", "\\\\").replaceAll("`", "\`");
-      await page.addInitScript(`if (!sessionStorage.getItem("seeded")) { localStorage.setItem("gensokyo-survivors/save", \`${saveText}\`); localStorage.removeItem("gensokyo-survivors/prefs"); sessionStorage.setItem("seeded", "1"); }`);
+      const saveText = await Bun.file(".tmp/save-rich.json").text();
+      await page.addInitScript(
+        `if (!sessionStorage.getItem("seeded")) { localStorage.setItem("gensokyo-survivors/save", ${JSON.stringify(saveText)}); localStorage.removeItem("gensokyo-survivors/prefs"); sessionStorage.setItem("seeded", "1"); }`,
+      );
       await page.goto(base + "?screen=menu&turbo=" + (process.env.TURBO ?? "3"));
       await wait(1200);
       await shot("menu");
@@ -257,6 +260,30 @@ async function run(p: Page): Promise<void> {
         await gs("g.host.meta('run:abandon', {});");
         await wait(500);
       }
+      break;
+    }
+    case "expedition": {
+      // Send Dai on the 5-minute errand, pretend the page was closed for 6 minutes, reload.
+      await page.goto(base + "?screen=menu");
+      await wait(1000);
+      await clickText("Expeditions");
+      await wait(400);
+      await page.locator(".comp").first().click();
+      await page.locator(".dest .btn").first().click();
+      await wait(400);
+      await shot("sent");
+      // Rewind the stored wall clock before the page script runs (the unload handler saves it first).
+      await page.addInitScript(`if (sessionStorage.getItem("rewind") === "1") { sessionStorage.setItem("rewind", "2"); const k = "gensokyo-survivors/clock"; localStorage.setItem(k, String(Number(localStorage.getItem(k)) - 360000)); }`);
+      await gs("sessionStorage.setItem('rewind', '1');");
+      await page.reload();
+      await wait(1500);
+      await clickText("Expeditions");
+      await wait(500);
+      await shot("back");
+      await page.getByText("Claim").first().click();
+      await wait(500);
+      await shot("claimed");
+      console.log(`coins after claim: ${await gs<number>("return g.host.k.view().q('wallet')[0].wallet.coins;")}`);
       break;
     }
     case "meta": {

@@ -16,7 +16,7 @@ import { Presenter, toast } from "./presenter.ts";
 import { Playfield } from "./renderer.ts";
 import { prefs } from "./prefs.ts";
 
-export type Screen = "title" | "menu" | "run" | "results" | "tree" | "cards" | "packs" | "records" | "settings" | "help";
+export type Screen = "title" | "menu" | "run" | "results" | "tree" | "cards" | "packs" | "expeditions" | "records" | "settings" | "help";
 
 export const state = reactive({
   screen: "title" as Screen,
@@ -38,6 +38,7 @@ export const state = reactive({
 });
 
 const params = new URLSearchParams(location.search);
+const CLOCK_KEY = "gensokyo-survivors/clock";
 
 class Host {
   k: Game;
@@ -72,7 +73,13 @@ class Host {
         this.save();
       }
     });
-    window.addEventListener("pagehide", () => this.save());
+    window.addEventListener("pagehide", () => {
+      this.resumeTime();
+      this.save();
+    });
+    // Real time for expeditions: reported to the kernel as input on load and every 10 seconds.
+    this.resumeTime();
+    window.setInterval(() => this.resumeTime(), 10_000);
     const canvas = this.field.app.canvas;
     const steer = (e: PointerEvent): void => {
       const r = canvas.getBoundingClientRect();
@@ -106,6 +113,46 @@ class Host {
     state.ready = true;
     this.last = performance.now();
     requestAnimationFrame((t) => this.frame(t));
+  }
+
+  /** Wall-clock ms already reported to the kernel's idle clock. */
+  private wallSeen = 0;
+
+  /**
+   * Tells the meta scope how many whole seconds passed since the last report
+   * (the only way wall time reaches the simulation, D22). Skipped while no
+   * companion is away, so idle play does not fill the log.
+   */
+  resumeTime(): void {
+    const now = Date.now();
+    if (!this.wallSeen) this.wallSeen = Number(localStorage.getItem(CLOCK_KEY)) || now;
+    const away = this.k.view().derived("trips").some((t) => !t.expedition.back);
+    const elapsed = Math.floor((now - this.wallSeen) / 1000);
+    if (elapsed < 0 || !away) {
+      this.wallSeen = now;
+    } else if (elapsed > 0) {
+      // Not saved here: the next save picks it up, and the wall clock is kept separately below.
+      const res = this.k.dispatch("/", "time:resumed", { elapsed });
+      this.presenter.consume(this.k, this.path(), res);
+      state.meta++;
+      if (res.ok) this.wallSeen += elapsed * 1000;
+      if (state.screen !== "run") this.save();
+    }
+    // The wall clock is written only with the save (save()), so the two never disagree.
+    if (!away) this.writeClock();
+  }
+
+  private writeClock(): void {
+    try {
+      localStorage.setItem(CLOCK_KEY, String(this.wallSeen));
+    } catch {
+      // Storage blocked: expeditions then only count time while the page is open.
+    }
+  }
+
+  /** The idle clock now, with the seconds not yet reported added (for countdowns). */
+  idleNow(): number {
+    return this.k.view().now("idle") + Math.max(0, (Date.now() - this.wallSeen) / 1000);
   }
 
   path(): RunPath | null {
@@ -246,7 +293,19 @@ class Host {
   // ---------- dispatching ----------
 
   /** A meta input: dispatched now, presented, saved. */
-  meta<E extends "run:start" | "run:abandon" | "tree:buy" | "pack:buy" | "deck:toggle" | "cards:seen">(
+  meta<
+    E extends
+      | "run:start"
+      | "run:abandon"
+      | "tree:buy"
+      | "pack:buy"
+      | "deck:toggle"
+      | "cards:seen"
+      | "time:resumed"
+      | "expedition:send"
+      | "expedition:claim"
+      | "expedition:recall",
+  >(
     event: E,
     payload: Parameters<Game["dispatch"]>[2],
   ): DispatchResult {
@@ -335,11 +394,13 @@ class Host {
   save(): void {
     this.sinceSave = 0;
     save(this.k);
+    if (this.wallSeen) this.writeClock();
   }
 
   eraseEverything(): void {
     eraseSave();
     this.k = markRaw(freshGame()) as Game;
+    this.wallSeen = Date.now();
     this.save();
     state.screen = "menu";
     state.frame++;

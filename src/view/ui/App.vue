@@ -11,6 +11,7 @@ import TreeView from "./TreeView.vue";
 import CardsView from "./CardsView.vue";
 import PacksView from "./PacksView.vue";
 import RecordsView from "./RecordsView.vue";
+import ExpeditionsView from "./ExpeditionsView.vue";
 import SettingsView from "./SettingsView.vue";
 import HelpView from "./HelpView.vue";
 
@@ -42,6 +43,7 @@ watchEffect(() => {
       <CardsView v-else-if="state.screen === 'cards'" key="cards" />
       <PacksView v-else-if="state.screen === 'packs'" key="packs" />
       <RecordsView v-else-if="state.screen === 'records'" key="records" />
+      <ExpeditionsView v-else-if="state.screen === 'expeditions'" key="expeditions" />
       <SettingsView v-else-if="state.screen === 'settings'" key="settings" @close="state.screen = state.back" />
       <HelpView v-else-if="state.screen === 'help'" key="help" @close="state.screen = state.back" />
     </Transition>

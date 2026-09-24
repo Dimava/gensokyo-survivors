@@ -43,6 +43,7 @@ const spells = bossDef(first.boss).spells.length;
       <h3>Between runs</h3>
       <ul>
         <li><b>Shrine Upgrades</b>: a tree of permanent upgrades. Buy nodes next to ones you own; each has several levels.</li>
+        <li><b>Expeditions</b>: send companions away for real minutes or hours (the game can be closed); they come back with {{ CURRENCY.name }}.</li>
         <li><b>Card Packs</b>: three cards each. Duplicates level a card up (to 3), then refund {{ CURRENCY.name }}. A pity counter guarantees a Super Rare or better.</li>
       </ul>
     </section>
