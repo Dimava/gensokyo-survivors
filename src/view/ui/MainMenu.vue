@@ -6,6 +6,9 @@ import { GAME_TITLE, CURRENCY, CHARACTERS, PLAYER_CHARACTER } from "../../conten
 import { bossDef, bossName } from "../../content/bosses.ts";
 import { DECK_MIN } from "../../content/gacha.ts";
 import { affordableNodes, fmtTime, owned, profile, stages, wallet } from "./useGame.ts";
+import { stageDef, type StageDef } from "../../content/stages.ts";
+
+const locked = (s: StageDef): boolean => !!s.requires && !profile.value.cleared.includes(s.requires);
 
 const picking = ref(false);
 const active = computed(() => {
@@ -87,16 +90,19 @@ function hover(): void {
       <div v-if="picking" class="modal-wrap" @click.self="picking = false">
         <div class="panel stagepick">
           <h2>Choose a stage</h2>
-          <div v-for="s in stages" :key="s.id" class="stage">
+          <div v-for="s in stages" :key="s.id" class="stage" :class="{ locked: locked(s) }">
             <div>
-              <div class="sname">{{ s.name }}</div>
+              <div class="sname">
+                {{ s.name }} <span v-if="profile.cleared.includes(s.id)" class="clearmark" title="Cleared at least once">✓ cleared</span>
+              </div>
               <div class="muted">{{ s.blurb }}</div>
               <div class="muted small">
                 Boss at {{ fmtTime(s.bossAt) }}: {{ bossName(bossDef(s.boss)) }} with {{ bossDef(s.boss).spells.length }} spell cards · clear bonus {{ CURRENCY.icon }}
                 {{ s.clearBonus }}
               </div>
             </div>
-            <button class="btn primary" @click="start(s.id)">Go</button>
+            <button v-if="!locked(s)" class="btn primary" @click="start(s.id)">Go</button>
+            <span v-else class="lockmsg">Clear {{ stageDef(s.requires!).name }} to open</span>
           </div>
           <button class="btn ghost" @click="picking = false">Back</button>
         </div>
@@ -214,6 +220,22 @@ dd {
   border-radius: 12px;
   background: rgba(111, 211, 255, 0.08);
   border: 1px solid rgba(111, 211, 255, 0.3);
+}
+.stage.locked {
+  opacity: 0.55;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--line);
+}
+.lockmsg {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: right;
+  max-width: 130px;
+}
+.clearmark {
+  font-size: 0.75rem;
+  color: var(--gold);
+  margin-left: 6px;
 }
 .sname {
   font-size: 1.2rem;

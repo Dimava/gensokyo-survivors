@@ -11,7 +11,8 @@ const seed = process.argv[3] ?? "bal";
 const skill = SKILL[(process.env.SKILL ?? "novice") as keyof typeof SKILL];
 const k = newGame(seed);
 for (let r = 1; r <= runs; r++) {
-  k.dispatch("/", "run:start", { stage: "lake" });
+  const stageId = process.env.STAGE && k.options("/", "run:start").some((o) => o.stage === process.env.STAGE) ? process.env.STAGE : "lake";
+  k.dispatch("/", "run:start", { stage: stageId });
   const path = activeRun(k)!;
   let snap = "";
   let atBoss = "";
@@ -30,7 +31,7 @@ for (let r = 1; r <= runs; r++) {
   });
   const ms = (performance.now() - t0) / res.ticks;
   const last = k.view().q("lastRun")[0]!.lastRun.summary;
-  console.log(`run ${r}: ${last.outcome} ${last.seconds}s lv${last.level} kills ${last.kills} +${last.coins.total} caps ${last.spellsCaptured} | ${ms.toFixed(2)} ms/tick`);
+  console.log(`run ${r} (${last.stage}): ${last.outcome} ${last.seconds}s lv${last.level} kills ${last.kills} +${last.coins.total} caps ${last.spellsCaptured} | ${ms.toFixed(2)} ms/tick`);
   console.log(`   ${snap.split("\n")[1]}`);
   console.log(`   at boss: ${atBoss || "-"} | spells: ${results || "-"}`);
   for (;;) {

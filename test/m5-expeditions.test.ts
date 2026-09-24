@@ -5,6 +5,7 @@
 import { describe, expect, test } from "bun:test";
 import { harness } from "gamebones";
 import { destination } from "../src/content/expeditions.ts";
+import { loadGame } from "../src/sim/game.ts";
 import { fixtureGame, render } from "./helpers.ts";
 
 describe("M5 idle expeditions", () => {
@@ -42,5 +43,29 @@ describe("M5 idle expeditions", () => {
     expect(trips()).toEqual([]);
     expect(h.transcript()).toMatchSnapshot();
     h.verifyReplay();
+  });
+});
+
+describe("M5 second stage", () => {
+  test("the forest opens after the lake is cleared; an old save migrates its clears", () => {
+    const k = fixtureGame("m5-stage");
+    const res = k.dispatch("/", "run:start", { stage: "forest" });
+    expect(res.ok).toBe(false);
+    expect(k.rejections.at(-1)?.reason).toBe("clear Misty Lake first");
+    expect(k.options("/", "run:start").map((o) => o.stage)).toEqual(["lake"]);
+
+    // A version-0 save (before per-stage clears) with one clear loads with the lake cleared.
+    const save = JSON.parse(JSON.stringify(k.save()));
+    save.scopes["/"].version = 0;
+    for (const e of save.scopes["/"].entities) {
+      if (e.profile) {
+        delete e.profile.cleared;
+        e.profile.clears = 1;
+      }
+    }
+    const k2 = loadGame(save);
+    expect(k2.view().derived("profile").profile.cleared).toEqual(["lake"]);
+    expect(k2.options("/", "run:start").map((o) => o.stage)).toEqual(["lake", "forest"]);
+    expect(k2.dispatch("/", "run:start", { stage: "forest" }).ok).toBe(true);
   });
 });

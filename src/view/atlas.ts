@@ -17,7 +17,8 @@ export interface Atlas {
   star: Texture;
   player: Texture;
   hitbox: Texture;
-  boss: Texture;
+  /** Boss sprite by boss id (a placeholder generic one for bosses without art). */
+  boss: Record<string, Texture>;
   yinyang: Texture;
   circle: Texture;
   ring: Texture;
@@ -218,7 +219,7 @@ export function buildAtlas(renderer: Renderer): Atlas {
     },
   });
   cells.push({
-    name: "boss",
+    name: "boss:cirno",
     w: 80,
     h: 80,
     draw: (g, cx, cy) => {
@@ -236,6 +237,23 @@ export function buildAtlas(renderer: Renderer): Atlas {
       g.poly([cx + 12, cy - 22, cx, cy - 18, cx + 10, cy - 12]).fill(0x3a78d8);
       g.circle(cx - 3.5, cy - 8, 1.6).fill(0x1a3a8a);
       g.circle(cx + 3.5, cy - 8, 1.6).fill(0x1a3a8a);
+    },
+  });
+  cells.push({
+    name: "boss:rumia",
+    w: 80,
+    h: 80,
+    draw: (g, cx, cy) => {
+      // Rumia: black dress, blonde hair, red ribbon, arms out like a cross; a haze of darkness.
+      g.circle(cx, cy, 30).fill({ color: 0x1a1030, alpha: 0.55 });
+      g.rect(cx - 30, cy - 2, 60, 5).fill(0x2b2238);
+      g.poly([cx - 12, cy + 2, cx + 12, cy + 2, cx + 16, cy + 24, cx - 16, cy + 24]).fill(0x2b2238);
+      g.rect(cx - 6, cy + 2, 12, 5).fill(0xffffff);
+      g.circle(cx, cy - 9, 10).fill(0xffe8dc);
+      g.moveTo(cx, cy - 10).arc(cx, cy - 10, 10.5, Math.PI, 0).fill(0xf2e27a);
+      g.poly([cx + 6, cy - 22, cx + 14, cy - 26, cx + 12, cy - 16]).fill(0xe0314b);
+      g.circle(cx - 3.5, cy - 8, 1.6).fill(0xb3122b);
+      g.circle(cx + 3.5, cy - 8, 1.6).fill(0xb3122b);
     },
   });
   cells.push({
@@ -324,7 +342,7 @@ export function buildAtlas(renderer: Renderer): Atlas {
     star: f("star"),
     player: f("player"),
     hitbox: f("hitbox"),
-    boss: f("boss"),
+    boss: { cirno: f("boss:cirno"), rumia: f("boss:rumia") },
     yinyang: f("yinyang"),
     circle: f("circle"),
     ring: f("ring"),

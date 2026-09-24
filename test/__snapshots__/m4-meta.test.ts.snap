@@ -326,7 +326,7 @@ weapons: amulet1 | passives: -
 enemies 75 [kedama 75] | drops 4 | shots 0 | bullets 0
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: pocket-watch
 overlay: levelup
--- save size mid-run: 13128 bytes
+-- save size mid-run: 13141 bytes
 == play / run:abandon
 run:abandon
   run:forfeit @/run:1

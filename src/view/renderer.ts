@@ -26,6 +26,7 @@ import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { BOSS, PLAYER, SWARM } from "../sim/tuning.ts";
 import { buildAtlas, type Atlas } from "./atlas.ts";
 import { prefs } from "./prefs.ts";
+import { CHARACTERS } from "../content/names.ts";
 
 interface Fx {
   kind: "ring" | "beam" | "wave";
@@ -141,7 +142,7 @@ export class Playfield {
     this.player.anchor.set(0.5, 0.55);
     this.hitbox = new Sprite(a.hitbox);
     this.hitbox.anchor.set(0.5);
-    this.boss = new Sprite(a.boss);
+    this.boss = new Sprite(a.boss.cirno);
     this.boss.anchor.set(0.5);
     this.bossCircle = new Sprite(a.circle);
     this.bossCircle.anchor.set(0.5);
@@ -231,6 +232,7 @@ export class Playfield {
     if (!v || !v.q("run")[0]) {
       this.ground.tilePosition.set(-this.time * 20, -this.time * 12);
       this.world.visible = false;
+      this.ground.tint = 0xffffff;
       this.drawScreen(W, H, fdt, opts.dim ?? 0);
       return;
     }
@@ -240,8 +242,8 @@ export class Playfield {
     const t = v.now("action");
     const td = v.now("danmaku");
     const stage = stageDef(run.stage);
-    this.ground.tint = 0xffffff;
-    void stage;
+    // Each stage tints the ground (the tile is drawn in the lake's colours).
+    this.ground.tint = stage.tint;
 
     // Camera, with shake.
     this.shakeAmt = Math.max(0, this.shakeAmt - fdt * 30);
@@ -272,6 +274,8 @@ export class Playfield {
     if (boss) {
       const def = bossDef(boss.boss.id);
       bossPos(boss, t, pos);
+      this.boss.texture = this.atlas.boss[boss.boss.id] ?? this.atlas.boss.cirno!;
+      this.bossCircle.tint = CHARACTERS[def.character].color === 0x2b2238 ? 0xb9a6ff : CHARACTERS[def.character].color;
       this.boss.position.set(pos.x, pos.y + Math.sin(this.time * 2.5) * 3);
       this.bossCircle.position.set(pos.x, pos.y);
       this.bossCircle.rotation = this.time * 1.2;

@@ -26,8 +26,8 @@ import type { RunSummary } from "./schemas.ts";
 
 type C = Ctx<RS0>;
 
-/** Bullets hurt this much (armor applies): the swarm's stray shots, and the boss's danmaku. */
-export const BULLET_DMG = { swarm: 10, boss: 18 } as const;
+/** The swarm's stray shots hurt this much (armor applies); boss bullets use the boss's own number. */
+export const SWARM_BULLET_DMG = 10;
 
 const bp = { x: 0, y: 0 };
 
@@ -204,8 +204,8 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     const stats = ctx.derived("stats");
     const res = stepBullets(ctx, stats.graze, playerSpeedBound(ctx));
     if (res.hit && ctx.derived("state").run.phase !== "over") {
-      const boss = ctx.derived("state").run.phase === "boss";
-      ctx.emit("player:hurt", { player: p.id, dmg: boss ? BULLET_DMG.boss : BULLET_DMG.swarm, cause: "bullet" });
+      const boss = ctx.derived("boss");
+      ctx.emit("player:hurt", { player: p.id, dmg: boss ? bossDef(boss.boss.id).bulletDmg : SWARM_BULLET_DMG, cause: "bullet" });
       ctx.emit("bullets:erase", { x: p.body.x, y: p.body.y, radius: PLAYER.mercyRadius, gems: false });
     }
     if (res.grazes) ctx.emit("graze", { player: p.id, n: res.grazes, x: r1(p.body.x), y: r1(p.body.y) });

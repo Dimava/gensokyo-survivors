@@ -30,6 +30,8 @@ const MetaDecl = defineScope("meta", {
       totalKills: int,
       activeRun: z.string(),
       nextRun: int,
+      /** Stage ids cleared at least once (they open the next stages). */
+      cleared: z.array(z.string()),
     }),
     tree: z.strictObject({ levels: z.record(z.string(), int) }),
     owned: z.strictObject({ card: z.string(), level: int, copies: int, inDeck: z.boolean(), fresh: z.boolean() }),
@@ -126,7 +128,10 @@ const MetaOpts = MetaDecl.exports((v) => ({
   activeRun: v.derived("profile").profile.activeRun,
 }))
   .options({
-    "run:start": (v) => (v.derived("profile").profile.activeRun ? [] : STAGES.map((s) => ({ stage: s.id }))),
+    "run:start": (v) => {
+      const p = v.derived("profile").profile;
+      return p.activeRun ? [] : STAGES.filter((s) => !s.requires || p.cleared.includes(s.requires)).map((s) => ({ stage: s.id }));
+    },
     "tree:buy": (v) => TREE.filter((n) => nodeState(v, n.id) === "buyable").map((n) => ({ node: n.id })),
     "pack:buy": (v) =>
       v.derived("profile").profile.activeRun || v.derived("gacha").gacha.open
@@ -169,7 +174,10 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
   r.on("run:start").check((ev, ctx) => {
     if (ctx.derived("profile").profile.activeRun) return "a run is already in progress";
     if (ctx.derived("deck").length < DECK_MIN) return `put at least ${DECK_MIN} card in your deck`;
-    return STAGES.some((s) => s.id === ev.stage) ? undefined : `no stage "${ev.stage}"`;
+    const stage = STAGES.find((s) => s.id === ev.stage);
+    if (!stage) return `no stage "${ev.stage}"`;
+    if (stage.requires && !ctx.derived("profile").profile.cleared.includes(stage.requires)) return `clear ${stageDef(stage.requires).name} first`;
+    return undefined;
   }),
   r.on("run:start", (ev, ctx) => {
     const profile = ctx.derived("profile");
@@ -189,11 +197,12 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
     if (ev.seconds > p.bestSeconds) records.push("time");
     if (ev.kills > p.bestKills) records.push("kills");
     if (ev.level > p.bestLevel) records.push("level");
-    if (ev.outcome === "clear" && p.clears === 0) records.push("first clear");
+    if (ev.outcome === "clear" && !p.cleared.includes(ev.stage)) records.push("first clear");
     ctx.close(p.activeRun);
     Object.assign(ctx.mut(profile, "profile"), {
       activeRun: "",
       clears: p.clears + (ev.outcome === "clear" ? 1 : 0),
+      cleared: ev.outcome === "clear" && !p.cleared.includes(ev.stage) ? [...p.cleared, ev.stage] : [...p.cleared],
       bestSeconds: Math.max(p.bestSeconds, ev.seconds),
       bestKills: Math.max(p.bestKills, ev.kills),
       bestLevel: Math.max(p.bestLevel, ev.level),
@@ -356,13 +365,22 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
   r.on("cards:seen", (_, ctx) => {
     for (const o of ctx.derived("owned")) if (o.owned.fresh) ctx.mut(o, "owned").fresh = false;
   }),
+]).migrations([
+  // v0 -> v1: per-stage clears (stage 2 opens after stage 1). Old saves only had the one stage.
+  (data) => ({
+    ...data,
+    entities: data.entities.map((e) => {
+      const p = e.profile as { clears?: number } | undefined;
+      return p ? { ...e, profile: { ...p, cleared: (p.clears ?? 0) > 0 ? ["lake"] : [] } } : e;
+    }),
+  }),
 ]);
 
 /** The fixture for a new profile. */
 export function newProfile(ctx: Ctx<MS>): void {
   ctx.spawn({ wallet: { coins: 0, lifetime: 0 } }, "wallet");
   ctx.spawn(
-    { profile: { runs: 0, clears: 0, bestSeconds: 0, bestKills: 0, bestLevel: 0, totalKills: 0, activeRun: "", nextRun: 1 } },
+    { profile: { runs: 0, clears: 0, bestSeconds: 0, bestKills: 0, bestLevel: 0, totalKills: 0, activeRun: "", nextRun: 1, cleared: [] } },
     "profile",
   );
   ctx.spawn({ tree: { levels: {} } }, "tree");

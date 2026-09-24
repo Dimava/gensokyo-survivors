@@ -4,7 +4,7 @@ import { host } from "../host.ts";
 import { CARDS } from "../../content/cards.ts";
 import { TREE } from "../../content/tree.ts";
 import { CURRENCY } from "../../content/names.ts";
-import { stageDef } from "../../content/stages.ts";
+import { STAGES, stageDef } from "../../content/stages.ts";
 import { fmtTime, gacha, lastRun, owned, profile, treeLevels, wallet } from "./useGame.ts";
 
 const nodes = computed(() => {
@@ -25,6 +25,7 @@ const last = computed(() => lastRun.value?.summary ?? null);
       <div class="grid">
         <div class="stat"><span class="muted">Runs started</span><b>{{ profile.runs }}</b></div>
         <div class="stat"><span class="muted">Stage clears</span><b>{{ profile.clears }}</b></div>
+        <div class="stat"><span class="muted">Stages cleared</span><b>{{ profile.cleared.length }} / {{ STAGES.length }}</b></div>
         <div class="stat"><span class="muted">Longest survival</span><b>{{ fmtTime(profile.bestSeconds) }}</b></div>
         <div class="stat"><span class="muted">Most kills in a run</span><b>{{ profile.bestKills }}</b></div>
         <div class="stat"><span class="muted">Highest level</span><b>{{ profile.bestLevel }}</b></div>
