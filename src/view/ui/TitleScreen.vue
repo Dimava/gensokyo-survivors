@@ -14,7 +14,12 @@ onBeforeUnmount(off);
 <template>
   <div class="screen title" @click="host.go('menu')">
     <div class="logo">
-      <div class="yy"></div>
+      <svg class="yy" viewBox="-1 -1 2 2" aria-hidden="true">
+        <circle r="1" fill="#fff" />
+        <path d="M0-1A1 1 0 0 1 0 1A.5.5 0 0 1 0 0A.5.5 0 0 0 0-1Z" fill="#e0314b" />
+        <circle cy="-.5" r=".15" fill="#e0314b" />
+        <circle cy=".5" r=".15" fill="#fff" />
+      </svg>
       <h1>{{ GAME_TITLE }}</h1>
       <p class="sub">{{ GAME_SUBTITLE }}</p>
     </div>
@@ -33,16 +38,11 @@ onBeforeUnmount(off);
   animation: rise calc(0.9s * var(--anim)) cubic-bezier(0.2, 1, 0.3, 1) both;
 }
 .yy {
+  display: block;
   width: 84px;
   height: 84px;
   margin: 0 auto 14px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 25%, #fff 0 9%, transparent 10%),
-    radial-gradient(circle at 50% 75%, #e0314b 0 9%, transparent 10%),
-    radial-gradient(circle at 50% 25%, #e0314b 0 25%, transparent 26%),
-    radial-gradient(circle at 50% 75%, #fff 0 25%, transparent 26%),
-    linear-gradient(90deg, #fff 50%, #e0314b 50%);
   box-shadow: 0 0 40px rgba(224, 49, 75, 0.6);
   animation: spin calc(6s * var(--anim)) linear infinite;
 }
