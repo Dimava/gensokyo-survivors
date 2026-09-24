@@ -5,6 +5,8 @@ import { defineConfig } from "vite";
 // The kernel is consumed as source through an alias (bun's `file:` install copies the
 // kernel's .git folder and fails with EPERM on Windows; see NOTES.md, Kernel friction).
 export default defineConfig({
+  // Relative asset URLs: the build is served both from a domain root and under a path prefix.
+  base: "./",
   plugins: [vue()],
   resolve: {
     alias: {

@@ -129,7 +129,7 @@ function buy(id: string): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 14px;
   font-weight: 800;
   animation: bob calc(3s * var(--anim)) ease-in-out infinite;

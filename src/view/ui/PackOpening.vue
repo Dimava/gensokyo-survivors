@@ -155,7 +155,7 @@ const labels = computed(() =>
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 10px;
   background: radial-gradient(ellipse at center, rgba(40, 20, 70, 0.9), rgba(4, 4, 12, 0.96));
   z-index: 20;

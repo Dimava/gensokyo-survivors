@@ -98,7 +98,7 @@ const RECORD_LABEL: Record<string, string> = { time: "Longest survival", kills: 
 
 <style scoped>
 .results {
-  justify-content: center;
+  justify-content: safe center;
 }
 .box {
   width: min(560px, 94vw);

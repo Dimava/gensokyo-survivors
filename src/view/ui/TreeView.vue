@@ -167,7 +167,7 @@ function buy(): void {
   overflow: auto;
   padding: 10px;
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
 }
 .board {
   position: relative;
@@ -195,7 +195,7 @@ function buy(): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 4px;
   padding: 6px;
   transition:

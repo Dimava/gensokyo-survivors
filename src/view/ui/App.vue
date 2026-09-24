@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watchEffect } from "vue";
+import { onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
 import { host, state } from "../host.ts";
 import { prefs } from "../prefs.ts";
 import { ui } from "../presenter.ts";
@@ -14,9 +14,25 @@ import RecordsView from "./RecordsView.vue";
 import ExpeditionsView from "./ExpeditionsView.vue";
 import SettingsView from "./SettingsView.vue";
 import HelpView from "./HelpView.vue";
+import GalleryView from "./GalleryView.vue";
 
 const field = ref<HTMLDivElement>();
 const failed = ref("");
+
+/**
+ * The interface is laid out for about 1100x720 CSS pixels; smaller screens
+ * (phones) get all of it zoomed down to fit, the field is scaled separately.
+ */
+const uiScale = ref(1);
+function fit(): void {
+  uiScale.value = Math.max(
+    0.5,
+    Math.min(1, window.innerWidth / 1100, window.innerHeight / 720),
+  );
+}
+fit();
+window.addEventListener("resize", fit);
+onBeforeUnmount(() => window.removeEventListener("resize", fit));
 
 onMounted(async () => {
   try {
@@ -27,48 +43,78 @@ onMounted(async () => {
 });
 
 watchEffect(() => {
-  document.documentElement.style.setProperty("--anim", String(1 / prefs.animSpeed));
+  document.documentElement.style.setProperty(
+    "--anim",
+    String(1 / prefs.animSpeed),
+  );
 });
 </script>
 
 <template>
   <div class="root">
     <div ref="field" class="field"></div>
-    <Transition name="fade" mode="out-in">
-      <TitleScreen v-if="state.screen === 'title'" key="title" />
-      <MainMenu v-else-if="state.screen === 'menu'" key="menu" />
-      <RunView v-else-if="state.screen === 'run'" key="run" />
-      <ResultsView v-else-if="state.screen === 'results'" key="results" />
-      <TreeView v-else-if="state.screen === 'tree'" key="tree" />
-      <CardsView v-else-if="state.screen === 'cards'" key="cards" />
-      <PacksView v-else-if="state.screen === 'packs'" key="packs" />
-      <RecordsView v-else-if="state.screen === 'records'" key="records" />
-      <ExpeditionsView v-else-if="state.screen === 'expeditions'" key="expeditions" />
-      <SettingsView v-else-if="state.screen === 'settings'" key="settings" @close="state.screen = state.back" />
-      <HelpView v-else-if="state.screen === 'help'" key="help" @close="state.screen = state.back" />
-    </Transition>
+    <div class="ui" :style="{ zoom: uiScale }">
+      <Transition name="fade" mode="out-in">
+        <TitleScreen v-if="state.screen === 'title'" key="title" />
+        <MainMenu v-else-if="state.screen === 'menu'" key="menu" />
+        <RunView v-else-if="state.screen === 'run'" key="run" />
+        <ResultsView v-else-if="state.screen === 'results'" key="results" />
+        <TreeView v-else-if="state.screen === 'tree'" key="tree" />
+        <CardsView v-else-if="state.screen === 'cards'" key="cards" />
+        <PacksView v-else-if="state.screen === 'packs'" key="packs" />
+        <RecordsView v-else-if="state.screen === 'records'" key="records" />
+        <GalleryView v-else-if="state.screen === 'gallery'" key="gallery" />
+        <ExpeditionsView
+          v-else-if="state.screen === 'expeditions'"
+          key="expeditions"
+        />
+        <SettingsView
+          v-else-if="state.screen === 'settings'"
+          key="settings"
+          @close="state.screen = state.back"
+        />
+        <HelpView
+          v-else-if="state.screen === 'help'"
+          key="help"
+          @close="state.screen = state.back"
+        />
+      </Transition>
 
-    <div class="toasts">
-      <TransitionGroup name="pop">
-        <div v-for="t in ui.toasts" :key="t.id" class="toast" :class="t.tone">{{ t.text }}</div>
-      </TransitionGroup>
-    </div>
-
-    <div v-if="prefs.fps" class="fps">{{ state.fps }} fps · {{ state.msPerTick }} ms/tick</div>
-
-    <div v-if="state.loadError" class="modal-wrap">
-      <div class="panel modal">
-        <h2>Your save could not be loaded</h2>
-        <p class="muted">{{ state.loadError }}</p>
-        <p>A new profile was started. The old save was kept aside in this browser (key <code>gensokyo-survivors/save.broken</code>) and was not overwritten.</p>
-        <button class="btn primary" @click="state.loadError = ''">Continue with a new profile</button>
+      <div class="toasts">
+        <TransitionGroup name="pop">
+          <div v-for="t in ui.toasts" :key="t.id" class="toast" :class="t.tone">
+            {{ t.text }}
+          </div>
+        </TransitionGroup>
       </div>
-    </div>
-    <div v-if="failed" class="modal-wrap">
-      <div class="panel modal">
-        <h2>The game could not start</h2>
-        <p class="muted">{{ failed }}</p>
-        <p>This game needs WebGL. Try a current version of Chrome, Edge or Firefox.</p>
+
+      <div v-if="prefs.fps" class="fps">
+        {{ state.fps }} fps · {{ state.msPerTick }} ms/tick
+      </div>
+
+      <div v-if="state.loadError" v-keynav class="modal-wrap">
+        <div class="panel modal">
+          <h2>Your save could not be loaded</h2>
+          <p class="muted">{{ state.loadError }}</p>
+          <p>
+            A new profile was started. The old save was kept aside in this
+            browser (key <code>gensokyo-survivors/save.broken</code>) and was
+            not overwritten.
+          </p>
+          <button class="btn primary" @click="state.loadError = ''">
+            Continue with a new profile
+          </button>
+        </div>
+      </div>
+      <div v-if="failed" v-keynav class="modal-wrap">
+        <div class="panel modal">
+          <h2>The game could not start</h2>
+          <p class="muted">{{ failed }}</p>
+          <p>
+            This game needs WebGL. Try a current version of Chrome, Edge or
+            Firefox.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -83,6 +129,15 @@ watchEffect(() => {
 .field {
   position: absolute;
   inset: 0;
+  touch-action: none;
+}
+.ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+:where(.ui) > * {
+  pointer-events: auto;
 }
 .toasts {
   position: absolute;

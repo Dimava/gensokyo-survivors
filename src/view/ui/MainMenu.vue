@@ -62,6 +62,7 @@ function hover(): void {
             Expeditions <span v-if="tripsBack" class="badge">{{ tripsBack }} back</span>
           </button>
           <button class="btn big" @mouseenter="hover" @click="host.go('records')">Records</button>
+          <button class="btn big" @mouseenter="hover" @click="host.go('gallery')">Gallery</button>
           <button class="btn big" @mouseenter="hover" @click="host.go('settings')">Settings</button>
           <button class="btn big" @mouseenter="hover" @click="host.go('help')">How to Play</button>
         </div>
@@ -121,7 +122,7 @@ function hover(): void {
 
 <style scoped>
 .menu {
-  justify-content: center;
+  justify-content: safe center;
 }
 .wrap {
   display: flex;
@@ -129,7 +130,7 @@ function hover(): void {
   align-items: center;
   width: min(1000px, 94vw);
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: safe center;
 }
 .left {
   flex: 1 1 380px;

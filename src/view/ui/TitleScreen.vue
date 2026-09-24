@@ -25,7 +25,7 @@ onBeforeUnmount(off);
 
 <style scoped>
 .title {
-  justify-content: center;
+  justify-content: safe center;
   cursor: pointer;
 }
 .logo {
