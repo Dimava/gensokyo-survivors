@@ -260,6 +260,26 @@ label:has(> [data-nav-sel]) {
   opacity: 0;
 }
 
+/* A modal over a full-screen backdrop: the backdrop only fades, the panel pops (scaling the backdrop made the whole screen lurch). */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity calc(0.2s * var(--anim));
+}
+.modal-enter-active > .panel {
+  transition: transform calc(0.25s * var(--anim)) cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+.modal-leave-active > .panel {
+  transition: transform calc(0.15s * var(--anim)) ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from > .panel,
+.modal-leave-to > .panel {
+  transform: scale(0.94);
+}
+
 .rarity-N {
   --rc: #b8c4d6;
 }

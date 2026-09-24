@@ -94,7 +94,7 @@ function hover(): void {
       </div>
     </div>
 
-    <Transition name="pop">
+    <Transition name="modal">
       <div v-if="picking" v-keynav="{ back: () => (picking = false) }" class="modal-wrap" @click.self="picking = false">
         <div class="panel stagepick">
           <h2>Choose a stage</h2>
