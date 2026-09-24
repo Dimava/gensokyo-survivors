@@ -28,9 +28,27 @@ export type CardEffect =
   | "gap"
   | "lastStand";
 
+/**
+ * What a card does, at a glance: the hand shows each kind in its own colour
+ * and badge shape so a card reads in peripheral vision mid-dodge.
+ */
+export type CardKind = "attack" | "guard" | "heal" | "buff" | "utility";
+
+export const CARD_KINDS: Record<CardKind, { label: string; color: number; css: string }> = {
+  attack: { label: "Attack", color: 0xff5a36, css: "#ff5a36" },
+  guard: { label: "Guard", color: 0x3fe0ff, css: "#3fe0ff" },
+  heal: { label: "Heal", color: 0x52e07a, css: "#52e07a" },
+  buff: { label: "Empower", color: 0xffc233, css: "#ffc233" },
+  utility: { label: "Utility", color: 0xb77bff, css: "#b77bff" },
+};
+
 export interface CardDef {
   id: string;
   name: string;
+  /** A name short enough for the in-run hand. */
+  short: string;
+  /** The effect category: the card's colour and badge shape in the hand. */
+  kind: CardKind;
   /** Whose technique it is, for flavour and the card art colour. */
   owner: keyof typeof CHARACTERS;
   rarity: Rarity;
@@ -50,6 +68,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "fantasy-seal",
     name: "Spirit Sign “Fantasy Seal”",
+    short: "Fantasy Seal",
+    kind: "attack",
     owner: "reimu",
     rarity: "N",
     cost: 1,
@@ -61,6 +81,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "barrier",
     name: "Barrier Talisman",
+    short: "Barrier",
+    kind: "guard",
     owner: "reimu",
     rarity: "N",
     cost: 1,
@@ -72,6 +94,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "healing",
     name: "Healing Charm",
+    short: "Heal",
+    kind: "heal",
     owner: "reimu",
     rarity: "N",
     cost: 2,
@@ -83,6 +107,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "power-charm",
     name: "Power Charm",
+    short: "Power Up",
+    kind: "buff",
     owner: "marisa",
     rarity: "R",
     cost: 2,
@@ -94,6 +120,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "graze-ribbon",
     name: "Graze Ribbon",
+    short: "Graze Ribbon",
+    kind: "heal",
     owner: "reimu",
     rarity: "R",
     cost: 2,
@@ -105,6 +133,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "vengeance",
     name: "Vengeful Amulet",
+    short: "Vengeance",
+    kind: "attack",
     owner: "reimu",
     rarity: "R",
     cost: 2,
@@ -116,6 +146,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "pocket-watch",
     name: "Time Sign “Private Square”",
+    short: "Time Stop",
+    kind: "guard",
     owner: "sakuya",
     rarity: "SR",
     cost: 3,
@@ -127,6 +159,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "master-spark",
     name: "Love Sign “Master Spark”",
+    short: "Master Spark",
+    kind: "attack",
     owner: "marisa",
     rarity: "SR",
     cost: 3,
@@ -138,6 +172,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "gap",
     name: "Boundary “Gap Travel”",
+    short: "Gap Travel",
+    kind: "utility",
     owner: "yukari",
     rarity: "SR",
     cost: 2,
@@ -149,6 +185,8 @@ export const CARDS: readonly CardDef[] = [
   {
     id: "last-stand",
     name: "Border of Life and Death",
+    short: "Last Stand",
+    kind: "heal",
     owner: "yukari",
     rarity: "SSR",
     cost: 4,

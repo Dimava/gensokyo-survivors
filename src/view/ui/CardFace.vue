@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { cardDef, cardText, RARITY_INFO } from "../../content/cards.ts";
+import { CARD_KINDS, cardDef, cardText, RARITY_INFO } from "../../content/cards.ts";
+import { cardIcon } from "./cardIcons.ts";
 import { CHARACTERS } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
 
@@ -14,11 +15,18 @@ const def = computed(() => cardDef(props.card));
       <span class="rar">{{ def.rarity }}</span>
       <span class="cost" :title="`Costs ${def.cost} Spirit`"><i v-for="n in def.cost" :key="n"></i></span>
     </div>
-    <div class="art" :style="{ '--c': hex(CHARACTERS[def.owner].color) }">
+    <div class="art" :style="{ '--c': hex(CHARACTERS[def.owner].color), '--kc': CARD_KINDS[def.kind].css }">
       <span v-if="unknown">?</span>
+      <svg
+        v-else
+        class="glyph"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        v-html="cardIcon(def.id)"
+      ></svg>
     </div>
     <div class="name">{{ unknown ? "Unknown card" : def.name }}</div>
-    <div class="owner muted">{{ unknown ? RARITY_INFO[def.rarity].label : `${CHARACTERS[def.owner].short} · ${RARITY_INFO[def.rarity].label}` }}</div>
+    <div class="owner muted">{{ unknown ? RARITY_INFO[def.rarity].label : `${CARD_KINDS[def.kind].label} · ${CHARACTERS[def.owner].short} · ${RARITY_INFO[def.rarity].label}` }}</div>
     <div class="text">{{ unknown ? "Not collected yet. Find it in Card Packs." : cardText(def, level) }}</div>
     <div v-if="!unknown" class="lvl">
       Lv <i v-for="n in 3" :key="n" :class="{ on: n <= level }"></i>
@@ -77,6 +85,15 @@ const def = computed(() => cardDef(props.card));
   place-items: center;
   font-size: 2rem;
   font-weight: 900;
+}
+.glyph {
+  width: 52px;
+  height: 52px;
+  padding: 8px;
+  border-radius: 50%;
+  background: var(--kc);
+  color: #0b0f22;
+  box-shadow: 0 0 14px var(--kc);
 }
 .name {
   font-weight: 800;
