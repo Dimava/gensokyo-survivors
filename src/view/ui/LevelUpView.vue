@@ -14,6 +14,7 @@ import { CURRENCY } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
 import { keyLabels } from "../keys.ts";
 import Keys from "./Keys.vue";
+import WeaponPreview from "./WeaponPreview.vue";
 
 const offer = computed(() => {
   void state.frame;
@@ -39,6 +40,7 @@ const choices = computed(() =>
         tag: c.level === 1 ? "NEW" : `Lv ${c.level - 1} → ${c.level}${c.level === def.levels.length ? " (MAX)" : ""}`,
         lines: weaponLevelDelta(def, c.level - 1),
         from: `from ${def.from}`,
+        weapon: { id: c.id, level: c.level },
       };
     }
     if (c.kind === "passive") {
@@ -50,10 +52,11 @@ const choices = computed(() =>
         tag: c.level === 1 ? "NEW" : `Lv ${c.level - 1} → ${c.level}${c.level === def.max ? " (MAX)" : ""}`,
         lines: [formatBonus(def.stat, def.per), `Total after: ${formatBonus(def.stat, def.per * c.level)}`],
         from: def.desc,
+        weapon: undefined,
       };
     }
-    if (c.kind === "heal") return { kind: "Recovery", name: "Onigiri", color: "#ff7aa2", tag: "", lines: [`Restore ${HEAL_FRACTION * 100}% of your max HP`], from: "Everything is maxed out" };
-    return { kind: "Donation", name: "Offering", color: "#ffc94d", tag: "", lines: [`+${COIN_OFFER} ${CURRENCY.name}`], from: "Everything is maxed out" };
+    if (c.kind === "heal") return { kind: "Recovery", name: "Onigiri", color: "#ff7aa2", tag: "", lines: [`Restore ${HEAL_FRACTION * 100}% of your max HP`], from: "Everything is maxed out", weapon: undefined };
+    return { kind: "Donation", name: "Offering", color: "#ffc94d", tag: "", lines: [`+${COIN_OFFER} ${CURRENCY.name}`], from: "Everything is maxed out", weapon: undefined };
   }),
 );
 
@@ -147,7 +150,8 @@ function hover(): void {
         @click="L.mode === 'live' && pick(i)"
       >
         <span class="key num">{{ keyLabels(`Action:pick${i + 1}`, 1)[0] }}</span>
-        <span class="icon"></span>
+        <WeaponPreview v-if="c.weapon" :id="c.weapon.id" :level="c.weapon.level" :active="L.mode === 'live'" />
+        <span v-else class="icon"></span>
         <span class="kind">{{ c.kind }}</span>
         <span class="name">{{ c.name }}</span>
         <span v-if="c.tag" class="tag" :class="{ new: c.tag === 'NEW' }">{{ c.tag }}</span>
