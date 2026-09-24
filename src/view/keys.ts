@@ -78,6 +78,8 @@ for (const code of FOCUS) {
 // Confirm and back are shared: a menu takes them when it is on top, the game otherwise.
 for (const code of ["Enter", "Space", "KeyZ"]) rules.push([{ code, mods: ANY }, { code: "Confirm" }]);
 rules.push([{ code: "Escape", mods: ANY }, { code: "Back" }]);
+// Backspace goes back too, except while typing in a text field.
+rules.push([{ code: "Backspace", mods: { inInput: false } }, { code: "Back" }]);
 
 const ACTIONS: [from: object, action: string][] = [
   [{ code: "Back", scopeBack: false }, "pause"],
@@ -122,6 +124,7 @@ export function keysFor(code: string): string[] {
 
 const LABELS: Record<string, string> = {
   Escape: "Esc",
+  Backspace: "Bksp",
   ArrowUp: "↑",
   ArrowDown: "↓",
   ArrowLeft: "←",

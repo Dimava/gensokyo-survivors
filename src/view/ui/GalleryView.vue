@@ -110,7 +110,7 @@ function draw(d: Drawing, key: string, px: number): string {
       <div class="styles">
         <button v-for="[id, label] in STYLES" :key="id" class="btn small" :class="{ primary: style === id }" @click="style = id">{{ label }}</button>
       </div>
-      <button class="btn" @click="host.go('menu')">Back <span class="key">Esc</span></button>
+      <button class="btn back" @click="host.go('menu')">Back</button>
     </div>
     <div class="panel body">
       <h3>Characters</h3>

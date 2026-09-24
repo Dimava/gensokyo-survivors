@@ -6,7 +6,6 @@ import { CARDS, RARITIES, RARITY_INFO, MAX_CARD_LEVEL } from "../../content/card
 import { CURRENCY } from "../../content/names.ts";
 import { gacha, owned, wallet } from "./useGame.ts";
 import PackOpening from "./PackOpening.vue";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 
 const open = computed(() => {
@@ -49,7 +48,7 @@ function buy(id: string): void {
       <div class="headr">
         <div class="coins"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
         <button class="btn" @click="host.go('cards')">Skill Cards</button>
-        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
+        <button class="btn back" @click="host.go('menu')">Back</button>
       </div>
     </div>
     <div class="shop">

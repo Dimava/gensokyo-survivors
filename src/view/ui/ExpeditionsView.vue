@@ -6,7 +6,6 @@ import { audio } from "../audio.ts";
 import { CHARACTERS, CURRENCY, type CharacterId } from "../../content/names.ts";
 import { DESTINATIONS, MAX_EXPEDITIONS, destination } from "../../content/expeditions.ts";
 import { hex, wallet } from "./useGame.ts";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 
 const picked = ref<string>("");
@@ -89,7 +88,7 @@ function recall(trip: string): void {
       </div>
       <div class="headr">
         <div class="coins"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
-        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
+        <button class="btn back" @click="host.go('menu')">Back</button>
       </div>
     </div>
     <div class="body">

@@ -8,7 +8,6 @@ import { hud } from "./useRun.ts";
 import { fmtTime } from "./useGame.ts";
 import SettingsPanel from "./SettingsPanel.vue";
 import HelpPanel from "./HelpPanel.vue";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 
 const h = computed(() => hud.value);
@@ -33,7 +32,7 @@ function quit(): void {
       <h2>Paused</h2>
       <div class="cols">
         <div class="menu">
-          <button class="btn primary" @click="resume">Resume <Keys for="Action:pause" /></button>
+          <button class="btn primary back" @click="resume">Resume</button>
           <button class="btn" @click="page('settings')">Settings</button>
           <button class="btn" @click="page('help')">How to Play</button>
           <button class="btn" @click="page('quit')">Quit run…</button>
@@ -53,12 +52,12 @@ function quit(): void {
     <div v-else-if="state.pausePage === 'settings'" v-keynav class="panel box wide">
       <h2>Settings</h2>
       <SettingsPanel in-run />
-      <button class="btn back" @click="page('main')">Back <Keys for="Back" /></button>
+      <button class="btn back" @click="page('main')">Back</button>
     </div>
     <div v-else-if="state.pausePage === 'help'" v-keynav class="panel box wide scroll">
       <h2>How to Play</h2>
       <HelpPanel />
-      <button class="btn back" @click="page('main')">Back <Keys for="Back" /></button>
+      <button class="btn back" @click="page('main')">Back</button>
     </div>
     <div v-else v-keynav class="panel box">
       <h2>Quit this run?</h2>
@@ -127,7 +126,7 @@ h2 {
   gap: 16px;
   padding: 2px 0;
 }
-.back {
+.box > .back {
   margin-top: 16px;
 }
 @keyframes fadein {

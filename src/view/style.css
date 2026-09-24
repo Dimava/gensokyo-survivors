@@ -124,6 +124,53 @@ button {
 }
 
 /*
+ * Back (Esc/Backspace): an arrow tab, its left edge a point. clip-path would
+ * cut a border off the slants, so the button itself is the edge colour and an
+ * inner layer 1px in is the fill; both clipped to the same point.
+ */
+.btn.back {
+  --tip: 0.85em;
+  --edge: var(--line);
+  --fill: var(--panel-2);
+  position: relative;
+  isolation: isolate;
+  padding-left: calc(0.9em + var(--tip));
+  border: none;
+  border-radius: 0 10px 10px 0;
+  background: var(--edge);
+  clip-path: polygon(var(--tip) 0, 100% 0, 100% 100%, var(--tip) 100%, 0 50%);
+}
+.btn.back::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 0 9px 9px 0;
+  background: var(--fill);
+  clip-path: polygon(calc(var(--tip) - 0.5px) 0, 100% 0, 100% 100%, calc(var(--tip) - 0.5px) 100%, 0 50%);
+  transition: background-color var(--glide);
+}
+.btn.back:hover:not(:disabled),
+.btn.back:focus-visible,
+.btn.back[data-nav-sel]:not(:disabled) {
+  --edge: rgba(255, 255, 255, 0.45);
+  --fill: #2e3a72;
+  background: var(--edge);
+}
+/* The red back: going back into the game (Resume). */
+.btn.back.primary {
+  --edge: #ff8098;
+  --fill: linear-gradient(180deg, #ef4863, #b8213a);
+}
+.btn.back.primary:hover:not(:disabled),
+.btn.back.primary:focus-visible,
+.btn.back.primary[data-nav-sel]:not(:disabled) {
+  --edge: #ffc2cf;
+  --fill: linear-gradient(180deg, #ff5c77, #c92a44);
+  background: var(--edge);
+}
+
+/*
  * The keyboard selection (keynav.ts marks the selected control with
  * data-nav-sel; the mouse moves it too) lightens the control in its own
  * colours, the same as hovering: no ring, no lift, no layout change.

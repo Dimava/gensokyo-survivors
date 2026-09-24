@@ -8,7 +8,6 @@ import { weaponDef } from "../../content/weapons.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { nodeState, type NodeState } from "../../sim/meta.ts";
 import { treeLevels, wallet } from "./useGame.ts";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 
 const UNIT = 104;
@@ -116,7 +115,7 @@ function buy(): void {
       </div>
       <div class="headr">
         <div class="coins"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
-        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
+        <button class="btn back" @click="host.go('menu')">Back</button>
       </div>
     </div>
     <div class="body">

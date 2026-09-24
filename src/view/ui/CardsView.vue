@@ -5,7 +5,6 @@ import { CARDS, RARITIES } from "../../content/cards.ts";
 import { DECK_MAX, DECK_MIN } from "../../content/gacha.ts";
 import { owned } from "./useGame.ts";
 import CardFace from "./CardFace.vue";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 
 const byId = computed(() => new Map(owned.value.map((o) => [o.card, o])));
@@ -32,7 +31,7 @@ onBeforeUnmount(() => {
       <div class="headr">
         <div class="deck" :class="{ full: deckSize >= DECK_MAX }">Deck {{ deckSize }} / {{ DECK_MAX }}</div>
         <button class="btn" @click="host.go('packs')">Card Packs</button>
-        <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
+        <button class="btn back" @click="host.go('menu')">Back</button>
       </div>
     </div>
     <p class="muted count">Collected {{ owned.length }} of {{ CARDS.length }} cards. A deck needs at least {{ DECK_MIN }} card.</p>

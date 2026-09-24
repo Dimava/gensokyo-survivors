@@ -8,7 +8,6 @@ import { DECK_MIN } from "../../content/gacha.ts";
 import { affordableNodes, fmtTime, owned, profile, stages, wallet } from "./useGame.ts";
 import { stageDef, type StageDef } from "../../content/stages.ts";
 import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 
 const midbossName = (s: StageDef): string => {
@@ -112,7 +111,7 @@ function hover(): void {
             <button v-if="!locked(s)" class="btn primary" @click="start(s.id)">Go</button>
             <span v-else class="lockmsg">Clear {{ stageDef(s.requires!).name }} to open</span>
           </div>
-          <button class="btn ghost" @click="picking = false">Back <Keys for="Back" /></button>
+          <button class="btn back" @click="picking = false">Back</button>
         </div>
       </div>
     </Transition>

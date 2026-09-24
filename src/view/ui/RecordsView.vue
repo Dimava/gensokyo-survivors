@@ -6,7 +6,6 @@ import { TREE } from "../../content/tree.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { STAGES, stageDef } from "../../content/stages.ts";
 import { fmtTime, gacha, lastRun, owned, profile, treeLevels, wallet } from "./useGame.ts";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 
 const nodes = computed(() => {
@@ -21,7 +20,7 @@ const last = computed(() => lastRun.value?.summary ?? null);
   <div v-keynav class="screen">
     <div class="screen-head">
       <h1>Records</h1>
-      <button class="btn" @click="host.go('menu')">Back <Keys for="Back" /></button>
+      <button class="btn back" @click="host.go('menu')">Back</button>
     </div>
     <div class="panel body">
       <div class="grid">

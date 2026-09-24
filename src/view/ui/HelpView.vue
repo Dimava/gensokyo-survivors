@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import HelpPanel from "./HelpPanel.vue";
-import Keys from "./Keys.vue";
 import NavHints from "./NavHints.vue";
 defineEmits<{ close: [] }>();
 </script>
@@ -9,7 +8,7 @@ defineEmits<{ close: [] }>();
   <div v-keynav class="screen">
     <div class="screen-head">
       <h1>How to Play</h1>
-      <button class="btn" @click="$emit('close')">Back <Keys for="Back" /></button>
+      <button class="btn back" @click="$emit('close')">Back</button>
     </div>
     <div class="panel body">
       <HelpPanel />
