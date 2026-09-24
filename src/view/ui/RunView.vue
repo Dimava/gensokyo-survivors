@@ -4,6 +4,7 @@ import { state } from "../host.ts";
 import { ui } from "../presenter.ts";
 import { hud } from "./useRun.ts";
 import HudView from "./HudView.vue";
+import SpellCutIn from "./SpellCutIn.vue";
 import LevelUpView from "./LevelUpView.vue";
 import DialogueView from "./DialogueView.vue";
 import PauseMenu from "./PauseMenu.vue";
@@ -14,6 +15,7 @@ const h = computed(() => hud.value);
 
 <template>
   <div class="run">
+    <SpellCutIn v-if="h" />
     <HudView v-if="h" />
     <div class="banners">
       <TransitionGroup name="banner">

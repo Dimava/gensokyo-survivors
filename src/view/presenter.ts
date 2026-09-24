@@ -7,7 +7,6 @@ import { reactive } from "vue";
 import type { DispatchResult, TraceNode } from "gamebones";
 import { ENEMIES } from "../content/enemies.ts";
 import { CARD_KINDS, cardDef } from "../content/cards.ts";
-import { bossDef } from "../content/bosses.ts";
 import { weaponDef, WEAPONS } from "../content/weapons.ts";
 import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { audio, type Sfx } from "./audio.ts";
@@ -258,9 +257,7 @@ export class Presenter {
       case "spell:start": {
         const boss = v?.derived("boss");
         if (boss) {
-          const def = bossDef(boss.boss.id);
-          const spell = def.spells[p.index as number]!;
-          if (!this.quiet) banner(spell.name, "boss", `Spell card ${(p.index as number) + 1} of ${def.spells.length}`, 3.2);
+          // The name bar (SpellBar) and the cut-in (SpellCutIn) declare the card.
           this.sfx("spell");
           f.flash(0x6fd3ff, 0.3);
         }

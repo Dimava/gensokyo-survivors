@@ -11,6 +11,7 @@ import { hud } from "./useRun.ts";
 import { ui } from "../presenter.ts";
 import { CARD_KINDS, cardDef } from "../../content/cards.ts";
 import { cardIcon } from "./cardIcons.ts";
+import SpellBar from "./SpellBar.vue";
 
 const h = computed(() => hud.value!);
 const hpPct = computed(() =>
@@ -178,9 +179,7 @@ function pause(): void {
       <div class="bbar" :title="`Spell card HP: ${h.boss.hp}`">
         <div class="bfill" :style="{ width: h.boss.frac * 100 + '%' }"></div>
       </div>
-      <div class="spell">
-        {{ h.boss.intro ? "Declaring: " : "" }}{{ h.boss.spell }}
-      </div>
+      <SpellBar :who="h.boss.who" :spell="h.boss.spell" :index="h.boss.index" :bonus="h.boss.bonus" :late="h.boss.late" :intro="h.boss.intro" />
     </div>
 
     <!-- Right: kills, donations, pause -->
@@ -535,14 +534,6 @@ function pause(): void {
   height: 100%;
   background: linear-gradient(90deg, #ff5c8a, #ffb3c8);
   transition: width calc(0.1s * var(--anim));
-}
-.spell {
-  margin-top: 4px;
-  text-align: right;
-  font-size: 13px;
-  font-style: italic;
-  color: #ffd6e0;
-  text-shadow: 0 1px 3px #000;
 }
 .tr {
   position: absolute;

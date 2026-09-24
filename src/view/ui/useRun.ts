@@ -10,6 +10,7 @@ import { weaponDef } from "../../content/weapons.ts";
 import { passiveDef } from "../../content/passives.ts";
 import { bossDef, bossName } from "../../content/bosses.ts";
 import { stageDef } from "../../content/stages.ts";
+import type { CharacterId } from "../../content/names.ts";
 
 export const hud = computed(() => {
   void state.frame;
@@ -46,7 +47,11 @@ export const hud = computed(() => {
   const boss = v.derived("boss");
   let bossInfo = null as null | {
     name: string;
+    /** The boss's character, for the declaration's colour and cut-in portrait. */
+    who: CharacterId;
     spell: string;
+    /** Donations for breaking this spell card in time. */
+    bonus: number;
     index: number;
     total: number;
     frac: number;
@@ -60,7 +65,9 @@ export const hud = computed(() => {
     const def = bossDef(boss.boss.id);
     bossInfo = {
       name: bossName(def),
+      who: def.character,
       spell: def.spells[boss.boss.spell]!.name,
+      bonus: def.spells[boss.boss.spell]!.bonus,
       index: boss.boss.spell,
       total: def.spells.length,
       frac: boss.boss.max ? boss.boss.hp / boss.boss.max : 0,
