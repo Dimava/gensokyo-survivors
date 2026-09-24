@@ -133,6 +133,8 @@ const h = computed(() => hud.value);
 }
 .ending.dead {
   color: #ff9aac;
+  /* After the death animation's burst (fx-death.ts). */
+  animation-delay: calc(0.7s * var(--anim));
 }
 @keyframes flash {
   to {

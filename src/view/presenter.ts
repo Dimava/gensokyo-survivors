@@ -6,7 +6,7 @@
 import { reactive } from "vue";
 import type { DispatchResult, TraceNode } from "gamebones";
 import { ENEMIES } from "../content/enemies.ts";
-import { cardDef } from "../content/cards.ts";
+import { CARD_KINDS, cardDef } from "../content/cards.ts";
 import { bossDef } from "../content/bosses.ts";
 import { weaponDef, WEAPONS } from "../content/weapons.ts";
 import { runView, type Game, type RunPath } from "../sim/game.ts";
@@ -14,6 +14,8 @@ import { audio, type Sfx } from "./audio.ts";
 import type { Playfield } from "./renderer.ts";
 import { CHARACTERS, type CharacterId } from "../content/names.ts";
 import { destination } from "../content/expeditions.ts";
+import { END_DELAY } from "../sim/tuning.ts";
+import { DeathFx } from "./fx-death.ts";
 
 export interface Banner {
   id: number;
@@ -72,12 +74,44 @@ const CARD_SFX: Record<string, Sfx> = {
   lastStand: "chime",
 };
 
+/**
+ * Each card's own burst from the player when played, for cards whose effect
+ * draws nothing by itself. Area cards (Fantasy Seal, Barrier), Master Spark
+ * and Private Square show through their own events and the frozen world, so
+ * they get none: one ring per card, never two. The burst is in the card's
+ * kind colour (CARD_KINDS), the same as its badge in the hand and the cast plate.
+ */
+const CARD_FX: Record<string, { n: number; speed: number; star: boolean }> = {
+  heal: { n: 16, speed: 2.2, star: true },
+  empower: { n: 20, speed: 4, star: false },
+  grazeHeal: { n: 14, speed: 2, star: true },
+  vengeance: { n: 16, speed: 3, star: false },
+  lastStand: { n: 18, speed: 2.5, star: true },
+  // Gems flying in show the pull, but only when there are gems on screen.
+  gap: { n: 24, speed: 6, star: false },
+};
+
 export class Presenter {
   /** Muted presenters (the title screen's attract mode) draw but make no sound or UI. */
   constructor(
     private field: Playfield,
     private quiet = false,
-  ) {}
+  ) {
+    this.death = quiet ? null : new DeathFx(field);
+  }
+
+  /** The player's death and revive animation (fx-death.ts); none for muted presenters. */
+  private death: DeathFx | null;
+
+  /** True while the run's last tick must wait for the death animation (view time only; the sim is untouched). */
+  holds(k: Game, path: RunPath): boolean {
+    return !!this.death && k.paths().includes(path) && this.death.holds(runView(k, path).now("fixed"));
+  }
+
+  /** Where the player of the run at `path` is now (null once the run is gone). */
+  private playerAt(k: Game, path: RunPath | null): () => { x: number; y: number } | null {
+    return () => (path && k.paths().includes(path) ? (runView(k, path).q("body")[0]?.body ?? null) : null);
+  }
 
   consume(k: Game, path: RunPath | null, res: DispatchResult): void {
     for (const input of res.inputs ?? []) this.walk(k, path, input.trace);
@@ -145,7 +179,8 @@ export class Presenter {
         break;
       case "blast":
         f.ring(p.x as number, p.y as number, 10, p.radius as number, 0xffe08a, 0.45);
-        f.wave(p.x as number, p.y as number, p.radius as number, 0xff5470, 0.4);
+        // Blasts come from attack cards (Fantasy Seal, Vengeful Amulet): the attack kind's colour.
+        f.wave(p.x as number, p.y as number, p.radius as number, CARD_KINDS.attack.color, 0.4);
         f.shake(8);
         f.flash(0xffffff, 0.25);
         break;
@@ -159,13 +194,15 @@ export class Presenter {
         this.sfx("hurt");
         break;
       case "player:revived":
-        if (player) f.ring(player.x, player.y, 10, 300, 0xffe08a, 0.8);
+        if (this.death) this.death.start("revive", this.playerAt(k, path));
+        else if (player) f.ring(player.x, player.y, 10, 300, 0xffe08a, 0.8);
         f.flash(0xffffff, 0.6);
         this.sfx("revive");
         break;
       case "graze": {
         const n2 = p.n as number;
         f.burst(p.x as number, p.y as number, 0xffffff, Math.min(6, n2 * 2), 3, 0.5, true);
+        f.grazeFlash();
         this.sfx("graze");
         break;
       }
@@ -191,14 +228,19 @@ export class Presenter {
         const card = v?.get(p.card as string) as { card?: { id: string; effect: string } } | undefined;
         if (card?.card) {
           const def = cardDef(card.card.id);
+          // The card's name rises from the hand (HudView), not a banner over the field.
           if (!this.quiet) {
-            ui.cardFlash = { id: nextId++, card: def.id };
-            banner(def.name, "spell", undefined, 1.6);
+            const flash = { id: nextId++, card: def.id };
+            ui.cardFlash = flash;
+            setTimeout(() => {
+              // By id: reading through the reactive `ui` returns a proxy, never `flash` itself.
+              if (ui.cardFlash?.id === flash.id) ui.cardFlash = null;
+            }, 1200);
           }
           this.sfx("card");
           this.sfx(CARD_SFX[def.effect] ?? "chime");
-          f.flash(0xffffff, 0.3);
-          if (player) f.ring(player.x, player.y, 20, 160, 0xffffff, 0.5);
+          const fx = CARD_FX[def.effect];
+          if (fx && player) f.burst(player.x, player.y, CARD_KINDS[def.kind].color, fx.n, fx.speed, 1, fx.star);
         }
         break;
       }
@@ -251,8 +293,12 @@ export class Presenter {
         this.sfx("bossDown");
         break;
       case "run:over":
-        this.sfx(p.outcome === "clear" ? "clear" : p.outcome === "dead" ? "death" : "back");
-        if (p.outcome === "dead") f.flash(0x000000, 0.4);
+        // A death plays its own animation and sounds (fx-death.ts); the run ends END_DELAY ticks later.
+        if (p.outcome === "dead" && this.death && v) this.death.start("death", this.playerAt(k, path), v.now("fixed") + END_DELAY);
+        else {
+          this.sfx(p.outcome === "clear" ? "clear" : p.outcome === "dead" ? "death" : "back");
+          if (p.outcome === "dead") f.flash(0x000000, 0.4);
+        }
         break;
       case "levelup:pick":
         if (!this.quiet) ui.levelPick = { id: nextId++, index: p.index as number };

@@ -7,7 +7,7 @@ import { reactive, markRaw } from "vue";
 import type { DispatchResult } from "gamebones";
 import { activeRun, newGame, runView, type Game, type RunPath } from "../sim/game.ts";
 import { botCard, botMove, botPick } from "../sim/bot.ts";
-import { handCards } from "../sim/cards.ts";
+import { handSlots } from "../sim/cards.ts";
 import { audio, type Track } from "./audio.ts";
 import { input, type Action } from "./input.ts";
 import { addStamp } from "./keys.ts";
@@ -15,8 +15,12 @@ import { eraseSave, freshGame, loadOrCreate, save } from "./persist.ts";
 import { Presenter, toast } from "./presenter.ts";
 import { Playfield } from "./renderer.ts";
 import { prefs } from "./prefs.ts";
+import { Vn } from "../sim/vn.ts";
 
-export type Screen = "title" | "menu" | "run" | "results" | "tree" | "cards" | "packs" | "expeditions" | "records" | "settings" | "help";
+/** The ?bot=1 player's pace on screens a person reads (ms). */
+const BOT_PACE = { levelUp: 1600, typeMs: 28, readMs: 900, readPerChar: 30 };
+
+export type Screen = "title" | "menu" | "run" | "results" | "tree" | "cards" | "packs" | "expeditions" | "records" | "gallery" | "settings" | "help";
 
 export const state = reactive({
   screen: "title" as Screen,
@@ -54,6 +58,8 @@ class Host {
   private demo: { k: Game; presenter: Presenter; last: { x: number; y: number } } | null = null;
   private tickCost = 0;
   private frames: number[] = [];
+  /** Level-ups the bot has picked (keys its wait per level-up). */
+  private levelups = 0;
   /** Debug: the bot plays the run (?bot=1). */
   autoplay = params.get("bot") === "1";
   /** Debug: ticks per frame multiplier (?turbo=4). */
@@ -84,21 +90,33 @@ class Host {
     this.resumeTime();
     window.setInterval(() => this.resumeTime(), 10_000);
     const canvas = this.field.app.canvas;
+    // A mouse steers toward the pointer; a finger is a floating joystick
+    // anchored where it touched down, so it never covers the player.
+    let anchor: { x: number; y: number } | null = null;
     const steer = (e: PointerEvent): void => {
+      if (anchor) {
+        input.steer({ dx: e.clientX - anchor.x, dy: e.clientY - anchor.y });
+        return;
+      }
       const r = canvas.getBoundingClientRect();
       input.steer({ dx: e.clientX - r.left - this.field.playerScreen.x, dy: e.clientY - r.top - this.field.playerScreen.y });
     };
     canvas.addEventListener("pointerdown", (e) => {
       audio.unlock();
       if (state.screen !== "run" || state.paused) return;
+      // A second finger does not take over the joystick.
+      if (anchor && e.pointerType !== "mouse") return;
       canvas.setPointerCapture(e.pointerId);
+      anchor = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY };
       steer(e);
     });
     canvas.addEventListener("pointermove", (e) => {
       if (canvas.hasPointerCapture(e.pointerId)) steer(e);
     });
     const release = (e: PointerEvent): void => {
-      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      if (!canvas.hasPointerCapture(e.pointerId)) return;
+      canvas.releasePointerCapture(e.pointerId);
+      anchor = null;
       input.steer(null);
     };
     canvas.addEventListener("pointerup", release);
@@ -176,7 +194,8 @@ class Host {
       let steps = 0;
       const cap = 4 * this.turbo;
       const t0 = performance.now();
-      while (this.acc >= 1 && steps < cap) {
+      // The death animation holds the dead run's last tick (view time only).
+      while (this.acc >= 1 && steps < cap && !this.presenter.holds(this.k, path)) {
         this.step(path);
         this.acc -= 1;
         steps++;
@@ -215,6 +234,9 @@ class Host {
         this.lastMove = m;
       }
     }
+    // Focus is logged input too (it narrows the weapons), sent only when it changes. The bot leaves it off.
+    const focus = !this.autoplay && input.focused;
+    if (focus !== v.derived("player").ctrl.focus) this.k.queue(path, "focus", { on: focus });
     const res = this.k.tick(path, "fixed");
     this.presenter.consume(this.k, path, res);
     if (!this.path()) {
@@ -224,13 +246,32 @@ class Host {
     if (++this.sinceSave >= 600) this.save();
   }
 
+  /** What the bot is waiting on (an overlay or a dialogue line) and since when (wall clock, ms). */
+  private botWait = { key: "", since: 0 };
+
+  /** True once the bot has looked at `key` for `ms` (a person's pace, so recordings show choices and dialogue). */
+  private botWaited(key: string, ms: number): boolean {
+    const now = performance.now();
+    if (this.botWait.key !== key) this.botWait = { key, since: now };
+    return now - this.botWait.since >= ms / this.turbo;
+  }
+
   private botStep(path: RunPath, overlay: string): void {
     if (overlay === "levelup") {
-      this.dispatchRun(`${path}/levelup`, "levelup:pick", { index: botPick(this.k, path) });
+      // Look at the three choices before picking one.
+      if (this.botWaited(`levelup:${this.levelups}`, BOT_PACE.levelUp)) {
+        this.dispatchRun(`${path}/levelup`, "levelup:pick", { index: botPick(this.k, path) });
+        this.levelups++;
+      }
       return;
     }
     if (overlay === "vn") {
-      this.dispatchRun(`${path}/vn`, "vn:next", {});
+      // Let the line type out, then read it.
+      const vn = `${path}/vn`;
+      const scene = this.k.paths().includes(vn) ? this.k.read(vn as "/run:1/vn", Vn) : null;
+      const len = scene?.line.text.length ?? 0;
+      const ms = (len * BOT_PACE.typeMs) / prefs.animSpeed + BOT_PACE.readMs + len * BOT_PACE.readPerChar;
+      if (this.botWaited(`vn:${scene?.script}:${scene?.index}`, ms)) this.dispatchRun(vn, "vn:next", {});
       return;
     }
     const m = botMove(this.k, path);
@@ -285,12 +326,16 @@ class Host {
 
   private music(): void {
     let track: Track = "menu";
+    let stage: string | undefined;
     if (state.screen === "run") {
       const path = this.path();
-      const phase = path ? runView(this.k, path).derived("state").run.phase : "over";
-      track = phase === "boss" || phase === "dialogue" ? "boss" : phase === "over" ? null : "stage";
+      const run = path ? runView(this.k, path).derived("state").run : null;
+      const phase = run?.phase ?? "over";
+      stage = run?.stage;
+      // The boss theme starts with her dialogue; a clear gets a fanfare, a death silence.
+      track = phase === "boss" || phase === "dialogue" ? "boss" : phase === "cleared" ? "clear" : phase === "over" ? null : "stage";
     }
-    audio.music(track);
+    audio.music(track, stage);
   }
 
   // ---------- dispatching ----------
@@ -364,7 +409,7 @@ class Host {
     const path = this.path();
     if (!path || state.paused) return;
     const v = runView(this.k, path);
-    const card = handCards(v)[slot];
+    const card = handSlots(v)[slot];
     if (!card) return;
     this.k.queue(path, "card:play", { card: card.id });
   }

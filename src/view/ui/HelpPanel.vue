@@ -44,7 +44,7 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
       <h3>Danmaku, graze and skill cards</h3>
       <ul>
         <li>Your danmaku hitbox is the tiny red dot at your centre, shown when bullets are near. Enemy bodies hurt on contact.</li>
-        <li><b>Grazing</b> (letting a bullet pass through the faint ring around you without touching the dot) fills the <b>graze meter</b>. Full meter: draw a skill card.</li>
+        <li><b>Grazing</b> (letting a bullet pass close to you without touching your hitbox; the graze ring flashes when you do) fills the <b>graze meter</b>. Full meter: draw a skill card. A grazed bullet loses its white core: it still hurts, but can't be grazed again.</li>
         <li>Cards cost <b>Spirit</b>, which refills slowly. Build your deck between runs in Skill Cards &amp; Deck; get new cards from Card Packs.</li>
       </ul>
     </section>
