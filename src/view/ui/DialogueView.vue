@@ -8,6 +8,11 @@ import { CHARACTERS } from "../../content/names.ts";
 import { script } from "../../content/dialogue.ts";
 import { hex } from "./useGame.ts";
 import Portrait from "./Portrait.vue";
+import type { Look } from "../../art/drawing.ts";
+
+/** The two speakers look at each other, toward the screen centre (a look is in screen space, mirrored portraits too). */
+const TO_RIGHT: Look = { x: 0.6, y: 0.05 };
+const TO_LEFT: Look = { x: -0.6, y: 0.05 };
 
 const scene = computed(() => {
   void state.frame;
@@ -69,11 +74,11 @@ const speakers = computed(() => {
   <div class="vn" v-if="scene && speaker" @click="advance">
     <div class="portraits">
       <div class="portrait left" :class="{ dim: !speakers.left }">
-        <Portrait :who="cast.left" :talking="!!speakers.left && typing" />
+        <Portrait :who="cast.left" :look="TO_RIGHT" :talking="!!speakers.left && typing" />
         <div class="pname">{{ CHARACTERS[cast.left].short }}</div>
       </div>
       <div class="portrait right" :class="{ dim: !speakers.right }">
-        <Portrait :who="cast.right" flip :talking="!!speakers.right && typing" />
+        <Portrait :who="cast.right" flip :look="TO_LEFT" :talking="!!speakers.right && typing" />
         <div class="pname">{{ CHARACTERS[cast.right].short }}</div>
       </div>
     </div>
