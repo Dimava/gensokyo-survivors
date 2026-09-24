@@ -101,7 +101,8 @@ function groupAlpha(c: Container, alpha: number): void {
     return;
   }
   let f = (c.filters as AlphaFilter[] | null)?.[0];
-  if (!(f instanceof AlphaFilter)) c.filters = [(f = new AlphaFilter())];
+  // At the screen's resolution and antialiased: the default (1x) would blur her on hi-DPI screens while she blinks.
+  if (!(f instanceof AlphaFilter)) c.filters = [(f = new AlphaFilter({ alpha, resolution: "inherit", antialias: "inherit" }))];
   f.alpha = alpha;
 }
 /**
