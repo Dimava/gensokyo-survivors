@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-09-25",
+  "claude": {
+    "sessions": 4,
+    "agents": 31,
+    "apiCalls": 3507,
+    "tokens": {
+      "input": 7244,
+      "output": 2518458,
+      "cacheWrite": 12808783,
+      "cacheRead": 621715511,
+      "total": 637049996
+    },
+    "outputByModel": {
+      "claude-opus-5-5": 2518458
+    },
+    "costUsd": 246,
+    "from": "2026-09-23T15:32:16.893Z",
+    "to": "2026-09-24T23:06:56.631Z",
+    "hours": 32
+  },
+  "git": {
+    "commits": 86,
+    "firstCommit": "2026-09-23T22:21:50+03:00",
+    "lastCommit": "2026-09-25T01:52:03+03:00",
+    "files": 152,
+    "lines": 28784
+  }
+}
