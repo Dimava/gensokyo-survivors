@@ -13,7 +13,20 @@ import { Animator } from "../../art-l2d/animator.ts";
 import { drawInto, partImages, RigView, sharedRenderer } from "../../art-l2d/pixi-model.ts";
 import { prefs } from "../prefs.ts";
 
-const props = defineProps<{ model: Model; width: number; height: number; look?: Look; flip?: boolean; talking?: boolean; rate?: number; follow?: boolean }>();
+const props = defineProps<{
+  model: Model;
+  width: number;
+  height: number;
+  look?: Look;
+  flip?: boolean;
+  talking?: boolean;
+  rate?: number;
+  follow?: boolean;
+  /** Sets the model's own parameters each frame, after the animator (dt in seconds, animation speed applied). */
+  drive?: (rig: Rig, dt: number) => void;
+  /** Frames per second at most (default: every display frame). */
+  fps?: number;
+}>();
 
 const canvas = ref<HTMLCanvasElement>();
 /** The cursor this far away (px) makes the model look fully that way. */
@@ -22,6 +35,7 @@ const res = Math.min(2, window.devicePixelRatio || 1);
 let raf = 0;
 let alive = true;
 let view: RigView | null = null;
+let io: IntersectionObserver | null = null;
 const mouse = { x: -1, y: -1 };
 
 function onMove(e: PointerEvent): void {
@@ -62,11 +76,18 @@ onMounted(async () => {
   anim.target = target();
   anim.snap();
   let last = performance.now();
+  // Off screen (scrolled away), nothing is stepped or drawn.
+  let onScreen = true;
+  io = new IntersectionObserver((es) => (onScreen = es.some((e) => e.isIntersecting)));
+  io.observe(canvas.value!);
   const frame = (now: number) => {
     raf = requestAnimationFrame(frame);
+    if (!onScreen || (props.fps && now - last < 1000 / props.fps - 2)) return;
     anim.target = target();
     anim.talking = !!props.talking;
-    anim.step(Math.min(0.1, (now - last) / 1000) * prefs.animSpeed);
+    const dt = Math.min(0.1, (now - last) / 1000) * prefs.animSpeed;
+    anim.step(dt);
+    props.drive?.(rig, dt);
     last = now;
     view!.update();
     drawInto(renderer, root, ctx, props.width, props.height, res);
@@ -77,6 +98,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   alive = false;
   cancelAnimationFrame(raf);
+  io?.disconnect();
   window.removeEventListener("pointermove", onMove);
   view?.destroy();
   view = null;

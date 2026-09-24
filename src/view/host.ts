@@ -30,7 +30,7 @@ const BOT_PACE = { navStep: 230, typeMs: 28, readMs: 900, readPerChar: 30 };
  */
 const LEVELUP_GUARD = { cast: 100, block: 600 };
 
-export type Screen = "title" | "menu" | "run" | "results" | "tree" | "cards" | "packs" | "expeditions" | "records" | "gallery" | "settings" | "help";
+export type Screen = "title" | "menu" | "run" | "results" | "tree" | "cards" | "packs" | "expeditions" | "records" | "gallery" | "settings" | "help" | "credits";
 
 export const state = reactive({
   screen: "title" as Screen,
@@ -49,6 +49,8 @@ export const state = reactive({
   ready: false,
   /** When the last run ended (for the results screen). */
   resultsFor: 0,
+  /** Credits rolls on screen (CreditsRoll.vue): the title theme plays while one is. */
+  rolling: 0,
 });
 
 // Key events carry the screen, so rules can match on it (keys.ts).
@@ -401,7 +403,7 @@ class Host {
   private music(): void {
     const s = state.screen;
     // The title theme on the title and main menu, the calm theme on the screens between runs.
-    let track: Track = s === "title" || s === "menu" ? "menu" : s === "results" ? "results" : s === "settings" || s === "help" ? "keep" : "shop";
+    let track: Track = s === "title" || s === "menu" || state.rolling > 0 ? "menu" : s === "results" ? "results" : s === "settings" || s === "help" ? "keep" : "shop";
     let stage: string | undefined;
     if (s === "run") {
       const path = this.path();

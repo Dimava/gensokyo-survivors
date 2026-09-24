@@ -40,7 +40,8 @@ export function partImages(model: Model): Promise<Record<string, HTMLImageElemen
 }
 
 let shared: Promise<Renderer> | null = null;
-let lastSize = "";
+/** The shared renderer's size: it only grows, so models of different sizes drawn in turn never resize it (a resize reallocates the drawing buffer). */
+const size = { w: 0, h: 0, res: 0 };
 
 /** The renderer every live model draws with (created on first use, kept for the page's life). */
 export function sharedRenderer(): Promise<Renderer> {
@@ -48,17 +49,23 @@ export function sharedRenderer(): Promise<Renderer> {
   return shared;
 }
 
-/** Draw a container with the shared renderer into a 2D canvas (sized w x h CSS px at `res`). */
+/**
+ * Draw a container with the shared renderer into a 2D canvas (sized w x h CSS
+ * px at `res`): it is drawn in the renderer's top-left corner and that corner
+ * copied out.
+ */
 export function drawInto(renderer: Renderer, target: Container, ctx: CanvasRenderingContext2D, w: number, h: number, res: number): void {
-  const size = `${w}x${h}@${res}`;
-  if (lastSize !== size) {
-    renderer.resize(w, h, res);
-    lastSize = size;
+  if (w > size.w || h > size.h || res !== size.res) {
+    if (res !== size.res) size.w = size.h = 0;
+    size.w = Math.max(size.w, Math.ceil(w));
+    size.h = Math.max(size.h, Math.ceil(h));
+    size.res = res;
+    renderer.resize(size.w, size.h, res);
   }
   renderer.render({ container: target, clear: true });
   const c = ctx.canvas;
   ctx.clearRect(0, 0, c.width, c.height);
-  ctx.drawImage(renderer.canvas as HTMLCanvasElement, 0, 0, c.width, c.height);
+  ctx.drawImage(renderer.canvas as HTMLCanvasElement, 0, 0, w * res, h * res, 0, 0, c.width, c.height);
 }
 
 /** A live model: call `update()` after changing the rig's parameters. */

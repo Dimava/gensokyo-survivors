@@ -5,10 +5,12 @@
 // the drawn set, the rigged Live2D-style set (src/art-l2d), or both side by side.
 // Below them, the items and weapons at every level, as their level-up cards
 // show them; the items in any of their looks, the chosen one used by the cards.
-// Three tabs (Characters, Items, Music: the music room), switched by click or
-// Q/E; only the open tab is mounted, and the last one is remembered.
+// Four tabs (Characters, Items, Music: the music room, Credits: the staff
+// roll), switched by click or Q/E; only the open tab is mounted, and the
+// last one is remembered.
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import MusicRoom from "./MusicRoom.vue";
+import CreditsRoll from "./CreditsRoll.vue";
 import { prefs } from "../prefs.ts";
 import { livePortrait } from "../art-set.ts";
 import type { Model } from "../../art-l2d/rig.ts";
@@ -87,11 +89,12 @@ function onMove(e: PointerEvent): void {
   mouse.y = e.clientY;
 }
 
-type Tab = "characters" | "items" | "music";
+type Tab = "characters" | "items" | "music" | "credits";
 const TABS: [Tab, string][] = [
   ["characters", "Characters"],
   ["items", "Items"],
   ["music", "Music"],
+  ["credits", "Credits"],
 ];
 const TAB_KEY = "gensokyo-survivors/gallery-tab";
 const tab = ref<Tab>(TABS.find(([id]) => id === sessionStorage.getItem(TAB_KEY))?.[0] ?? "characters");
@@ -146,8 +149,9 @@ function draw(d: Drawing, key: string, px: number): string {
       </div>
       <button class="btn back" @click="host.go('menu')">Back</button>
     </div>
-    <div class="panel body" :class="{ music: tab === 'music' }">
+    <div class="panel body" :class="{ music: tab === 'music', credits: tab === 'credits' }">
       <MusicRoom v-if="tab === 'music'" />
+      <CreditsRoll v-if="tab === 'credits'" />
       <template v-if="tab === 'characters'">
       <h3>Characters</h3>
       <div class="grid" :class="{ wide: style !== 'drawn' }">
@@ -258,6 +262,10 @@ function draw(d: Drawing, key: string, px: number): string {
 }
 .body.music {
   overflow: hidden;
+}
+.body.credits {
+  overflow: hidden;
+  padding: 0;
 }
 .grid {
   display: grid;

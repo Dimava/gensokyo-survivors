@@ -15,6 +15,7 @@ import ExpeditionsView from "./ExpeditionsView.vue";
 import SettingsView from "./SettingsView.vue";
 import HelpView from "./HelpView.vue";
 import GalleryView from "./GalleryView.vue";
+import CreditsView from "./CreditsView.vue";
 
 const field = ref<HTMLDivElement>();
 const failed = ref("");
@@ -64,6 +65,7 @@ watchEffect(() => {
         <PacksView v-else-if="state.screen === 'packs'" key="packs" />
         <RecordsView v-else-if="state.screen === 'records'" key="records" />
         <GalleryView v-else-if="state.screen === 'gallery'" key="gallery" />
+        <CreditsView v-else-if="state.screen === 'credits'" key="credits" />
         <ExpeditionsView
           v-else-if="state.screen === 'expeditions'"
           key="expeditions"
