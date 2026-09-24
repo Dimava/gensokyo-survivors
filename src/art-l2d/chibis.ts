@@ -9,8 +9,8 @@ import { fairy } from "./fairy.ts";
  * Reimu's hitbox, worn: a yin-yang brooch pinned at the knot of her ascot. The
  * orb (radius 11.5 units = 3 game px, PLAYER.hitbox) is the collision circle;
  * the gold rim and clasp reach past it. The field pins this part's centre (the
- * middle vertex of its 2x2 grid) to the player's position and lifts the mesh
- * above the bullets, with a glow behind it (renderer.ts).
+ * middle vertex of its 2x2 grid) to the player's position; it stays in her
+ * layer order, on the dress below the face (renderer.ts).
  */
 export const HITBOX_PART = "charm";
 export const CHARM: Part = {

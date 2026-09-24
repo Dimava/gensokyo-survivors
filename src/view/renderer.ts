@@ -123,16 +123,6 @@ export class Playfield {
   private sparkPC!: ParticleContainer;
   private player!: Sprite;
   private hitbox!: Sprite;
-  /**
-   * The Live2D player's hitbox: the jewel on her ascot (chibis.ts CHARM),
-   * redrawn above the bullets exactly where the rig puts it, which is pinned
-   * to the collision point. A crisp core the size of PLAYER.hitbox and a glow
-   * that lights up near bullets or while focused.
-   */
-  private gem = new Container();
-  /** Reimu's brooch (the rig's own charm mesh), lifted above the bullets; transformed like her rig. */
-  private gemItem = new Container();
-  private gemGlow!: Sprite;
   /** ?hitdebug=1: the true hitbox circle drawn over everything. */
   private hitDebug = new Graphics();
   private readonly debugHit = new URLSearchParams(location.search).has("hitdebug");
@@ -197,14 +187,6 @@ export class Playfield {
     this.player = new Sprite(a.player);
     this.player.anchor.set(0.5, 0.55);
     this.hitbox = new Sprite(a.hitbox);
-    const glow = new Graphics();
-    // The brooch's aura: a soft rose glow and a thin bright halo just outside its rim.
-    for (let r = 11; r > PLAYER.hitbox + 2; r -= 0.75) glow.circle(0, 0, r).fill({ color: 0xff5a86, alpha: 0.07 });
-    glow.circle(0, 0, PLAYER.hitbox + 2.6).stroke({ width: 1.1, color: 0xffffff, alpha: 0.95 });
-    glow.circle(0, 0, PLAYER.hitbox + 3.6).stroke({ width: 0.6, color: 0xff5a86, alpha: 0.8 });
-    this.gemGlow = new Sprite(this.app.renderer.generateTexture({ target: glow, resolution: 4, antialias: true }));
-    this.gemGlow.anchor.set(0.5);
-    this.gem.addChild(this.gemGlow, this.gemItem);
     this.hitbox.anchor.set(0.5);
     this.boss = new Sprite(a.boss.cirno);
     this.boss.anchor.set(0.5);
@@ -226,7 +208,6 @@ export class Playfield {
       this.fxG,
       this.bulletPC,
       this.hitbox,
-      this.gem,
       this.sparkPC,
       this.over,
       this.floatLayer,
@@ -310,11 +291,7 @@ export class Playfield {
         live[id] = { sr, view, anim, holder };
       }
     }
-    this.gemItem.removeChildren();
     for (const l of Object.values(this.live)) l.holder.destroy({ children: true });
-    // The brooch leaves her sprite for the layer above the bullets (the rig still deforms it).
-    const charm = live.reimu?.view.detach(HITBOX_PART);
-    if (charm) this.gemItem.addChild(charm);
     this.playerLive.removeChildren();
     this.bossLive.removeChildren();
     if (live.reimu) this.playerLive.addChild(live.reimu.holder);
@@ -587,20 +564,9 @@ export class Playfield {
     this.hitbox.position.set(p.body.x, p.body.y);
     // The hitbox and graze ring show near bullets, and always while focused (Shift).
     const near = nearest < 170 * 170 || input.focused;
-    // Live2D: the worn brooch is the hitbox, always shown, its glow brighter near bullets or focused.
+    // Live2D: the brooch she wears on her dress is the hitbox (the rig pins it to the body).
     // Drawn: the classic dot, shown near bullets or focused.
-    this.gem.visible = !!liveReimu && this.player.alpha > 0.02;
     this.hitbox.visible = near && !liveReimu;
-    if (liveReimu) {
-      // The brooch sits exactly where the rig put it (its centre pinned to the body); the glow is on it.
-      this.gemItem.position.copyFrom(liveReimu.holder.position);
-      this.gemItem.scale.copyFrom(liveReimu.view.scale);
-      this.gemGlow.position.set(p.body.x, p.body.y);
-      const pulse = Math.sin(this.time * 6);
-      this.gemGlow.alpha = near ? 0.8 + 0.2 * pulse : 0.12;
-      this.gemGlow.scale.set(near ? 1.2 + 0.15 * pulse : 0.9);
-      this.gem.alpha = run.phase === "over" ? this.player.alpha : 1;
-    }
     this.hitDebug.clear();
     if (this.debugHit) {
       const hx = p.body.x;
