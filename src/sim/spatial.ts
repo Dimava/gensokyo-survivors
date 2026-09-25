@@ -12,6 +12,8 @@ export class Grid {
   private readonly start: Int32Array;
   private items: Int32Array;
   private cellOf: Int32Array;
+  /** Scratch write cursors for build's fill pass (reused, so a build allocates nothing). */
+  private readonly fill: Int32Array;
   /** Scratch output of `query`. */
   readonly hits: Int32Array;
   hitCount = 0;
@@ -20,6 +22,7 @@ export class Grid {
     this.cell = cell;
     this.side = Math.ceil((2 * extent) / cell);
     this.start = new Int32Array(this.side * this.side + 1);
+    this.fill = new Int32Array(this.side * this.side);
     this.items = new Int32Array(capacity);
     this.cellOf = new Int32Array(capacity);
     this.hits = new Int32Array(capacity);
@@ -51,7 +54,8 @@ export class Grid {
     }
     for (let c = 0; c < side * side; c++) start[c + 1]! += start[c]!;
     // Fill in row order, so each bucket lists rows ascending (deterministic iteration).
-    const fill = start.slice(0, side * side);
+    const fill = this.fill;
+    fill.set(start.subarray(0, side * side));
     for (let i = 0; i < n; i++) {
       const c = this.cellOf[i]!;
       if (c >= 0) this.items[fill[c]!++] = i;

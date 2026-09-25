@@ -98,7 +98,9 @@ export function botMove(
   const ex = e.col("x");
   const ey = e.col("y");
   let midboss = -1;
-  for (let i = 0; i < e.count; i++) if (ENEMIES[e.col("kind")[i]!]!.midboss && e.col("phase")[i] !== PHASE.leaving) midboss = i;
+  const ekind = e.col("kind");
+  const ephase = e.col("phase");
+  for (let i = 0; i < e.count; i++) if (ENEMIES[ekind[i]!]!.midboss && ephase[i] !== PHASE.leaving) midboss = i;
   const near: number[] = [];
   const nearVx: number[] = [];
   const nearVy: number[] = [];
@@ -144,9 +146,11 @@ export function botMove(
   } else {
     const d = v.packed("drops");
     let best = 450 * 450;
+    const dxs = d.col("x");
+    const dys = d.col("y");
     for (let i = 0; i < d.count; i++) {
-      const dx = d.col("x")[i]! - px;
-      const dy = d.col("y")[i]! - py;
+      const dx = dxs[i]! - px;
+      const dy = dys[i]! - py;
       const d2 = dx * dx + dy * dy;
       if (d2 < best) {
         best = d2;
@@ -162,13 +166,31 @@ export function botMove(
   const gl = Math.sqrt(gx * gx + gy * gy) || 1;
   gx /= gl;
   gy /= gl;
+  // Every candidate direction probes the same look-ahead times: where each near bullet is then,
+  // and each threat's radius, are worked out once here instead of once per direction.
+  const nearR = near.map((i) => ENEMIES[e.col("kind")[i]!]!.radius + 11 + 8);
+  const nb = bnear.length;
+  const bR = bnear.map((i) => BULLET_STYLES[b.col("style")[i]!]!.radius + 3 + 6 * (1 - dodge));
+  const bAt = LOOK.map((k2) => {
+    const xs = new Float64Array(nb);
+    const ys = new Float64Array(nb);
+    const ok = new Uint8Array(nb);
+    for (let j = 0; j < nb; j++) {
+      if (!b.pos(bnear[j]!, td + k2, pos)) continue;
+      ok[j] = 1;
+      xs[j] = pos.x;
+      ys[j] = pos.y;
+    }
+    return { xs, ys, ok };
+  });
   let bestScore = Infinity;
   let bestDanger = 0;
   let bx = 0;
   let by = 0;
   for (const [dx, dy] of opts.keys8 ? DIRS8 : DIRS) {
     let danger = 0;
-    for (const k2 of LOOK) {
+    for (let li = 0; li < LOOK.length; li++) {
+      const k2 = LOOK[li]!;
       let qx = px + dx * speed * k2;
       let qy = py + dy * speed * k2;
       if (run.arena) {
@@ -185,21 +207,20 @@ export function botMove(
       // Untouchable then (a shield's cover): nothing there can hurt her.
       if (plan?.invuln !== undefined && t + k2 < plan.invuln) continue;
       for (let n = 0; n < near.length; n++) {
-        const i = near[n]!;
-        const def = ENEMIES[e.col("kind")[i]!]!;
         // Each enemy keeps doing what it does now (chasing, crossing, holding a post).
         const ox = nearX[n]! + nearVx[n]! * k2 - qx;
         const oy = nearY[n]! + nearVy[n]! * k2 - qy;
         const dd = Math.sqrt(ox * ox + oy * oy);
-        const r = def.radius + 11 + 8;
+        const r = nearR[n]!;
         if (dd < r + 20) danger += ((r + 20 - dd) / (r + 20)) * 30 * w;
       }
-      for (const i of bnear) {
-        if (!b.pos(i, td + k2, pos)) continue;
-        const ox = pos.x - qx;
-        const oy = pos.y - qy;
+      const at = bAt[li]!;
+      for (let j = 0; j < nb; j++) {
+        if (!at.ok[j]) continue;
+        const ox = at.xs[j]! - qx;
+        const oy = at.ys[j]! - qy;
         const dd = Math.sqrt(ox * ox + oy * oy);
-        const r = BULLET_STYLES[b.col("style")[i]!]!.radius + 3 + 6 * (1 - dodge);
+        const r = bR[j]!;
         if (dd < r) danger += 400 * w * dodge;
         else if (dd < r + 14) danger += ((r + 14 - dd) / 14) * 12 * w * dodge;
       }
