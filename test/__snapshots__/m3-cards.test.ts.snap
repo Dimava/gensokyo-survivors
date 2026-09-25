@@ -69,13 +69,13 @@ enemies 42 [kedama 35, fairy 7] | drops 0 | shots 2 | bullets 6
 cards: spirit 2.00/3 meter 0 grazes 0 | hand: graze-ribbon
 -- hand (spirit 3):
 {"key":1,"name":"Graze Ribbon","cost":2,"playable":true,"does":"For 30s, every bullet you graze restores 1 HP and 0.05 Spirit."}
-{"key":2,"name":"Power Charm","cost":2,"playable":true,"does":"Your weapons deal +50% damage for 10s."}
+{"key":3,"name":"Power Charm","cost":2,"playable":true,"does":"Your weapons deal +50% damage for 10s."}
 -- the graze meter drew the second card after 12 grazes
 == play /run:1 card:play card=card#9
 card:play card=card#9
   . player#3.spirit t0 0 -> 1002 (pay and discard)
   . player#3.progress cardsPlayed 0 -> 1 (pay and discard)
-  . card#9.in of hand#6 -> discard#7, at 1 -> 0 (pay and discard)
+  . card#9.in of hand#6 -> discard#7, at 2 -> 0 (pay and discard)
   card:played card=card#9 x=144.48000000000005 y=404.05160159025564 fx=-0.924261426490025 fy=-0.3817601544197929
     . +player#3.empowered {"pct":50,"until":1602,"pid":"after#13"} (Power Charm)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1

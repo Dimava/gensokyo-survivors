@@ -8,7 +8,7 @@
 
 import { z } from "zod";
 import { trigger, type Ctx, type RuleBuilder, type RuleDef, type View } from "gamebones";
-import { cardDef, cardParams } from "../content/cards.ts";
+import { CARD_KINDS, cardDef, cardParams, type CardKind } from "../content/cards.ts";
 import type { RS, RS0 } from "./run.ts";
 import { CARDS_TUNING, sec } from "./tuning.ts";
 
@@ -45,6 +45,48 @@ export function handSlots(v: View<RS0>): (ReturnType<typeof handCards>[number] |
 function topAt(v: View<RS0>, pileId: string): number {
   const cards = v.related("inPile", pileId);
   return cards.length ? cards[cards.length - 1]!.in.at + 1 : 0;
+}
+
+/** The kinds in their colour order (red attack, blue guard, green heal, yellow empower, purple utility), for the home slots. */
+const KIND_ORDER = Object.keys(CARD_KINDS) as CardKind[];
+
+/**
+ * The hand slot a drawn card takes, aiming to keep the hand in colour order
+ * (red attack, blue guard, green heal, yellow empower, purple utility) as
+ * often as possible, without ever moving a card already held (a key must
+ * still play the card it showed).
+ *
+ * Its kind's home is where that kind sits in this run's deck, stretched over
+ * the hand: a kind that makes up the deck's first quarter lives in the
+ * hand's first quarter. Of the free slots, it takes the one that leaves the
+ * fewest cards out of colour order with it, and among those the nearest to home.
+ */
+function slotFor(v: View<RS0>, card: string): number {
+  const piles = v.derived("piles");
+  const rank = (id: string): number => KIND_ORDER.indexOf(cardDef(v.req(id, "card").card.id).kind);
+  const deck = [piles.deck, piles.hand, piles.discard].flatMap((pile) => v.related("inPile", pile).map((c) => rank(c.id)));
+  const slots = handSlots(v);
+  const mine = rank(card);
+  const below = deck.filter((r) => r < mine).length;
+  const same = deck.filter((r) => r === mine).length;
+  const home = Math.min(slots.length - 1, Math.floor(((below + same / 2) / Math.max(1, deck.length)) * slots.length));
+  let best = -1;
+  let bestKey = Infinity;
+  slots.forEach((held, at) => {
+    if (held) return;
+    let wrong = 0;
+    slots.forEach((c, j) => {
+      if (!c || c.id === card) return;
+      const r = rank(c.id);
+      if ((j < at && r > mine) || (j > at && r < mine)) wrong++;
+    });
+    const key = wrong * 100 + Math.abs(at - home);
+    if (key < bestKey) {
+      bestKey = key;
+      best = at;
+    }
+  });
+  return best;
 }
 
 /** Moves a card to the top of a pile (read the slot before writing: related() sees this node's writes). */
@@ -141,8 +183,8 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
         top = ctx.related("inPile", piles.deck)[0];
         if (!top) return;
       }
-      // The drawn card takes the first empty slot (read before writing: related() sees this node's writes).
-      const slot = handSlots(ctx).indexOf(null);
+      // The drawn card goes home (slotFor; read before writing: related() sees this node's writes).
+      const slot = slotFor(ctx, top.id);
       Object.assign(ctx.mut(top.id, "in"), { of: piles.hand, at: slot });
       ctx.emit("card:drawn", { card: top.id });
     }),

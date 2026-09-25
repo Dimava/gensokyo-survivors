@@ -318,7 +318,7 @@ run:start stage=lake
     process:director pid=director#16 state=script [enemies: count=5]
       . run#2.run nextUid 1 -> 6 (process:director.script)
     card:draw
-      . card#8.in of deck#5 -> hand#6 (apply card:draw)
+      . card#8.in of deck#5 -> hand#6, at 0 -> 1 (apply card:draw)
       card:drawn card=card#8
     banner text=Misty Lake tone=info
 meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
