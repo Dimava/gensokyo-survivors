@@ -54,7 +54,7 @@ function quit(): void {
       <SettingsPanel in-run />
       <button class="btn back" @click="page('main')">Back</button>
     </div>
-    <div v-else-if="state.pausePage === 'help'" v-keynav class="panel box wide scroll">
+    <div v-else-if="state.pausePage === 'help'" v-keynav class="panel box wide scroll fabric-scroll">
       <h2>How to Play</h2>
       <HelpPanel />
       <button class="btn back" @click="page('main')">Back</button>

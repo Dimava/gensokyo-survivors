@@ -352,3 +352,196 @@ input[type="range"] {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 5px;
 }
+
+/*
+ * Fabric: every button, panel, tab and modal is cut from a printed cloth
+ * whose pattern slowly drifts behind the shape (the tiles are drawn in
+ * fabric.ts and put on :root as --fab-<name>, -faint, -w, -h, -dx and -dy).
+ *
+ * The pattern lives on ::after (.btn.back's ::before is its fill), two loop
+ * steps larger than the element on the side it drifts from, clipped by the element (overflow:
+ * clip and its border-radius, or .btn.back's clip-path), under the content
+ * (z-index -1 in the element's own stacking context). It moves by animating
+ * `translate` exactly one lattice step in a loop, which the compositor does
+ * without repainting. Hover and the keyboard selection brighten it and run a
+ * second loop on `transform` along the same step, paused otherwise so the
+ * pattern never jumps: the two add up to a quicker drift.
+ *
+ * Not in the run's HUD or on the playfield (only the pause menu, the
+ * level-up and the dialogue overlays there), and not inside the pack
+ * opening, the credits roll or the card faces, which have art of their own.
+ *
+ * Per kind: --fab-img/-w/-h the tile, --fab-dx/-dy its loop step, --fab-t
+ * the loop time at animation speed 1 (the step's length over it is a few px
+ * a second), --fab-o and --fab-hi the strength at rest and when lit.
+ */
+@keyframes fab-drift {
+  to {
+    translate: var(--fab-dx) var(--fab-dy);
+  }
+}
+@keyframes fab-boost {
+  to {
+    transform: translate(var(--fab-dx), var(--fab-dy));
+  }
+}
+/* Where the cloth goes: see above for the exceptions. */
+:where(.btn, .panel):not(:where(.hud, .hintbar, .opening, .credits-roll, .face, .no-fabric) *):not(.no-fabric) {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+:where(.btn, .panel):not(:where(.hud, .hintbar, .opening, .credits-roll, .face, .no-fabric) *):not(.no-fabric, .fabric-scroll)::after {
+  content: "";
+  z-index: -1;
+  background: var(--fab-img) 0 0 / var(--fab-w) var(--fab-h) repeat;
+  opacity: var(--fab-o);
+  pointer-events: none;
+  animation:
+    fab-drift calc(var(--fab-t) * var(--anim)) linear infinite,
+    fab-boost calc(var(--fab-t) * 1.25 * var(--anim)) linear infinite paused;
+  transition: opacity var(--glide);
+  /* Room for two steps behind the drift (the loop and the lit boost can each be a step along), none ahead. */
+  --fab-et: calc(2 * max(0px, var(--fab-dy)));
+  --fab-er: calc(-2 * min(0px, var(--fab-dx)));
+  --fab-eb: calc(-2 * min(0px, var(--fab-dy)));
+  --fab-el: calc(2 * max(0px, var(--fab-dx)));
+}
+:where(.btn, .panel)::after {
+  position: absolute;
+  inset: calc(-1 * var(--fab-et)) calc(-1 * var(--fab-er)) calc(-1 * var(--fab-eb)) calc(-1 * var(--fab-el));
+}
+.btn:is(:hover:not(:disabled), :focus-visible, [data-nav-sel]:not(:disabled))::after {
+  opacity: var(--fab-hi);
+  animation-play-state: running, running;
+}
+/* A disabled control's cloth hangs still. */
+.btn:disabled::after {
+  animation-play-state: paused, paused;
+}
+/*
+ * A panel that scrolls its own content (.fabric-scroll) would carry a layer
+ * away with the content, and a sticky one costs a composited copy of all that
+ * content, so there the cloth is simply the panel's own background: the same
+ * tile with its ink baked faint (--fab-img-faint), held still.
+ */
+.panel.fabric-scroll {
+  background-image: var(--fab-img-faint);
+  background-size: var(--fab-w) var(--fab-h);
+}
+/* Everything under the pack opening holds still while it plays. */
+.packs:has(> .opening) :is(.btn, .panel)::after {
+  animation-play-state: paused, paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.btn, .panel)::after {
+    animation: none !important;
+  }
+}
+
+/* Panels: asanoha (hemp leaf) in gold, up and to the right (a 28px step, ~2.5px/s). */
+.panel {
+  --fab-img: var(--fab-asanoha);
+  --fab-img-faint: var(--fab-asanoha-faint);
+  --fab-w: var(--fab-asanoha-w);
+  --fab-h: var(--fab-asanoha-h);
+  --fab-dx: var(--fab-asanoha-dx);
+  --fab-dy: var(--fab-asanoha-dy);
+  --fab-t: 11s;
+  --fab-o: 0.07;
+  --fab-hi: 0.07;
+}
+/* Modals and the pause menu: kumo (clouds), drifting right and a little down (38px, ~2.5px/s). */
+:is(.modal-wrap, .pause) > .panel,
+.panel.modal {
+  --fab-img: var(--fab-kumo);
+  --fab-img-faint: var(--fab-kumo-faint);
+  --fab-w: var(--fab-kumo-w);
+  --fab-h: var(--fab-kumo-h);
+  --fab-dx: var(--fab-kumo-dx);
+  --fab-dy: var(--fab-kumo-dy);
+  --fab-t: 15s;
+  --fab-o: 0.08;
+  --fab-hi: 0.08;
+}
+/* The pack shop's tiles: sakura, falling (44px, ~2.5px/s). */
+.packs .panel.pack {
+  --fab-img: var(--fab-sakura);
+  --fab-w: var(--fab-sakura-w);
+  --fab-h: var(--fab-sakura-h);
+  --fab-dx: var(--fab-sakura-dx);
+  --fab-dy: var(--fab-sakura-dy);
+  --fab-t: 18s;
+  --fab-o: 0.08;
+  --fab-hi: 0.08;
+}
+/* Buttons: sayagata (interlocking manji) in washi, down and to the left (18px, ~3.5px/s). */
+.btn {
+  --fab-img: var(--fab-sayagata);
+  --fab-w: var(--fab-sayagata-w);
+  --fab-h: var(--fab-sayagata-h);
+  --fab-dx: var(--fab-sayagata-dx);
+  --fab-dy: var(--fab-sayagata-dy);
+  --fab-t: 5s;
+  --fab-o: 0.07;
+  --fab-hi: 0.14;
+}
+/* Primary: seigaiha (waves) rolling along their rows (18px, ~3.5px/s). */
+.btn.primary {
+  --fab-img: var(--fab-seigaiha);
+  --fab-w: var(--fab-seigaiha-w);
+  --fab-h: var(--fab-seigaiha-h);
+  --fab-dx: var(--fab-seigaiha-dx);
+  --fab-dy: var(--fab-seigaiha-dy);
+  --fab-t: 5s;
+  --fab-o: 0.13;
+  --fab-hi: 0.24;
+}
+/* Gold: shippō (seven treasures) in dark ink (17px, ~3.5px/s). */
+.btn.gold {
+  --fab-img: var(--fab-shippo);
+  --fab-w: var(--fab-shippo-w);
+  --fab-h: var(--fab-shippo-h);
+  --fab-dx: var(--fab-shippo-dx);
+  --fab-dy: var(--fab-shippo-dy);
+  --fab-t: 5s;
+  --fab-o: 0.12;
+  --fab-hi: 0.2;
+}
+/* Ghost: an outline on nothing, so only a breath of sakura that shows when lit (44px, ~3px/s). */
+.btn.ghost {
+  --fab-img: var(--fab-sakura);
+  --fab-w: var(--fab-sakura-w);
+  --fab-h: var(--fab-sakura-h);
+  --fab-dx: var(--fab-sakura-dx);
+  --fab-dy: var(--fab-sakura-dy);
+  --fab-t: 15s;
+  --fab-o: 0.03;
+  --fab-hi: 0.14;
+}
+/* Tabs: kikkō (tortoiseshell), picked (red) or not (21px, ~3.5px/s). */
+.btn.tab {
+  --fab-img: var(--fab-kikko);
+  --fab-w: var(--fab-kikko-w);
+  --fab-h: var(--fab-kikko-h);
+  --fab-dx: var(--fab-kikko-dx);
+  --fab-dy: var(--fab-kikko-dy);
+  --fab-t: 6s;
+  --fab-o: 0.09;
+  --fab-hi: 0.18;
+}
+/* Back: yagasuri (arrow feathers) pointing and flying the way Back goes (32px, 4px/s). */
+.btn.back {
+  --fab-img: var(--fab-yagasuri);
+  --fab-w: var(--fab-yagasuri-w);
+  --fab-h: var(--fab-yagasuri-h);
+  --fab-dx: var(--fab-yagasuri-dx);
+  --fab-dy: var(--fab-yagasuri-dy);
+  --fab-t: 8s;
+  --fab-o: 0.08;
+  --fab-hi: 0.17;
+}
+.btn.back.primary {
+  --fab-o: 0.12;
+  --fab-hi: 0.19;
+}

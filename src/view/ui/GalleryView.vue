@@ -149,7 +149,7 @@ function draw(d: Drawing, key: string, px: number): string {
       </div>
       <button class="btn back" @click="host.go('menu')">Back</button>
     </div>
-    <div class="panel body" :class="{ music: tab === 'music', credits: tab === 'credits' }">
+    <div class="panel body" :class="{ music: tab === 'music', credits: tab === 'credits', 'fabric-scroll': tab !== 'music' && tab !== 'credits', 'no-fabric': tab === 'credits' }">
       <MusicRoom v-if="tab === 'music'" />
       <CreditsRoll v-if="tab === 'credits'" />
       <template v-if="tab === 'characters'">
