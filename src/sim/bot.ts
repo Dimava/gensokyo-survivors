@@ -33,6 +33,13 @@ export interface BotOptions {
   latency?: number;
   /** Move only in the 8 directions a keyboard gives (and stand still), instead of 16. */
   keys8?: boolean;
+  /**
+   * Pixels added to her hitbox when judging bullets: a person keeps a wide berth
+   * because they can't react in a tick. Dropped once she is `settle`d.
+   */
+  caution?: number;
+  /** Ticks of standing still with no danger in sight after which she trusts her real hitbox (a safe spot found). */
+  settle?: number;
 }
 
 /** Reference players: a first-timer and a practised danmaku player for balance, and a person's pace for recordings. */
@@ -41,6 +48,13 @@ export const SKILL = {
   expert: { dodge: 1, reaction: 1 },
   /** The ?bot=1 player of the recordings: decides every tick, executes half a second later. */
   human: { dodge: 1, reaction: 1, latency: 30, keys8: true },
+  /**
+   * The balance reference: the human's pace, keeping 8 px more from bullets
+   * until she has stood a second in a safe spot. (A wider berth, like three
+   * times her hitbox and 16 px, makes her timid: she stops collecting gems,
+   * can't get under the boss, and dies more, not less.)
+   */
+  player: { dodge: 1, reaction: 1, latency: 30, keys8: true, caution: 8, settle: 60 },
 } as const satisfies Record<string, BotOptions>;
 
 /** A card is held at least this long after it is drawn before the bot plays it (it reads it first). */
@@ -67,6 +81,8 @@ export interface BotPlan {
   goal?: { x: number; y: number };
   invuln?: number;
   danger: number;
+  /** She has stood in a safe spot long enough to trust her real hitbox (BotOptions.settle). */
+  settled?: boolean;
 }
 
 /**
@@ -171,7 +187,8 @@ export function botMove(
   // and each threat's radius, are worked out once here instead of once per direction.
   const nearR = near.map((i) => ENEMIES[e.col("kind")[i]!]!.radius + 11 + 8);
   const nb = bnear.length;
-  const bR = bnear.map((i) => BULLET_STYLES[b.col("style")[i]!]!.radius + 3 + 6 * (1 - dodge));
+  const pad = plan?.settled ? 0 : (opts.caution ?? 0);
+  const bR = bnear.map((i) => BULLET_STYLES[b.col("style")[i]!]!.radius + 3 + pad + 6 * (1 - dodge));
   const bAt = LOOK.map((k2) => {
     const xs = new Float64Array(nb);
     const ys = new Float64Array(nb);
@@ -308,6 +325,8 @@ export interface BotInputs {
   seen?: Record<string, number>;
   /** The latest decision's look-ahead danger (botMove), for the guard cards. */
   danger?: number;
+  /** Ticks she has stood still with no danger in sight (BotOptions.settle). */
+  stillFor?: number;
   /** A dive under way (botDive). */
   dive?: Dive | null;
   /** Until when (action time) a queued shield card keeps her untouchable. */
@@ -336,13 +355,25 @@ interface Dive {
  */
 export function botSteer(k: Game, path: RunPath, last: BotInputs, opts: BotOptions = {}): void {
   const p = path as "/run:1";
-  const m = botMove(k, path, opts);
+  const plan: BotPlan = { from: { ...runView(k, path).derived("player").body }, danger: 0, settled: settled(last, opts) };
+  const m = botMove(k, path, opts, plan);
+  keepStill(last, m, plan.danger, opts);
   if (m.x !== last.move.x || m.y !== last.move.y) {
     k.queue(p, "move", m);
     last.move = m;
   }
   const on = opts.focus !== false && botFocus(k, path);
   if (on !== runView(k, path).derived("player").ctrl.focus) k.queue(p, "focus", { on });
+}
+
+/** She has stood still in safety for BotOptions.settle ticks. */
+function settled(last: BotInputs, opts: BotOptions): boolean {
+  return opts.settle !== undefined && (last.stillFor ?? 0) >= opts.settle;
+}
+
+/** Counts how long she has stood still with nothing threatening her; any move or danger resets it. */
+function keepStill(last: BotInputs, m: { x: number; y: number }, danger: number, opts: BotOptions): void {
+  last.stillFor = m.x === 0 && m.y === 0 && danger === 0 ? (last.stillFor ?? 0) + (opts.reaction ?? 1) : 0;
 }
 
 /**
@@ -392,9 +423,10 @@ export function botThink(k: Game, path: RunPath, last: BotInputs, opts: BotOptio
   const from = plannedFrom(k, path, last, lead);
   const tactic = cards ? botDive(k, path, last, from, lead) : null;
   const invuln = Math.max(v.derived("player").life.invulnUntil, last.shieldUntil ?? 0);
-  const plan: BotPlan = { from, danger: 0, invuln, goal: last.dive ? { x: last.dive.x, y: last.dive.y } : undefined };
+  const plan: BotPlan = { from, danger: 0, invuln, goal: last.dive ? { x: last.dive.x, y: last.dive.y } : undefined, settled: settled(last, opts) };
   const m = botMove(k, path, opts, plan);
   last.danger = plan.danger;
+  keepStill(last, m, plan.danger, opts);
   const order: BotOrder = { due: clock + lead };
   if (m.x !== planned.move.x || m.y !== planned.move.y) order.move = planned.move = m;
   const on = opts.focus !== false && !last.dive && botFocus(k, path);

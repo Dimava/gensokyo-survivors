@@ -1,12 +1,13 @@
 // Records the full, filtered event log (lib/runlog.ts) of Misty Lake runs:
 // each level-up strategy (lib/strategies.ts) on each seed, played to its end
-// by the expert bot, one JSON file per run. scripts/balance-report.ts reads them.
-//   bun scripts/balance-log.ts <outdir> [seeds=6]   (ONLY=a,b  TREE=none|mid|full  SHARD=i/n  STAGE=lake)
+// by a bot (BOT: a SKILL preset, default "player", the human-like balance
+// reference), one JSON file per run. scripts/balance-report.ts reads them.
+//   bun scripts/balance-log.ts <outdir> [seeds=6]   (ONLY=a,b  TREE=none|mid|full  SHARD=i/n  STAGE=lake  BOT=player|expert)
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fixtureGame } from "../test/helpers.ts";
 import { activeRun } from "../src/sim/game.ts";
-import { SKILL } from "../src/sim/bot.ts";
+import { SKILL, type BotOptions } from "../src/sim/bot.ts";
 import { recordRun } from "./lib/runlog.ts";
 import { STRATEGIES, TREES } from "./lib/strategies.ts";
 
@@ -15,6 +16,10 @@ const only = process.env.ONLY?.split(",");
 const treeName = process.env.TREE ?? "none";
 const tree = TREES[treeName]!;
 const stage = process.env.STAGE ?? "lake";
+const bot = (process.env.BOT ?? "player") as keyof typeof SKILL;
+// CAUTION=px, LATENCY=ticks, SETTLE=ticks override the preset's.
+const skill: BotOptions = { ...SKILL[bot] };
+for (const [env, key] of [["CAUTION", "caution"], ["LATENCY", "latency"], ["SETTLE", "settle"]] as const) if (process.env[env]) skill[key] = Number(process.env[env]);
 const seeds = process.env.SEEDS?.split(",") ?? Array.from({ length: Number(nSeeds) }, (_, i) => `c${i + 1}`);
 const [shard, shards] = (process.env.SHARD ?? "0/1").split("/").map(Number) as [number, number];
 
@@ -27,8 +32,8 @@ for (const [si, st] of STRATEGIES.entries()) {
     k.dispatch("/", "run:start", { stage });
     if (!activeRun(k)) throw new Error("no run");
     const t0 = performance.now();
-    const { log, ticks } = recordRun(k, { ...SKILL.expert, pick: st.make(seed)() });
-    writeFileSync(join(dir, `${seed}.json`), JSON.stringify({ strategy: st.name, seed, stage, tree: treeName, ticks, log }));
+    const { log, ticks } = recordRun(k, { ...skill, pick: st.make(seed)() });
+    writeFileSync(join(dir, `${seed}.json`), JSON.stringify({ strategy: st.name, seed, stage, tree: treeName, bot, skill, ticks, log }));
     console.log(`${st.name} ${seed}: ${log.length} entries, ${ticks} ticks, ${((performance.now() - t0) / 1000).toFixed(1)} s`);
   }
 }
