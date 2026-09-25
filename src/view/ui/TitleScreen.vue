@@ -24,7 +24,7 @@ onBeforeUnmount(off);
       <p class="sub">{{ GAME_SUBTITLE }}</p>
     </div>
     <p class="press">Press any key or click to begin</p>
-    <p class="foot muted">A Touhou Project fan game · placeholder art · all sound synthesized</p>
+    <p class="foot muted">A Touhou Project fan game · every picture drawn and every sound synthesized in code</p>
   </div>
 </template>
 
