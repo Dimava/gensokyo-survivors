@@ -68,7 +68,11 @@ const last = computed(() => lastRun.value?.summary ?? null);
   font-size: 1.4rem;
 }
 h3 {
-  color: var(--cyan);
   margin: 20px 0 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--head);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 </style>

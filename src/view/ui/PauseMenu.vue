@@ -115,10 +115,11 @@ h2 {
 }
 .stats h4 {
   margin: 12px 0 6px;
-  color: var(--cyan);
-  text-transform: uppercase;
   font-size: 0.8rem;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--head);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 .row {
   display: flex;

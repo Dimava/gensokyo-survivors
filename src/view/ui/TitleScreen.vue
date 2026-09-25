@@ -46,16 +46,13 @@ const build = [`v${__BUILD__.version}`, __BUILD__.commit, __BUILD__.date].filter
   height: 84px;
   margin: 0 auto 14px;
   border-radius: 50%;
-  box-shadow: 0 0 40px rgba(224, 49, 75, 0.6);
   animation: spin calc(6s * var(--anim)) linear infinite;
 }
 h1 {
   margin: 0;
   font-size: clamp(2.4rem, 6vw, 4.6rem);
   letter-spacing: 0.06em;
-  text-shadow:
-    0 0 24px rgba(224, 49, 75, 0.7),
-    0 4px 0 #6a0f1f;
+  text-shadow: 0 4px 0 #6a0f1f;
 }
 .sub {
   margin: 8px 0 0;

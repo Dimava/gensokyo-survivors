@@ -106,9 +106,10 @@ section {
 }
 h3 {
   margin: 0 0 4px;
-  font-size: 1rem;
-  color: var(--cyan);
-  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--head);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 label {

@@ -236,8 +236,8 @@ function hover(): void {
 h2 {
   margin: 0;
   font-size: 2.4rem;
-  color: #b6ffc8;
-  text-shadow: 0 0 20px rgba(123, 216, 143, 0.7);
+  color: #e8c15a;
+  text-shadow: 0 2px 0 #3a2a0c;
 }
 .head p {
   margin: 6px 0 0;

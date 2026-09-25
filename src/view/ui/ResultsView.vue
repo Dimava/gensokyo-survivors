@@ -114,10 +114,10 @@ h1 {
   font-size: 2.3rem;
 }
 .clear h1 {
-  color: #fff0c0;
+  color: #e8c15a;
 }
 .dead h1 {
-  color: #ff9aac;
+  color: #e8604a;
 }
 .records {
   display: flex;
@@ -152,7 +152,11 @@ h1 {
 }
 h3 {
   margin: 8px 0;
-  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--head);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 table {
   width: 100%;

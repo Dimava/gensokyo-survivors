@@ -170,7 +170,11 @@ function recall(trip: string): void {
 }
 h3 {
   margin: 0 0 10px;
-  color: var(--cyan);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--head);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 .comps {
   display: flex;

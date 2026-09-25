@@ -138,7 +138,6 @@ function hover(): void {
 .logo {
   font-size: 2.6rem;
   margin: 0 0 20px;
-  text-shadow: 0 0 20px rgba(224, 49, 75, 0.6);
 }
 .buttons {
   display: flex;

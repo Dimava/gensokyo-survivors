@@ -243,6 +243,13 @@ function draw(d: Drawing, key: string, px: number): string {
 </template>
 
 <style scoped>
+h3 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--head);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
 /* Full screen: the head stays put, the body fills the rest and scrolls inside itself (the music room scrolls its own list). */
 .gallery {
   overflow: hidden;

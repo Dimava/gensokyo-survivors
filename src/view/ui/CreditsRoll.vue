@@ -854,7 +854,6 @@ onBeforeUnmount(() => {
   height: 72px;
   border-radius: 50%;
   margin-bottom: 18px;
-  box-shadow: 0 0 36px rgba(224, 49, 75, 0.55);
   animation: spin calc(8s * var(--anim)) linear infinite;
 }
 .yy.big {
@@ -865,9 +864,7 @@ onBeforeUnmount(() => {
   margin: 0;
   font-size: clamp(2.6rem, 6vw, 4.4rem);
   letter-spacing: 0.06em;
-  text-shadow:
-    0 0 24px rgba(224, 49, 75, 0.7),
-    0 4px 0 #6a0f1f;
+  text-shadow: 0 4px 0 #6a0f1f;
 }
 .subtitle {
   margin: 10px 0 0;
@@ -1314,9 +1311,7 @@ code {
   margin: 0;
   font-size: clamp(2rem, 4.4vw, 3.2rem);
   letter-spacing: 0.04em;
-  text-shadow:
-    0 0 22px rgba(224, 49, 75, 0.6),
-    0 3px 0 #6a0f1f;
+  text-shadow: 0 3px 0 #6a0f1f;
 }
 .sweep {
   position: relative;

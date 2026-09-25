@@ -12,6 +12,10 @@
   --green: #7bd88f;
   --cyan: #6fd3ff;
   --violet: #c56bff;
+  /* Display type: the serif of the spell-card names, for titles and headings (refs/gui/NOTES.md, Type). */
+  --display: Georgia, "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  /* Section headers: letter-spaced small caps in shimenawa straw. */
+  --head: #d6c48c;
   /* Animation speed setting: durations are multiplied by --anim. */
   --anim: 1;
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -35,6 +39,14 @@ body,
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+}
+
+h1,
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  /* The UI sans's own line height, so a heading's box stays the size it was. */
+  line-height: 1.33;
 }
 
 button {
