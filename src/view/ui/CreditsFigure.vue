@@ -17,7 +17,6 @@ const props = withDefaults(defineProps<{ art: string; kind?: "sprite" | "portrai
 /** Frames baked per idle cycle of a sprite rig. */
 const FRAMES = 6;
 
-const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 const el = ref<HTMLElement>();
 const seen = ref(false);
 
@@ -35,7 +34,7 @@ const svg = computed(() => {
   const d = (props.kind === "portrait" ? set?.portrait : null) ?? set?.sprite;
   return d ? svgOf(d, props.zoom) : "";
 });
-const rigged = computed(() => !reduced && prefs.artStyle === "live2d");
+const rigged = computed(() => prefs.artStyle === "live2d");
 const livePortrait = computed(() => {
   const m = rigged.value && props.kind === "portrait" ? ART_L2D[props.art]?.portrait : undefined;
   return m ? { model: m, w: size.value.w * 1.1, h: size.value.h * 1.06 } : null;
@@ -70,7 +69,7 @@ onBeforeUnmount(() => io?.disconnect());
 </script>
 
 <template>
-  <div ref="el" class="fig" :class="[kind, { still: reduced }]" :style="{ width: `${size.w}px`, height: `${size.h}px`, '--delay': `${delay}s` }">
+  <div ref="el" class="fig" :class="kind" :style="{ width: `${size.w}px`, height: `${size.h}px`, '--delay': `${delay}s` }">
     <LivePortrait v-if="livePortrait && seen" class="live" :model="livePortrait.model" :width="livePortrait.w" :height="livePortrait.h" :flip="flip" :fps="30" follow />
     <div
       v-else-if="strip && stripBox"
@@ -122,9 +121,6 @@ onBeforeUnmount(() => io?.disconnect());
   max-width: none;
   animation-name: play;
   animation-iteration-count: infinite;
-}
-.still .drawn {
-  animation: none;
 }
 @keyframes bob {
   to {

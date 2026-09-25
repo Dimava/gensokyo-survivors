@@ -31,8 +31,6 @@ import dimavaAvatar from "./credits/dimava.png";
 const props = withDefaults(defineProps<{ loop?: boolean }>(), { loop: true });
 const emit = defineEmits<{ end: [] }>();
 
-const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-
 // ---------------------------------------------------------------- the content
 
 const cardsOf = (who: CharacterId) => CARDS.filter((c) => c.owner === who).map((c) => c.name);
@@ -329,7 +327,7 @@ function frame(now: number): void {
   speed += (want - speed) * (1 - Math.exp(-dt * 6));
   const take = wheel * (1 - Math.exp(-dt * 14));
   wheel -= take;
-  if (!fading.value) pos += h * (BASE * (reduced ? 0.6 : 1) * prefs.animSpeed * speed + ARROW * arrow) * dt + take;
+  if (!fading.value) pos += h * (BASE * prefs.animSpeed * speed + ARROW * arrow) * dt + take;
   pos = Math.max(0, Math.min(maxPos, pos));
   if (pos >= maxPos - 0.5 && !fading.value) {
     endFor += dt;
@@ -458,7 +456,7 @@ onBeforeUnmount(() => {
   <div
     ref="root"
     class="credits-roll"
-    :class="{ still: reduced, fading }"
+    :class="{ fading }"
     :style="{ '--rollh': `${rollH}px` }"
     @wheel.prevent="onWheel"
     @pointerdown="onDown"
@@ -573,7 +571,7 @@ onBeforeUnmount(() => {
           <div class="avatar-wrap">
             <div ref="avatarBox" class="avatar">
               <img :src="dimavaAvatar" :alt="AVATAR_ALT" width="96" height="96" />
-              <LivePortrait v-if="seen.avatar && !reduced" class="avatar-live" :model="dimavaModel" :width="96" :height="96" :rate="DIMAVA_RATE" :fps="30" follow :drive="driveAvatar" />
+              <LivePortrait v-if="seen.avatar" class="avatar-live" :model="dimavaModel" :width="96" :height="96" :rate="DIMAVA_RATE" :fps="30" follow :drive="driveAvatar" />
             </div>
             <div class="hat">(the hat)</div>
           </div>
@@ -588,7 +586,7 @@ onBeforeUnmount(() => {
         <div class="name big">{{ CLAUDE }}</div>
         <p class="line">by Anthropic, working in Claude Code</p>
         <div ref="clawdBox" class="clawd" @click="nextSuit">
-          <LivePortrait v-if="seen.clawd" :key="suit" :model="clawd" :width="360" :height="288" :rate="reduced ? 0 : CLAWD_RATE" :fps="30" follow />
+          <LivePortrait v-if="seen.clawd" :key="suit" :model="clawd" :width="360" :height="288" :rate="CLAWD_RATE" :fps="30" follow />
         </div>
         <p class="caption">
           Clawd, Claude Code's mascot<template v-if="suitDef.as">, {{ suitDef.as }}</template>
@@ -814,14 +812,6 @@ onBeforeUnmount(() => {
   animation-duration: calc(7.4s * var(--anim));
   animation-delay: calc(-3s * var(--anim));
   animation-direction: alternate-reverse;
-}
-.still .twinkle,
-.still .flies,
-.still .yy,
-.still .px,
-.still .broom,
-.still .leaf {
-  animation: none;
 }
 /* A soft dark column behind the text, so it reads over the sky. */
 .veil {

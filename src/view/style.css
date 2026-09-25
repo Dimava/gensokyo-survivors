@@ -433,11 +433,6 @@ input[type="range"] {
 .packs:has(> .opening) :is(.btn, .panel)::after {
   animation-play-state: paused, paused;
 }
-@media (prefers-reduced-motion: reduce) {
-  :is(.btn, .panel)::after {
-    animation: none !important;
-  }
-}
 
 /* Panels: asanoha (hemp leaf) in gold, up and to the right (a 28px step, ~2.5px/s). */
 .panel {
