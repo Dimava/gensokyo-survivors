@@ -192,8 +192,7 @@ function pause(): void {
         class="stat gold"
         :title="`${CURRENCY.name} collected this run (paid out at the end, with bonuses)`"
       >
-        <span class="muted">{{ CURRENCY.name }}</span>
-        <b>{{ CURRENCY.icon }} {{ h.coins }}</b>
+        <span class="muted">{{ CURRENCY.name }}</span> <b>{{ CURRENCY.icon }} {{ h.coins }}</b>
       </div>
       <button class="btn small ghost pausebtn" @click="pause">
         Pause <Keys for="Action:pause" :max="1" />
