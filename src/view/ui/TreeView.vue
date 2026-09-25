@@ -7,7 +7,7 @@ import { formatBonus, STAT_DEFS } from "../../content/stats.ts";
 import { weaponDef } from "../../content/weapons.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { nodeState, type NodeState } from "../../sim/meta.ts";
-import { treeLevels, wallet } from "./useGame.ts";
+import { profile, treeLevels, wallet } from "./useGame.ts";
 import NavHints from "./NavHints.vue";
 
 const UNIT = 104;
@@ -108,6 +108,8 @@ const sel = computed(() => {
     next: lvl < n.costs.length ? (n.effect.kind === "unlock" ? `Adds ${weaponDef(n.effect.weapon).name} (${weaponDef(n.effect.weapon).desc}) to the level-up pool` : effectAt(n, lvl + 1)) : null,
     help: n.effect.kind === "stat" ? STAT_DEFS[n.effect.stat].help : weaponDef(n.effect.weapon).desc,
     requires: n.requires.map((r) => treeNode(r).name),
+    /** Stage clears still needed, if that is what keeps it locked. */
+    clears: Math.max(0, (n.clears ?? 0) - profile.value.clears),
   };
 });
 
@@ -185,7 +187,8 @@ function buy(): void {
         <div class="row"><span class="muted">Now</span><b>{{ sel.now }}</b></div>
         <div v-if="sel.next" class="row next"><span class="muted">Next level</span><b>{{ sel.next }}</b></div>
         <p class="help muted">{{ sel.help }}</p>
-        <p v-if="sel.st === 'locked'" class="req">Needs {{ sel.requires.join(" or ") }} first.</p>
+        <p v-if="sel.st === 'locked' && sel.clears" class="req">Needs {{ sel.n.clears }} stage clear{{ sel.n.clears === 1 ? "" : "s" }} ({{ sel.clears }} to go).</p>
+        <p v-else-if="sel.st === 'locked'" class="req">Needs {{ sel.requires.join(" or ") }} first.</p>
         <button v-if="sel.st !== 'maxed'" class="btn buy" :class="{ gold: sel.st === 'buyable' }" :disabled="sel.st !== 'buyable'" @click="buy">
           {{ sel.st === "locked" ? "Locked" : `Buy for ${CURRENCY.icon} ${sel.cost}` }}
         </button>

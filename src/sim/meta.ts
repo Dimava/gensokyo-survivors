@@ -11,7 +11,7 @@ import { CHARACTERS, PLAYER_CHARACTER } from "../content/names.ts";
 import { CARDS, MAX_CARD_LEVEL, RARITIES, RARITY_INFO, STARTER_CARDS, cardDef, type Rarity } from "../content/cards.ts";
 import { DECK_MAX, DECK_MIN, PACKS, packDef } from "../content/gacha.ts";
 import { STAGES, stageDef } from "../content/stages.ts";
-import { TREE, treeNode } from "../content/tree.ts";
+import { OLD_TREE_COSTS, TREE, treeNode } from "../content/tree.ts";
 import { RunSummary } from "./schemas.ts";
 import { Run } from "./rules.ts";
 import { Pack } from "./pack.ts";
@@ -105,6 +105,7 @@ export function nodeState(v: View<MS>, id: string): NodeState {
   const lvl = levels[id] ?? 0;
   if (lvl >= node.costs.length) return "maxed";
   if (node.requires.length && !node.requires.some((r) => (levels[r] ?? 0) > 0)) return "locked";
+  if ((node.clears ?? 0) > v.derived("profile").profile.clears) return "locked";
   return v.derived("wallet").wallet.coins >= node.costs[lvl]! ? "buyable" : "poor";
 }
 
@@ -226,6 +227,7 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
       case "maxed":
         return `${node.name} is fully upgraded`;
       case "locked":
+        if ((node.clears ?? 0) > ctx.derived("profile").profile.clears) return `${node.name} needs ${node.clears} stage clear${node.clears === 1 ? "" : "s"}`;
         return `${node.name} needs ${node.requires.map((id) => treeNode(id).name).join(" or ")} first`;
       case "poor":
         return `${node.name} costs ${node.costs[lvl]} (you have ${ctx.derived("wallet").wallet.coins})`;
@@ -374,6 +376,20 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
       return p ? { ...e, profile: { ...p, cleared: (p.clears ?? 0) > 0 ? ["lake"] : [] } } : e;
     }),
   }),
+  // v1 -> v2: the shrine tree was rebuilt (flat bonuses, head starts): everything spent on the old one is refunded.
+  (data) => {
+    const tree = data.entities.find((e) => e.tree) as { tree: { levels: Record<string, number> } } | undefined;
+    let refund = 0;
+    for (const [id, lvl] of Object.entries(tree?.tree.levels ?? {})) refund += (OLD_TREE_COSTS[id] ?? []).slice(0, lvl).reduce((a, b) => a + b, 0);
+    return {
+      ...data,
+      entities: data.entities.map((e) => {
+        if (e.tree) return { ...e, tree: { levels: {} } };
+        const w = e.wallet as { coins: number } | undefined;
+        return w ? { ...e, wallet: { ...w, coins: w.coins + refund } } : e;
+      }),
+    };
+  },
 ]);
 
 /** The fixture for a new profile. */

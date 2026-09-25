@@ -20,6 +20,11 @@ export const STAT_KEYS = [
   "revive",
   "reroll",
   "duration",
+  "dmg",
+  "headStart",
+  "weaponLevel",
+  "fullHand",
+  "skip",
 ] as const;
 
 export type StatKey = (typeof STAT_KEYS)[number];
@@ -31,6 +36,8 @@ export interface StatDef {
   format: "pct" | "flat" | "rate" | "hp";
   base: number;
   help: string;
+  /** Used once as a run begins (shrine head starts), not a stat of the run itself. */
+  start?: boolean;
 }
 
 export const STAT_DEFS: Record<StatKey, StatDef> = {
@@ -49,10 +56,18 @@ export const STAT_DEFS: Record<StatKey, StatDef> = {
   spiritRegen: { label: "Spirit Regen", format: "pct", base: 1, help: "How fast Spirit refills (cards cost Spirit)." },
   spiritMax: { label: "Max Spirit", format: "flat", base: 3, help: "Spirit you can hold." },
   hand: { label: "Hand Size", format: "flat", base: 3, help: "Skill cards you can hold at once." },
-  revive: { label: "Revival", format: "flat", base: 0, help: "Times you get back up at half HP instead of falling." },
+  revive: { label: "Last Stand", format: "flat", base: 0, help: "Times per run a hit that would fell you leaves you at 5% HP instead." },
   reroll: { label: "Reroll", format: "flat", base: 0, help: "Times per run you can reroll a level-up offer." },
   duration: { label: "Duration", format: "pct", base: 1, help: "How long card effects last." },
+  dmg: { label: "Damage", format: "flat", base: 0, help: "Added to every weapon hit, before Might: worth most to weak, fast weapons." },
+  headStart: { label: "Head Start", format: "flat", base: 0, start: true, help: "Level-ups waiting for you when a run begins." },
+  weaponLevel: { label: "Weapon Level", format: "flat", base: 0, start: true, help: "Your first weapon starts this many levels up." },
+  fullHand: { label: "Prepared Hand", format: "flat", base: 0, start: true, help: "A run begins with your hand full of cards." },
+  skip: { label: "Early Start", format: "flat", base: 0, start: true, help: "Seconds of the stage's opening skipped, with the experience you would have gathered in them." },
 };
+
+/** The stats a run has (the pause menu lists them): all but the ones used only as it begins. */
+export const RUN_STAT_KEYS: readonly StatKey[] = STAT_KEYS.filter((k) => !STAT_DEFS[k].start);
 
 export function baseStats(): Stats {
   const out = {} as Stats;

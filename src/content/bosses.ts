@@ -38,8 +38,8 @@ export const BOSSES: readonly BossDef[] = [
     spells: [
       {
         name: "Ice Sign “Icicle Fall”",
-        hp: 1000,
-        time: 40,
+        hp: 500,
+        time: 30,
         move: "sway",
         bonus: 30,
         emitters: [
@@ -49,8 +49,8 @@ export const BOSSES: readonly BossDef[] = [
       },
       {
         name: "Freeze Sign “Perfect Freeze”",
-        hp: 1200,
-        time: 45,
+        hp: 600,
+        time: 35,
         move: "wander",
         bonus: 40,
         emitters: [
@@ -64,8 +64,8 @@ export const BOSSES: readonly BossDef[] = [
       },
       {
         name: "Snow Sign “Diamond Blizzard”",
-        hp: 1400,
-        time: 50,
+        hp: 700,
+        time: 40,
         move: "still",
         bonus: 50,
         emitters: [
@@ -84,8 +84,8 @@ export const BOSSES: readonly BossDef[] = [
     spells: [
       {
         name: "Night Sign “Night Bird”",
-        hp: 2450,
-        time: 40,
+        hp: 1225,
+        time: 35,
         move: "sway",
         bonus: 40,
         emitters: [
@@ -95,8 +95,8 @@ export const BOSSES: readonly BossDef[] = [
       },
       {
         name: "Darkness Sign “Demarcation”",
-        hp: 2900,
-        time: 45,
+        hp: 1450,
+        time: 40,
         move: "wander",
         bonus: 55,
         emitters: [
@@ -106,8 +106,8 @@ export const BOSSES: readonly BossDef[] = [
       },
       {
         name: "Moon Sign “Moonlight Ray”",
-        hp: 3300,
-        time: 50,
+        hp: 1650,
+        time: 45,
         move: "still",
         bonus: 70,
         emitters: [

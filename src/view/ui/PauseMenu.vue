@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { host, state } from "../host.ts";
 import { audio } from "../audio.ts";
-import { STAT_DEFS, STAT_KEYS, formatStat } from "../../content/stats.ts";
+import { RUN_STAT_KEYS, STAT_DEFS, formatStat } from "../../content/stats.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { hud } from "./useRun.ts";
 import { fmtTime } from "./useGame.ts";
@@ -47,8 +47,8 @@ function quit(): void {
         </div>
         <div v-if="h" class="stats yours">
           <h4>Your stats</h4>
-          <div class="grid" :style="{ gridTemplateRows: `repeat(${Math.ceil(STAT_KEYS.length / 2)}, auto)` }">
-            <div v-for="k in STAT_KEYS" :key="k" class="row" :title="STAT_DEFS[k].help">
+          <div class="grid" :style="{ gridTemplateRows: `repeat(${Math.ceil(RUN_STAT_KEYS.length / 2)}, auto)` }">
+            <div v-for="k in RUN_STAT_KEYS" :key="k" class="row" :title="STAT_DEFS[k].help">
               <span class="muted">{{ STAT_DEFS[k].label }}</span><b>{{ formatStat(k, h.stats[k]) }}</b>
             </div>
           </div>

@@ -131,6 +131,8 @@ export const FORMATION = {
 export const XP = {
   /** Experience per HP of an enemy's gem (EnemyDef.xpPerHp overrides it): tough enemies are worth their HP. */
   perHp: 0.3,
+  /** Experience per second of the opening an Early Start skips (about what a player gathers then). */
+  skipPerSecond: 2.7,
   /**
    * Experience needed for level n -> n+1: cheap at first, steeper as gems grow
    * with the enemies' HP (fitted so levels come at about the old times).

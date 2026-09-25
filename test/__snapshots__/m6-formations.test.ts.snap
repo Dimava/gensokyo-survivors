@@ -3,14 +3,14 @@
 exports[`M6 stage formations scripted: formations fly in, fire and leave; the midboss holds the stage; the boss clears the field 1`] = `
 "== initial
 meta: coins 0 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
+tree: core:3 dmg1:2 hp1:3 spirit1:2 greed1:2 regen1:2 armor1:2 speed1:2 reroll:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
 == play / run:start stage=lake
 run:start stage=lake
   . +/run:1.scope "run" (apply run:start)
   . profile#2.profile runs 0 -> 1, activeRun  -> /run:1, nextRun 1 -> 2 (apply run:start)
-  run:begin stage=lake bonuses={"maxHp":90,"might":0.24,"cooldown":-0.1,"area":0.16,"armor":2,"regen":0.6,"magnet":0.75,"greed":0.24,"growth":0.16,"speed":0.12,"spiritRegen":0.45,"graze":0.24} unlocked=[] deck=[{"id":"fantasy-seal","level":1},{"id":"barrier","level":1},{"id":"healing","level":1}] @/run:1
+  run:begin stage=lake bonuses={"maxHp":75,"dmg":2,"armor":2,"regen":0.4,"reroll":2,"speed":0.08,"greed":0.1,"spiritRegen":0.2} unlocked=[] deck=[{"id":"fantasy-seal","level":1},{"id":"barrier","level":1},{"id":"healing","level":1}] @/run:1
     . +loadout#1 {loadout} (apply run:begin)
     . +run#2 {run} (apply run:begin)
     . +player#3 {body, ctrl, life, progress, spirit, meter} (apply run:begin)
@@ -23,127 +23,130 @@ run:start stage=lake
       card:drawn card=card#8
     banner text=Misty Lake tone=info
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
+tree: core:3 dmg1:2 hp1:3 spirit1:2 greed1:2 regen1:2 armor1:2 speed1:2 reroll:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:00 fixed=0 | hp 190/190 lv 1 xp 0/5 kills 0 | pos 0,0
+lake swarm t=0:00 fixed=0 | hp 175/175 lv 1 xp 0/5 kills 0 | pos 0,0
 weapons: amulet1 | passives: -
 enemies 5 [kedama 5] | drops 0 | shots 0 | bullets 0
 cards: spirit 1.00/3 meter 0 grazes 0 | hand: fantasy-seal
 == tick /run:1 fixed x1
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
+tree: core:3 dmg1:2 hp1:3 spirit1:2 greed1:2 regen1:2 armor1:2 speed1:2 reroll:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:07 fixed=429 | hp 190/190 lv 1 xp 2/5 kills 8 | pos 668,-191
+lake swarm t=0:07 fixed=432 | hp 175/175 lv 1 xp 1/5 kills 7 | pos 642,-130
 weapons: amulet1 | passives: -
-enemies 53 [kedama 39, fairy 14] | drops 4 | shots 0 | bullets 15
+enemies 53 [kedama 39, fairy 14] | drops 3 | shots 0 | bullets 12
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: fantasy-seal
 -- 7.2 s: the first formation of fairies (f) in view:
 +-------------------------------------------+
 |         k                                 |
+|   k        k                              |
+|   k   k             k         k           |
+|       k                             k     |
+|k                    .           *f  f f  f|
+|                          k      *         |
+|       *             @   k                 |
+| f  f f*                                   |
+|                          k                |
+|                        .                 k|
+|                      k      k             |
 |                                           |
-|  k         k        k          k          |
-|  k    k                                   |
-|      k                             k      |
-|k                               **f f f  f |
-|                     @   k      **         |
-|      *                 $                  |
-|f  f f**                                   |
-|                         k              k  |
-|                        .                  |
-|                     k       k             |
-|                                  k        |
+|              k                   k        |
 +-------------------------------------------+
--- 20 s: 125 spawned, 49 shot down, 71 on the field, 5 flew away
+-- 20 s: 116 spawned, 41 shot down, 68 on the field, 7 flew away
 == tick /run:1 fixed x1
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
+tree: core:3 dmg1:2 hp1:3 spirit1:2 greed1:2 regen1:2 armor1:2 speed1:2 reroll:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=0:26 fixed=1589 | hp 190/190 lv 7 xp 2/55 kills 89 | pos 624,144
-weapons: amulet3 needle2 orbs1 | passives: tome1
-enemies 68 [fairy 28, kedama 38, sunflower 2] | drops 13 | shots 9 | bullets 112
-cards: spirit 2.81/3 meter 57 grazes 32 | hand: barrier, healing
--- 26.5 s: sunflower fairies (s) holding their posts above the player:
+lake swarm t=0:26 fixed=1594 | hp 164/175 lv 6 xp 7/40 kills 89 | pos 758,-129
+weapons: amulet3 needle2 | passives: tome1
+enemies 65 [kedama 38, fairy 25, sunflower 2] | drops 25 | shots 7 | bullets 97
+cards: spirit 2.67/3 meter 23 grazes 47 | hand: barrier, healing
+-- 26.4 s: sunflower fairies (s) holding their posts above the player:
 +-------------------------------------------+
-|           *                               |
-| * *       ***              .  *** f f  f f|
-|      *    f*f  f f*f  f f*     **         |
-|  *      k***     **s  s-* *   ***       . |
-|* * k          .  *   * *          k       |
-|     *   **k       .     *     *           |
-| *                   @            k k      |
-|          k k f kk**  * * *                |
-|     *       f  **    * *- *         k     |
-| *  *          f k            .            |
-|               f k                .-       |
-|    * *          ff   kk.      k  k        |
-|            k            .                 |
+|            f f  f f f  f f                |
+|                                           |
+|         *           k                     |
+|         * k  k       k   kk               |
+| *           k  s  s              .        |
+| *    *        .  *                   k    |
+|               *****-@ .  -                |
+|          k.f f* f *    . *.          k    |
+|    *      .. **   .    . * f f *  f kf f f|
+|              *           ***.  *f         |
+|k      k      *    .*      *..   *  k      |
+|           .k   *  *       * .  *          |
+|   **             *   -   k  .  *    k     |
 +-------------------------------------------+
 == tick /run:1 fixed x1
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
+tree: core:3 dmg1:2 hp1:3 spirit1:2 greed1:2 regen1:2 armor1:2 speed1:2 reroll:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake swarm t=1:49 fixed=6575 | hp 210/210 lv 18 xp 82/345 kills 1038 | pos 2184,-567
-weapons: amulet7 needle3 orbs2 border2 | passives: tome1 grimoire1 heart1 power1
-enemies 66 [kedama 64, fairy 2] | drops 351 | shots 23 | bullets 0
-cards: spirit 3.00/3 meter 89 grazes 258 | hand: fantasy-seal, barrier, healing
--- Daiyousei held the stage for 9.6 s and was defeated (every bullet turned into points):
+lake swarm t=1:58 fixed=7127 | hp 195/195 lv 17 xp 183/309 kills 1096 | pos 444,-346
+weapons: amulet6 needle3 orbs2 border2 | passives: tome1 grimoire1 heart1 power1
+enemies 2 [kedama 2] | drops 416 | shots 18 | bullets 0
+cards: spirit 3.00/3 meter 100 grazes 295 | hand: fantasy-seal, barrier, healing
+-- Daiyousei held the stage for 18.6 s and was defeated (every bullet turned into points):
 +-------------------------------------------+
-|              .              -             |
-|                -   -   -      -           |
-|            -              -    -     .    |
-|                  .---     -      -        |
-|                    .       - .            |
-|                                        .  |
-|                     @               .     |
-|        . .         ..                     |
-| .                          .          .   |
-|. .          ..                .    ...    |
-|.  k kk k            .        .            |
-|kkk k  kkk k        .   .   .              |
-|.k.   kkkk     k   .                       |
+| .           .    - .       -              |
+|     ..       -      .    .     -     .    |
+|                         .         .  .    |
+|                  . -+- -             .  . |
+|                 --       - .  .  .   .. . |
+|.               -     ....          .  .. .|
+|                     @    . . ..   ...     |
+|                .       .   .. .. ..  .    |
+|                   . . . .  .   ...  ....  |
+|.     -                   . .   ......  .  |
+|       -          ..  . .. ..  . ......    |
+|       - .         k ... . ..... ...       |
+|       ..- .   .    k... ......  ..   .. . |
 +-------------------------------------------+
 == tick /run:1 fixed x1
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
+tree: core:3 dmg1:2 hp1:3 spirit1:2 greed1:2 regen1:2 armor1:2 speed1:2 reroll:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake warning t=3:29 fixed=12594 | hp 210/210 lv 32 xp 80/1038 kills 3681 | pos 3391,1274
-weapons: amulet8 needle7 orbs7 border5 | passives: tome1 grimoire1 heart1 power2
-enemies 175 [kedama 146, icefairy 14, fairy 12, yinyang 3] | drops 118 | shots 41 | bullets 0
-cards: spirit 3.00/3 meter 100 grazes 469 | hand: fantasy-seal, barrier, healing
--- the boss approaches at 209.7 s: strong winds blow the swarm away and spiral the nearby drops in:
+lake warning t=3:38 fixed=13144 | hp 195/195 lv 30 xp 56/919 kills 3731 | pos 1738,-26
+weapons: amulet8 needle6 orbs5 border5 | passives: tome1 grimoire1 heart1 power2
+enemies 185 [kedama 153, fairy 17, icefairy 8, sunflower 3, yinyang 4] | drops 850 | shots 30 | bullets 0
+cards: spirit 2.94/3 meter 57 grazes 572 | hand: fantasy-seal, barrier, healing
+overlay: levelup
+-- the boss approaches at 218.7 s: strong winds blow the swarm away and spiral the nearby drops in:
 +-------------------------------------------+
-|       .  ..            ....  . .          |
-| .  .  ..     i              .  -  .  .-   |
-|. i.. k  i      i  i -i-       . .$  ..    |
-|   .        k            -   .    -        |
-| .    ..                 k-     .          |
-|                           -..    -    -   |
-|          .          @.    -               |
-|       .  k               .              - |
-|   .        k ..           .  . -   .-     |
-|            .  . -- -- --               -  |
-|    k         .               .            |
-|            .-       .. .k k-    - k -  k  |
-|k               -k.-k -  k-       -    k   |
+|   .   .  .. k .   .-- - .  .kk   .. k.    |
+|. ... .   .   .    .....--- .k kk. ..      |
+| ....k .....   ..  ...  .i k     .  ....   |
+|.. ..- k. ....s....... . f f. f f. f f f  f|
+|....--.........  .......    . .  .k k   .  |
+|kk...........   -   . ......  ..  ..  .    |
+|Y.kk.......f    -    @.  .  .    .k .      |
+|kkkkkY...... f            .  .  .   k  $   |
+|..kkkkk.i  i.       .---... .. .. .    k . |
+|kkk.ki.ik ...i ..  .   kk..  k..   k  .. . |
+| kY.k.k ..f      .    . .i .. ..k .   .k   |
+| kkkk   f.     . ..    ... i.  . .     .  .|
+|    .k. f.    .k..   ...... .k   k.k  . .  |
 +-------------------------------------------+
 == play / run:abandon
 run:abandon
   run:forfeit @/run:1
     run:over outcome=quit
+      . -/run:1/levelup.scope (apply run:over)
+      . clock:game.scale 0/1 -> 1/1 (apply run:over)
       . clock:game.scale 1/1 -> 0/1 (apply run:over)
-      . run#2.run phase warning -> over, outcome none -> quit, endedAt 0 -> 12581 (apply run:over)
+      . run#2.run phase warning -> over, outcome none -> quit, overlay levelup -> none, endedAt 0 -> 13120 (apply run:over)
 meta: coins 0 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:3 magnet1:3 might1:3 hp1:3 spirit1:3 greed1:2 growth1:2 graze1:2 cooldown1:2 area1:2 regen1:2 armor1:2 speed1:2
+tree: core:3 dmg1:2 hp1:3 spirit1:2 greed1:2 regen1:2 armor1:2 speed1:2 reroll:2
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-lake over(quit) t=3:29 fixed=12594 | hp 210/210 lv 32 xp 80/1038 kills 3681 | pos 3391,1274
-weapons: amulet8 needle7 orbs7 border5 | passives: tome1 grimoire1 heart1 power2
-enemies 175 [kedama 146, icefairy 14, fairy 12, yinyang 3] | drops 118 | shots 41 | bullets 0
-cards: spirit 3.00/3 meter 100 grazes 469 | hand: fantasy-seal, barrier, healing
+lake over(quit) t=3:38 fixed=13144 | hp 195/195 lv 30 xp 56/919 kills 3731 | pos 1738,-26
+weapons: amulet8 needle6 orbs5 border5 | passives: tome1 grimoire1 heart1 power2
+enemies 185 [kedama 153, fairy 17, icefairy 8, sunflower 3, yinyang 4] | drops 850 | shots 30 | bullets 0
+cards: spirit 2.94/3 meter 57 grazes 572 | hand: fantasy-seal, barrier, healing
 "
 `;

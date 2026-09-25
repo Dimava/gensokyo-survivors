@@ -275,7 +275,8 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
 
     // The damage interception point: every weapon volley passes through here (D17 modify).
     r.on("weapon:fire").priority(10).as("might").modify((ev, ctx) => {
-      ev.dmg = ev.dmg * ctx.derived("stats").might;
+      // Flat damage (the shrine's) goes on before Might multiplies.
+      ev.dmg = (ev.dmg + ctx.derived("stats").dmg) * ctx.derived("stats").might;
     }),
     r.on("weapon:fire").as("Power Charm bonus").modify((ev, ctx) => {
       const pl = ctx.derived("player");

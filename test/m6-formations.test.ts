@@ -15,7 +15,7 @@ import { renderField } from "../src/view/text-renderer.ts";
 import { fixtureGame, render } from "./helpers.ts";
 
 /** A shrine tree a few runs in: enough to live through the stage while the bot steers. */
-const TREE = { core: 3, magnet1: 3, might1: 3, hp1: 3, spirit1: 3, greed1: 2, growth1: 2, graze1: 2, cooldown1: 2, area1: 2, regen1: 2, armor1: 2, speed1: 2 };
+const TREE = { core: 3, dmg1: 2, hp1: 3, spirit1: 2, greed1: 2, regen1: 2, armor1: 2, speed1: 2, reroll: 2 };
 
 /** Plays uncaptured ticks with the expert bot steering (inputs still go to the log) until `stop` or `max` ticks. */
 function advance(k: Game, path: RunPath, max: number, stop: () => boolean = () => false): void {

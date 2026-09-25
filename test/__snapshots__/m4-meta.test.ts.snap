@@ -6,9 +6,16 @@ meta: coins 1500 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
 last run: -
+== play / tree:buy node=weaponLevel
+!! tree:buy node=weaponLevel: Practiced Throw needs Sharpened Ink first (check tree:buy)
+-- refused: Practiced Throw needs Sharpened Ink first
+meta: coins 1500 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: (none)
+cards: fantasy-seal barrier healing | pity 0
+last run: -
 == play / tree:buy node=spark
-!! tree:buy node=spark: Borrowed Hakkero needs Quick Hands or Wider Borders first (check tree:buy)
--- refused: Borrowed Hakkero needs Quick Hands or Wider Borders first
+!! tree:buy node=spark: Borrowed Hakkero needs 1 stage clear (check tree:buy)
+-- refused: Borrowed Hakkero needs 1 stage clear
 meta: coins 1500 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
 tree: (none)
 cards: fantasy-seal barrier healing | pity 0
@@ -23,65 +30,56 @@ cards: fantasy-seal barrier healing | pity 0
 last run: -
 == play / tree:buy node=hp1
 tree:buy node=hp1
-  . wallet#1.wallet coins 1480 -> 1450 (apply tree:buy)
+  . wallet#1.wallet coins 1480 -> 1440 (apply tree:buy)
   . tree#3.tree levels {"core":1} -> {"core":1,"hp1":1} (apply tree:buy)
-meta: coins 1450 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+meta: coins 1440 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
 tree: core:1 hp1:1
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-== play / tree:buy node=might1
-tree:buy node=might1
-  . wallet#1.wallet coins 1450 -> 1420 (apply tree:buy)
-  . tree#3.tree levels {"core":1,"hp1":1} -> {"core":1,"hp1":1,"might1":1} (apply tree:buy)
-meta: coins 1420 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1
+== play / tree:buy node=dmg1
+tree:buy node=dmg1
+  . wallet#1.wallet coins 1440 -> 1380 (apply tree:buy)
+  . tree#3.tree levels {"core":1,"hp1":1} -> {"core":1,"hp1":1,"dmg1":1} (apply tree:buy)
+meta: coins 1380 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-== play / tree:buy node=cooldown1
-tree:buy node=cooldown1
-  . wallet#1.wallet coins 1420 -> 1370 (apply tree:buy)
-  . tree#3.tree levels {"core":1,"hp1":1,"might1":1} -> {"core":1,"hp1":1,"might1":1,"cooldown1":1} (apply tree:buy)
-meta: coins 1370 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1
+== play / tree:buy node=weaponLevel
+tree:buy node=weaponLevel
+  . wallet#1.wallet coins 1380 -> 1130 (apply tree:buy)
+  . tree#3.tree levels {"core":1,"hp1":1,"dmg1":1} -> {"core":1,"hp1":1,"dmg1":1,"weaponLevel":1} (apply tree:buy)
+meta: coins 1130 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal barrier healing | pity 0
 last run: -
-== play / tree:buy node=spark
-tree:buy node=spark
-  . wallet#1.wallet coins 1370 -> 1210 (apply tree:buy)
-  . tree#3.tree levels {"core":1,"hp1":1,"might1":1,"cooldown1":1} -> {"core":1,"hp1":1,"might1":1,"cooldown1":1,"spark":1} (apply tree:buy)
-meta: coins 1210 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
-cards: fantasy-seal barrier healing | pity 0
-last run: -
-== play / tree:buy node=spark
-!! tree:buy node=spark: Borrowed Hakkero is fully upgraded (check tree:buy)
--- refused: Borrowed Hakkero is fully upgraded
-meta: coins 1210 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+== play / tree:buy node=weaponLevel
+!! tree:buy node=weaponLevel: Practiced Throw is fully upgraded (check tree:buy)
+-- refused: Practiced Throw is fully upgraded
+meta: coins 1130 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal barrier healing | pity 0
 last run: -
 -- tree (# maxed, $ affordable, - locked):
-                                          $might2 0/3   $amount1 0/1
-                                                        #spark 1/1
-                                          $cooldown 1/3               $area1 0/3
-                            $armor1 0/3                 $might1 1/4                 -greed1 0/4
--hp2 0/3      -revive 0/1                 $hp1 1/4      $core 1/3     $magnet1 0/3                -speed1 0/3   -reroll 0/3
-                            $regen1 0/3                 $spirit1 0/3                -growth1 0/3
-                                          -graze1 0/3                 -hand1 0/2
-                                                        -knives 0/1
-                                          -spiritMa 0/2               -duration 0/3
+                                          -amount1 0/1
+                            #weaponLe 1/1               -spark 0/1
+              $armor1 0/2                 $dmg1 1/3                   -reroll 0/3
+-revive 0/1                 $hp1 1/3      $core 1/3     $headStar 0/3               -skip 0/1
+              $regen1 0/2                 $spirit1 0/2                -speed1 0/2   -greed1 0/2
+                            -fullHand 0/1               -spiritMa 0/1
+                                          -knives 0/1
+                                          -hand1 0/1
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 1210 -> 1110 (apply pack:buy)
+  . wallet#1.wallet coins 1130 -> 1030 (apply pack:buy)
   . gacha#4.gacha opened 0 -> 1, open false -> true (apply pack:buy)
   . +owned#8 {owned} (apply pack:buy)
   . +owned#9 {owned} (apply pack:buy)
   . +owned#10 {owned} (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"pocket-watch","rarity":"SR","outcome":"new","level":1,"refund":0,"pity":false},{"card":"graze-ribbon","rarity":"R","outcome":"new","level":1,"refund":0,"pity":false},{"card":"power-charm","rarity":"R","outcome":"new","level":1,"refund":0,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 1110 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 1030 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal barrier healing pocket-watch graze-ribbon power-charm | pity 0
 last run: -
 -- pack omikuji:
@@ -91,8 +89,8 @@ last run: -
 == play / pack:buy pack=omikuji
 !! pack:buy pack=omikuji: a pack is already open (check pack:buy)
 -- refused: a pack is already open
-meta: coins 1110 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 1030 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal barrier healing pocket-watch graze-ribbon power-charm | pity 0
 last run: -
 == play /pack pack:close
@@ -101,22 +99,22 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 1110 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 1030 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal barrier healing pocket-watch graze-ribbon power-charm | pity 0
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 1110 -> 1010 (apply pack:buy)
+  . wallet#1.wallet coins 1030 -> 930 (apply pack:buy)
   . gacha#4.gacha sinceHigh 0 -> 1, opened 1 -> 2, open false -> true (apply pack:buy)
   . owned#6.owned level 1 -> 2, copies 1 -> 2, fresh false -> true (apply pack:buy)
   . owned#10.owned level 1 -> 2, copies 1 -> 2 (apply pack:buy)
   . owned#7.owned level 1 -> 2, copies 1 -> 2, fresh false -> true (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"barrier","rarity":"N","outcome":"level","level":2,"refund":0,"pity":false},{"card":"power-charm","rarity":"R","outcome":"level","level":2,"refund":0,"pity":false},{"card":"healing","rarity":"N","outcome":"level","level":2,"refund":0,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 1010 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 930 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal barrier+2 healing+2 pocket-watch graze-ribbon power-charm+2 | pity 1
 last run: -
 == play /pack pack:close
@@ -125,21 +123,21 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 1010 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 930 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal barrier+2 healing+2 pocket-watch graze-ribbon power-charm+2 | pity 1
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 1010 -> 910 (apply pack:buy)
+  . wallet#1.wallet coins 930 -> 830 (apply pack:buy)
   . gacha#4.gacha sinceHigh 1 -> 2, opened 2 -> 3, open false -> true (apply pack:buy)
   . owned#5.owned level 1 -> 3, copies 1 -> 3, fresh false -> true (apply pack:buy)
   . owned#6.owned level 2 -> 3, copies 2 -> 3 (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"fantasy-seal","rarity":"N","outcome":"level","level":2,"refund":0,"pity":false},{"card":"barrier","rarity":"N","outcome":"level","level":3,"refund":0,"pity":false},{"card":"fantasy-seal","rarity":"N","outcome":"level","level":3,"refund":0,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 910 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 830 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+2 pocket-watch graze-ribbon power-charm+2 | pity 2
 last run: -
 == play /pack pack:close
@@ -148,22 +146,22 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 910 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 830 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+2 pocket-watch graze-ribbon power-charm+2 | pity 2
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 910 -> 820 (apply pack:buy)
+  . wallet#1.wallet coins 830 -> 740 (apply pack:buy)
   . gacha#4.gacha sinceHigh 2 -> 3, opened 3 -> 4, open false -> true (apply pack:buy)
   . owned#7.owned level 2 -> 3, copies 2 -> 3 (apply pack:buy)
   . owned#5.owned copies 3 -> 4 (apply pack:buy)
   . +owned#11 {owned} (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"healing","rarity":"N","outcome":"level","level":3,"refund":0,"pity":false},{"card":"fantasy-seal","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"vengeance","rarity":"R","outcome":"new","level":1,"refund":0,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 820 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 740 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon power-charm+2 vengeance | pity 3
 last run: -
 == play /pack pack:close
@@ -172,22 +170,22 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 820 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 740 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon power-charm+2 vengeance | pity 3
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 820 -> 730 (apply pack:buy)
+  . wallet#1.wallet coins 740 -> 650 (apply pack:buy)
   . gacha#4.gacha sinceHigh 3 -> 0, opened 4 -> 5, open false -> true (apply pack:buy)
   . owned#9.owned level 1 -> 2, copies 1 -> 2 (apply pack:buy)
   . owned#5.owned copies 4 -> 5 (apply pack:buy)
   . +owned#12 {owned} (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"graze-ribbon","rarity":"R","outcome":"level","level":2,"refund":0,"pity":false},{"card":"fantasy-seal","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"gap","rarity":"SR","outcome":"new","level":1,"refund":0,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 730 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 650 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+2 power-charm+2 vengeance gap | pity 0
 last run: -
 == play /pack pack:close
@@ -196,22 +194,22 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 730 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 650 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+2 power-charm+2 vengeance gap | pity 0
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 730 -> 650 (apply pack:buy)
+  . wallet#1.wallet coins 650 -> 570 (apply pack:buy)
   . gacha#4.gacha sinceHigh 0 -> 1, opened 5 -> 6, open false -> true (apply pack:buy)
   . owned#5.owned copies 5 -> 6 (apply pack:buy)
   . owned#9.owned level 2 -> 3, copies 2 -> 3 (apply pack:buy)
   . owned#6.owned copies 3 -> 4 (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"fantasy-seal","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"graze-ribbon","rarity":"R","outcome":"level","level":3,"refund":0,"pity":false},{"card":"barrier","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 650 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 570 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+2 vengeance gap | pity 1
 last run: -
 == play /pack pack:close
@@ -220,20 +218,20 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 650 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 570 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+2 vengeance gap | pity 1
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 650 -> 580 (apply pack:buy)
+  . wallet#1.wallet coins 570 -> 500 (apply pack:buy)
   . gacha#4.gacha sinceHigh 1 -> 2, opened 6 -> 7, open false -> true (apply pack:buy)
   . owned#7.owned copies 3 -> 6 (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"healing","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"healing","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"healing","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 580 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 500 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+2 vengeance gap | pity 2
 last run: -
 == play /pack pack:close
@@ -242,21 +240,21 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 580 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 500 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+2 vengeance gap | pity 2
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 580 -> 510 (apply pack:buy)
+  . wallet#1.wallet coins 500 -> 430 (apply pack:buy)
   . gacha#4.gacha sinceHigh 2 -> 3, opened 7 -> 8, open false -> true (apply pack:buy)
   . owned#6.owned copies 4 -> 6 (apply pack:buy)
   . owned#7.owned copies 6 -> 7 (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"barrier","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"healing","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"barrier","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 510 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 430 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+2 vengeance gap | pity 3
 last run: -
 == play /pack pack:close
@@ -265,22 +263,22 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 510 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 430 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+2 vengeance gap | pity 3
 last run: -
 == play / pack:buy pack=omikuji
 pack:buy pack=omikuji
   . +/pack.scope "pack" (apply pack:buy)
-  . wallet#1.wallet coins 510 -> 420 (apply pack:buy)
+  . wallet#1.wallet coins 430 -> 340 (apply pack:buy)
   . gacha#4.gacha sinceHigh 3 -> 4, opened 8 -> 9, open false -> true (apply pack:buy)
   . owned#10.owned level 2 -> 3, copies 2 -> 3 (apply pack:buy)
   . owned#7.owned copies 7 -> 8 (apply pack:buy)
   . owned#11.owned level 1 -> 2, copies 1 -> 2 (apply pack:buy)
   pack:show pack=omikuji pulls=[{"card":"power-charm","rarity":"R","outcome":"level","level":3,"refund":0,"pity":false},{"card":"healing","rarity":"N","outcome":"refund","level":3,"refund":10,"pity":false},{"card":"vengeance","rarity":"R","outcome":"level","level":2,"refund":0,"pity":false}] @/pack
     . +opening#1 {opening} (apply pack:show)
-meta: coins 420 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 340 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
 == play /pack pack:close
@@ -289,23 +287,23 @@ pack:close
   pack:closed @/
     . -/pack.scope (apply pack:closed)
     . gacha#4.gacha open true -> false (apply pack:closed)
-meta: coins 420 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 340 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
 -- pity triggered during the nine packs: false
 == play / deck:toggle card=fantasy-seal
 !! deck:toggle card=fantasy-seal: the deck needs at least 1 card (check deck:toggle)
 -- refused: the deck needs at least 1 card
-meta: coins 420 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 340 (lifetime 0) | runs 0 clears 0 [] best 0s/0 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3(out) healing+3(out) pocket-watch(out) graze-ribbon+3(out) power-charm+3(out) vengeance+2(out) gap(out) | pity 4
 last run: -
 == play / run:start stage=lake
 run:start stage=lake
   . +/run:1.scope "run" (apply run:start)
   . profile#2.profile runs 0 -> 1, activeRun  -> /run:1, nextRun 1 -> 2 (apply run:start)
-  run:begin stage=lake bonuses={"maxHp":30,"might":0.08,"cooldown":-0.05} unlocked=["spark"] deck=[{"id":"fantasy-seal","level":3},{"id":"barrier","level":3},{"id":"healing","level":3},{"id":"pocket-watch","level":1},{"id":"graze-ribbon","level":3},{"id":"power-charm","level":3},{"id":"vengeance","level":2},{"id":"gap","level":1}] @/run:1
+  run:begin stage=lake bonuses={"maxHp":25,"dmg":1,"weaponLevel":1} unlocked=[] deck=[{"id":"fantasy-seal","level":3},{"id":"barrier","level":3},{"id":"healing","level":3},{"id":"pocket-watch","level":1},{"id":"graze-ribbon","level":3},{"id":"power-charm","level":3},{"id":"vengeance","level":2},{"id":"gap","level":1}] @/run:1
     . +loadout#1 {loadout} (apply run:begin)
     . +run#2 {run} (apply run:begin)
     . +player#3 {body, ctrl, life, progress, spirit, meter} (apply run:begin)
@@ -321,43 +319,43 @@ run:start stage=lake
       . card#8.in of deck#5 -> hand#6, at 0 -> 1 (apply card:draw)
       card:drawn card=card#8
     banner text=Misty Lake tone=info
-meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 340 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
-lake swarm t=0:00 fixed=0 | hp 130/130 lv 1 xp 0/5 kills 0 | pos 0,0
-weapons: amulet1 | passives: -
+lake swarm t=0:00 fixed=0 | hp 125/125 lv 1 xp 0/5 kills 0 | pos 0,0
+weapons: amulet2 | passives: -
 enemies 5 [kedama 5] | drops 0 | shots 0 | bullets 0
 cards: spirit 1.00/3 meter 0 grazes 0 | hand: pocket-watch
 == tick /run:1 fixed x600
 > before tick 1: move x=70 y=70
-meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 340 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
-lake swarm t=0:10 fixed=600 | hp 130/130 lv 1 xp 2/5 kills 11 | pos 1008,1008
-weapons: amulet1 | passives: -
-enemies 61 [kedama 40, fairy 21] | drops 4 | shots 0 | bullets 42
+lake swarm t=0:10 fixed=600 | hp 125/125 lv 1 xp 2/5 kills 10 | pos 1008,1008
+weapons: amulet2 | passives: -
+enemies 61 [kedama 40, fairy 21] | drops 2 | shots 2 | bullets 42
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: pocket-watch
--- save size mid-run: 24927 bytes
+-- save size mid-run: 24993 bytes
 == play / run:abandon
 run:abandon
   run:forfeit @/run:1
     run:over outcome=quit
       . clock:game.scale 1/1 -> 0/1 (apply run:over)
-      . run#2.run phase swarm -> over, outcome none -> quit, endedAt 0 -> 895 (apply run:over)
-meta: coins 420 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+      . run#2.run phase swarm -> over, outcome none -> quit, endedAt 0 -> 890 (apply run:over)
+meta: coins 340 (lifetime 0) | runs 1 clears 0 [] best 0s/0 kills | active /run:1
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
 last run: -
-lake over(quit) t=0:14 fixed=900 | hp 125/130 lv 1 xp 4/5 kills 19 | pos 300,1008
-weapons: amulet1 | passives: -
-enemies 69 [kedama 39, fairy 30] | drops 5 | shots 0 | bullets 78
-cards: spirit 3.00/3 meter 0 grazes 0 | hand: pocket-watch
+lake over(quit) t=0:14 fixed=900 | hp 113/125 lv 2 xp 4/7 kills 19 | pos 312,1008
+weapons: amulet3 | passives: -
+enemies 69 [kedama 40, fairy 29] | drops 4 | shots 1 | bullets 78
+cards: spirit 3.00/3 meter 18 grazes 2 | hand: pocket-watch
 == tick /run:1 fixed x1
-meta: coins 427 (lifetime 7) | runs 1 clears 0 [] best 14s/19 kills | active -
-tree: core:1 hp1:1 might1:1 cooldown1:1 spark:1
+meta: coins 347 (lifetime 7) | runs 1 clears 0 [] best 14s/19 kills | active -
+tree: core:1 hp1:1 dmg1:1 weaponLevel:1
 cards: fantasy-seal+3 barrier+3 healing+3 pocket-watch graze-ribbon+3 power-charm+3 vengeance+2 gap | pity 4
-last run: lake quit at 14s, lv 1, 19 kills, +7 coins (new: time, kills, level)
+last run: lake quit at 14s, lv 2, 19 kills, +7 coins (new: time, kills, level)
 "
 `;

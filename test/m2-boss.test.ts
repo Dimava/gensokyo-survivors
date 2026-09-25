@@ -16,7 +16,7 @@ function has(n: TraceNode, event: string): boolean {
 describe("M2 boss", () => {
   test("scripted playthrough: warning, dialogue overlay, three spell cards, stage clear", () => {
     // A strong shrine so the fight is short and decisive.
-    const tree = { core: 3, might1: 4, cooldown1: 3, area1: 3, hp1: 4, armor1: 3, regen1: 3, magnet1: 3, growth1: 3, spark: 1, amount1: 1, might2: 3 };
+    const tree = { core: 3, dmg1: 3, weaponLevel: 1, spark: 1, amount1: 1, hp1: 3, armor1: 2, regen1: 2, spirit1: 2, spiritMax: 1, speed1: 2, reroll: 3 };
     const h = harness(() => fixtureGame("m2", { tree }), { render, maxChanges: 6 });
     const k = h.kernel;
     h.play("/", "run:start", { stage: "lake" });

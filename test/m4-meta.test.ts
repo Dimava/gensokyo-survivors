@@ -18,16 +18,17 @@ describe("M4 meta progression", () => {
     const k = h.kernel;
 
     // The tree: locked, poor and maxed nodes refuse with a reason.
+    h.play("/", "tree:buy", { node: "weaponLevel" });
+    expect(k.rejections.at(-1)?.reason).toBe("Practiced Throw needs Sharpened Ink first");
     h.play("/", "tree:buy", { node: "spark" });
-    expect(k.rejections.at(-1)?.reason).toBe("Borrowed Hakkero needs Quick Hands or Wider Borders first");
+    expect(k.rejections.at(-1)?.reason).toBe("Borrowed Hakkero needs 1 stage clear");
     h.play("/", "tree:buy", { node: "core" });
     h.play("/", "tree:buy", { node: "hp1" });
-    h.play("/", "tree:buy", { node: "might1" });
-    h.play("/", "tree:buy", { node: "cooldown1" });
-    h.play("/", "tree:buy", { node: "spark" });
-    expect(k.view().derived("tree").tree.levels).toMatchObject({ core: 1, hp1: 1, might1: 1, cooldown1: 1, spark: 1 });
-    h.play("/", "tree:buy", { node: "spark" });
-    expect(k.rejections.at(-1)?.reason).toBe("Borrowed Hakkero is fully upgraded");
+    h.play("/", "tree:buy", { node: "dmg1" });
+    h.play("/", "tree:buy", { node: "weaponLevel" });
+    expect(k.view().derived("tree").tree.levels).toMatchObject({ core: 1, hp1: 1, dmg1: 1, weaponLevel: 1 });
+    h.play("/", "tree:buy", { node: "weaponLevel" });
+    expect(k.rejections.at(-1)?.reason).toBe("Practiced Throw is fully upgraded");
     expect(k.options("/", "tree:buy").length).toBeGreaterThan(0);
     h.note(renderTree(k));
 
@@ -61,13 +62,13 @@ describe("M4 meta progression", () => {
     expect(k.rejections.at(-1)?.reason).toBe("the deck needs at least 1 card");
     for (const c of deck.slice(1)) h.quiet("/", "deck:toggle", { card: c });
 
-    // A run starts with the tree's loadout: more HP, more might, the Hakkero in the pool.
+    // A run starts with the tree's loadout: more HP, flat damage, the first weapon a level up.
     h.play("/", "run:start", { stage: "lake" });
     const path = activeRun(k)! as "/run:1";
     const v = runView(k, path);
-    expect(v.derived("stats").maxHp).toBe(100 + 15 + 15);
-    expect(v.derived("stats").might).toBeCloseTo(1.08, 6);
-    expect(v.derived("loadout").unlocked).toContain("spark");
+    expect(v.derived("stats").maxHp).toBe(100 + 10 + 15);
+    expect(v.derived("stats").dmg).toBe(1);
+    expect(v.derived("weapons")[0]!.weapon.level).toBe(2);
     k.queue(path, "move", { x: 70, y: 70 });
     h.tick(path, "fixed", 600);
 

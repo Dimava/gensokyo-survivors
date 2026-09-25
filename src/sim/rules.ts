@@ -6,6 +6,7 @@ import { STAT_DEFS } from "../content/stats.ts";
 import { ENEMIES } from "../content/enemies.ts";
 import { passiveDef } from "../content/passives.ts";
 import { cardDef } from "../content/cards.ts";
+import { weaponDef } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
 import { stageDef } from "../content/stages.ts";
 import { script } from "../content/dialogue.ts";
@@ -154,7 +155,9 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
       },
       "player",
     );
-    ctx.spawn({ weapon: { id: "amulet", level: 1, readyAt: 30, armed: 0 } }, "weapon");
+    // The shrine's head starts (stats.ts `start`): a first weapon further along, ...
+    const weaponLevel = Math.min(weaponDef("amulet").levels.length, 1 + (ev.bonuses.weaponLevel ?? 0));
+    ctx.spawn({ weapon: { id: "amulet", level: weaponLevel, readyAt: 30, armed: 0 } }, "weapon");
     const deck = ctx.spawn({ pile: { kind: "deck" } }, "deck");
     ctx.spawn({ pile: { kind: "hand" } }, "hand");
     ctx.spawn({ pile: { kind: "discard" } }, "discard");
@@ -164,9 +167,26 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
       const c = ev.deck[i]!;
       ctx.spawn({ card: { id: c.id, level: c.level, effect: cardDef(c.id).effect }, in: { of: deck, at } }, "card");
     });
-    ctx.start("director");
-    ctx.emit("card:draw", {});
+    // ... the stage's opening skipped (the director starts that far into its script), ...
+    const skip = ev.bonuses.skip ?? 0;
+    ctx.start("director", skip ? { held: -sec(skip) } : undefined);
+    // ... a full hand, ...
+    const draws = ev.bonuses.fullHand ? STAT_DEFS.hand.base + (ev.bonuses.hand ?? 0) : 1;
+    for (let i = 0; i < draws; i++) ctx.emit("card:draw", {});
     ctx.emit("banner", { text: stage.name, tone: "info" });
+    // ... the experience the skipped opening would have brought (levels at the opening's prices), then extra level-ups.
+    let xp = XP.skipPerSecond * skip * ctx.derived("stats").growth;
+    let level = 1;
+    let pending = ev.bonuses.headStart ?? 0;
+    while (xp >= XP.next(level)) {
+      xp -= XP.next(level);
+      level++;
+      pending++;
+    }
+    if (pending) {
+      Object.assign(ctx.mut(ctx.derived("player"), "progress"), { xp, level: level + (ev.bonuses.headStart ?? 0), pending });
+      ctx.emit("level:up", {});
+    }
   }),
 
   // ---------- input ----------
@@ -304,14 +324,15 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     if (p.life.hp > 0) return; // saved on the way down (Border of Life and Death)
     const stats = ctx.derived("stats");
     if (p.life.revivesUsed < stats.revive) {
+      // Last Stand: the felling hit leaves her at 5% instead.
       Object.assign(ctx.mut(p, "life"), {
-        hp: Math.round(stats.maxHp / 2),
+        hp: Math.max(1, Math.round(stats.maxHp * 0.05)),
         revivesUsed: p.life.revivesUsed + 1,
         invulnUntil: ctx.now("action") + sec(3),
       });
       ctx.emit("player:revived", { player: ev.player });
       ctx.emit("bullets:erase", { x: p.body.x, y: p.body.y, radius: 1e6, gems: false });
-      ctx.emit("banner", { text: "Hakurei Blessing: back on your feet!", tone: "good" });
+      ctx.emit("banner", { text: "Last Stand: still standing!", tone: "good" });
       return;
     }
     ctx.emit("run:over", { outcome: "dead" });
