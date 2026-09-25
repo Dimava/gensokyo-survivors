@@ -167,7 +167,7 @@ const RunDecl = defineScope("run", {
   packed: {
     enemies: () =>
       columns({ fields: ENEMY_FIELDS, capacity: CAP.enemies }),
-    drops: () => columns({ fields: ["x", "y", "kind", "value", "pulled", "check", "spd"], capacity: CAP.drops }),
+    drops: () => columns({ fields: ["x", "y", "kind", "value", "pulled", "check", "spd", "born"], capacity: CAP.drops }),
     shots: () =>
       columns({
         fields: ["x0", "y0", "vx", "vy", "t0", "dieAt", "dmg", "pierce", "radius", "weapon", "knock", "lastUid"],

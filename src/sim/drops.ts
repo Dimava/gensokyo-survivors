@@ -21,7 +21,7 @@ export function addDrop(ctx: C, kind: number, x: number, y: number, value: numbe
     return;
   }
   if (d.count >= d.capacity) return;
-  d.add({ x, y, kind, value, pulled: 0, check: 0, spd: 0 });
+  d.add({ x, y, kind, value, pulled: 0, check: 0, spd: 0, born: ctx.now("action") });
 }
 
 export interface Collected {
@@ -42,6 +42,7 @@ export function stepDrops(ctx: C, magnetScale: number, playerSpeed: number): Col
   const pulled = d.col("pulled");
   const check = d.col("check");
   const spd = d.col("spd");
+  const born = d.col("born");
   const R = PICKUP.magnet * magnetScale;
   const out: Collected = { xp: 0, coins: 0, hearts: 0, n: 0 };
   for (let i = d.count - 1; i >= 0; i--) {
@@ -64,12 +65,13 @@ export function stepDrops(ctx: C, magnetScale: number, playerSpeed: number): Col
       y[i] = y[i]! + (ddy / dist) * s;
       continue;
     }
-    if (dist <= R) {
+    if (dist <= R || (kind[i] === DROP.xp && t - born[i]! >= PICKUP.drift)) {
       pulled[i] = 1;
       spd[i] = PICKUP.pullSpeed;
       continue;
     }
     check[i] = t + Math.max(1, Math.floor((dist - R) / Math.max(playerSpeed, 0.01)));
+    if (kind[i] === DROP.xp) check[i] = Math.min(check[i]!, born[i]! + PICKUP.drift);
   }
   return out;
 }

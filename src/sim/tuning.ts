@@ -56,6 +56,8 @@ export const PICKUP = {
   pullSpeed: 2.5,
   pullAccel: 0.35,
   pullMax: 14,
+  /** Experience left lying this long (action ticks) flies to the player anyway: the magnet brings it sooner, not more of it. */
+  drift: 360,
   /** Beyond this many drops, new experience merges into an existing gem. */
   softCap: 2500,
 } as const;
@@ -115,8 +117,8 @@ export const FORMATION = {
 } as const;
 
 export const XP = {
-  /** Experience needed for level n -> n+1. */
-  next: (level: number): number => (level < 20 ? 5 + (level - 1) * 10 : 195 + (level - 20) * 30),
+  /** Experience needed for level n -> n+1 (1.6x the old curve since uncollected gems drift in, PICKUP.drift). */
+  next: (level: number): number => (level < 20 ? 8 + (level - 1) * 16 : 312 + (level - 20) * 48),
 } as const;
 
 export const CARDS_TUNING = {
