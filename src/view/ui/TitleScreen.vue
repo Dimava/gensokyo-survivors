@@ -9,6 +9,8 @@ const off = kds.on({ screen: "title", mods: undefined, event: { type: "keydown",
   if (e.code === (e.event as KeyboardEvent).code) host.go("menu");
 });
 onBeforeUnmount(off);
+
+const build = [`v${__BUILD__.version}`, __BUILD__.commit, __BUILD__.date].filter(Boolean).join(" · ");
 </script>
 
 <template>
@@ -25,6 +27,7 @@ onBeforeUnmount(off);
     </div>
     <p class="press">Press any key or click to begin</p>
     <p class="foot muted">A Touhou Project fan game · every picture drawn and every sound synthesized in code</p>
+    <p class="ver muted">{{ build }}</p>
   </div>
 </template>
 
@@ -70,6 +73,14 @@ h1 {
   position: absolute;
   bottom: 14px;
   font-size: 0.85rem;
+}
+.ver {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
 }
 @keyframes spin {
   to {
