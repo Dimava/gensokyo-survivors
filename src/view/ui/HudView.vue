@@ -782,30 +782,6 @@ function pause(): void {
   width: 44px;
   height: 44px;
 }
-/* Castable: a light sweep runs across the badge now and then. */
-.card.slotted:not(.off) .cbadge::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    115deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.55) 50%,
-    transparent 65%
-  );
-  background-size: 300% 100%;
-  animation: ready calc(2.4s * var(--anim)) linear infinite;
-  pointer-events: none;
-}
-@keyframes ready {
-  0% {
-    background-position: 100% 0;
-  }
-  40%,
-  100% {
-    background-position: 0% 0;
-  }
-}
 /* Not enough Spirit: the card greys out except the charged part of its badge. */
 .card.off {
   border-color: color-mix(in srgb, var(--kc) 35%, #555);

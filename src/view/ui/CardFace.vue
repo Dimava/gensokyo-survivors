@@ -145,23 +145,6 @@ const vars = computed(() => ({
 .rarity-SSR .brk {
   display: block;
 }
-.rarity-SSR::after {
-  /* A slow foil sheen across the SSR card. */
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(115deg, transparent 38%, rgba(255, 236, 170, 0.28) 48%, transparent 58%) 0 0 / 300% 100%;
-  animation: sheen calc(4s * var(--anim, 1)) linear infinite;
-  pointer-events: none;
-}
-@keyframes sheen {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: -50% 0;
-  }
-}
 .wm {
   position: absolute;
   left: 10px;
