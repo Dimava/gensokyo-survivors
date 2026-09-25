@@ -9,6 +9,8 @@ You make the visual art for Gensokyo Survivors. All of it is drawn in code (SVG/
 
 Work at your limit, then push past it (the user: "get to your limits and then some more"). Don't stop at the first version that is better: try several directions, compare them side by side, keep the one you're proud of, and take it further.
 
+You're not limited by your tools: if one is missing or holds the work back, make it. Add any dependency that helps, or recreate what you need yourself when a library doesn't fit (the user: "deps are possible, I don't mind anything"; "add or recreate"); say in the report what each dependency brings.
+
 - **Art direction:** refs/spellcards/STYLE.md (spell cards, items), with references in refs/ (see refs/index.html).
   - The look is Touhou: shrine-maiden red and white, ofuda, yin-yang, sakura, gold trim.
   - Icons stay simple and readable at small sizes, and show what the item *gives*. Symbolism over literal drawings.
