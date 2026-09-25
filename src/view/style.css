@@ -15,7 +15,7 @@
   --cyan: #6fd3ff;
   --violet: #c56bff;
   /* Display type: the serif of the spell-card names, for titles and headings (refs/gui/NOTES.md, Type). */
-  --display: Georgia, "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  --display: "Shippori Mincho B1", "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif;
   /* Section headers: letter-spaced small caps in shimenawa straw. */
   --head: #d6c48c;
   /* Animation speed setting: durations are multiplied by --anim. */
@@ -87,6 +87,8 @@ button {
   color: var(--text);
   font-family: var(--display);
   font-weight: 700;
+  /* The Mincho's tall ascent and descent would grow every plaque; hold the box to the sans's. */
+  line-height: 1.25;
   letter-spacing: 0.01em;
   transition:
     transform calc(0.1s * var(--anim)) ease,

@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { host, state } from "../host.ts";
 import { audio } from "../audio.ts";
-import { GAME_TITLE, CURRENCY, CHARACTERS, PLAYER_CHARACTER } from "../../content/names.ts";
+import { GAME_TITLE, CURRENCY, PLAYER_CHARACTER } from "../../content/names.ts";
 import { bossDef, bossName } from "../../content/bosses.ts";
 import { DECK_MIN } from "../../content/gacha.ts";
 import { EXPEDITIONS_ENABLED } from "../../content/expeditions.ts";
@@ -10,7 +10,11 @@ import { affordableNodes, fmtTime, owned, profile, stages, wallet } from "./useG
 import { stageDef, type StageDef } from "../../content/stages.ts";
 import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
 import NavHints from "./NavHints.vue";
-import Face from "./Face.vue";
+import Portrait from "./Portrait.vue";
+import HakureiSeal from "./HakureiSeal.vue";
+import LivePortrait from "./LivePortrait.vue";
+import { livePortrait } from "../art-set.ts";
+import { prefs } from "../prefs.ts";
 
 const midbossName = (s: StageDef): string => {
   const mid = s.script.find((b) => b.form === "midboss");
@@ -21,6 +25,8 @@ const captures = (s: StageDef): number => bossDef(s.boss).spells.reduce((sum, c)
 const locked = (s: StageDef): boolean => !!s.requires && !profile.value.cleared.includes(s.requires);
 
 const picking = ref(false);
+/** Reimu stands on the shrine steps beside the menu, her rigged bust when the art style has one. */
+const heroine = computed(() => livePortrait(PLAYER_CHARACTER, prefs.artStyle));
 const active = computed(() => {
   void state.meta;
   return host.path();
@@ -50,7 +56,7 @@ function hover(): void {
   <div v-keynav="{ id: 'menu' }" class="screen menu">
     <div class="wrap">
       <div class="left">
-        <h1 class="logo">{{ GAME_TITLE }}</h1>
+        <h1 class="logo">{{ GAME_TITLE }}<HakureiSeal class="seal" /></h1>
         <!-- Touhou's title menu: words, no boxes; the selected one sits in 「 」 on a vermilion brush stroke. -->
         <nav class="entries">
           <button v-if="active" class="entry" @mouseenter="hover" @click="resume"><span>Continue Run</span></button>
@@ -71,28 +77,11 @@ function hover(): void {
           <button class="entry" @mouseenter="hover" @click="host.go('help')"><span>How to Play</span></button>
         </nav>
       </div>
-      <div class="right panel">
-        <div class="who">
-          <Face :who="PLAYER_CHARACTER" />
-          <div>
-            <div class="name">{{ CHARACTERS[PLAYER_CHARACTER].name }}</div>
-            <div class="muted">{{ CHARACTERS[PLAYER_CHARACTER].title }}</div>
-          </div>
-        </div>
-        <div class="coins"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
-        <dl>
-          <dt>Runs</dt>
-          <dd>{{ profile.runs }}</dd>
-          <dt>Stage clears</dt>
-          <dd>{{ profile.clears }}</dd>
-          <dt>Longest survival</dt>
-          <dd>{{ fmtTime(profile.bestSeconds) }}</dd>
-          <dt>Most kills</dt>
-          <dd>{{ profile.bestKills }}</dd>
-          <dt>Deck</dt>
-          <dd>{{ deckSize }} cards</dd>
-        </dl>
-      </div>
+    </div>
+    <div class="coins wallet"><span class="label">{{ CURRENCY.name }}</span> {{ CURRENCY.icon }} {{ wallet.coins }}</div>
+    <div class="heroine" aria-hidden="true">
+      <LivePortrait v-if="heroine" :model="heroine" :width="400" :height="566" follow />
+      <div v-else class="drawn"><Portrait :who="PLAYER_CHARACTER" /></div>
     </div>
 
     <Transition name="modal">
@@ -122,23 +111,30 @@ function hover(): void {
 </template>
 
 <style scoped>
+/* The menu stands high on the left, clear of the torii below it. */
 .menu {
-  justify-content: safe center;
+  justify-content: flex-start;
+  padding-top: 11vh;
 }
 .wrap {
-  display: flex;
-  gap: 40px;
-  align-items: center;
-  width: min(1000px, 94vw);
-  flex-wrap: wrap;
-  justify-content: safe center;
+  position: relative;
+  z-index: 1;
+  width: min(1200px, 94vw);
 }
 .left {
-  flex: 1 1 380px;
+  width: fit-content;
+  margin-left: 4%;
 }
 .logo {
   font-size: 2.6rem;
-  margin: 0 0 20px;
+  margin: 0 0 18px;
+}
+.logo .seal {
+  width: 0.82em;
+  height: 0.82em;
+  margin-left: 0.22em;
+  vertical-align: -0.02em;
+  rotate: -7deg;
 }
 .entries {
   display: flex;
@@ -155,13 +151,12 @@ function hover(): void {
   border: none;
   background: none;
   font-family: var(--display);
-  font-size: 1.6rem;
+  font-size: 1.45rem;
   font-weight: 700;
+  line-height: 1.25;
   letter-spacing: 0.01em;
-  color: rgba(243, 238, 228, 0.5);
-  text-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.7),
-    0 0 6px rgba(6, 9, 24, 0.9);
+  color: rgba(233, 225, 207, 0.6);
+  text-shadow: 0 2px 0 rgba(6, 5, 12, 0.75);
   transition: color var(--glide);
 }
 .entry > span {
@@ -216,39 +211,40 @@ function hover(): void {
   color: #e8c15a;
   text-shadow: none;
 }
-.right {
-  flex: 0 1 340px;
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* Reimu on the shrine steps, right of the menu; her feet fade into the dark below. She watches the cursor. */
+.heroine {
+  position: absolute;
+  bottom: 0;
+  right: max(2vw, calc(50% - 600px));
+  width: 400px;
+  height: 566px;
+  pointer-events: none;
+  mask-image: linear-gradient(180deg, #000 78%, transparent 99%);
+  animation: arrive calc(0.7s * var(--anim)) cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
-.who {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+.heroine .drawn {
+  width: 240px;
+  height: 340px;
+  transform: scale(1.66);
+  transform-origin: 50% 100%;
+  margin: 226px 0 0 80px;
 }
-.name {
-  font-weight: 700;
-  font-size: 1.1rem;
+.wallet {
+  position: absolute;
+  top: 18px;
+  right: max(3vw, calc(50% - 600px));
+  z-index: 1;
 }
-dl {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 12px;
-  margin: 0;
-}
-dt {
-  color: var(--muted);
-}
-dd {
-  margin: 0;
-  font-weight: 700;
-  text-align: right;
+@keyframes arrive {
+  from {
+    opacity: 0;
+    translate: 24px 0;
+  }
 }
 .modal-wrap {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: grid;
   place-items: center;
   background: rgba(0, 0, 0, 0.55);

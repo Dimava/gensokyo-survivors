@@ -226,7 +226,7 @@ const vars = computed(() => ({
 .disc.q {
   display: grid;
   place-items: center;
-  font: 900 30px/1 Georgia, serif;
+  font: 800 30px/1 var(--display);
 }
 .chev {
   position: absolute;
@@ -268,7 +268,7 @@ const vars = computed(() => ({
   color: color-mix(in oklab, var(--ac) 70%, var(--ink));
 }
 .name {
-  font: 700 13.5px/1.15 Georgia, "Yu Mincho", "Times New Roman", serif;
+  font: 700 13.5px/1.15 var(--display);
   margin-top: 1px;
 }
 .name b {

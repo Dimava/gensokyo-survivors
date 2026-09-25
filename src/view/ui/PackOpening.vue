@@ -1316,7 +1316,7 @@ h2 {
   opacity: 0;
 }
 .maxed b {
-  font: 900 30px/1 Georgia, serif;
+  font: 800 30px/1 var(--display);
   letter-spacing: 0.12em;
   color: #d23a2a;
   border: 3px solid #d23a2a;

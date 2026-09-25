@@ -5,6 +5,7 @@
     "": {
       "name": "gensokyo-survivors",
       "dependencies": {
+        "@fontsource/shippori-mincho-b1": "^5.3.0",
         "gamebones": "file:../gamebones",
         "pixi.js": "^8.0.0",
         "vue": "^3.5.0",
@@ -80,6 +81,8 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.28.2", "", { "os": "win32", "cpu": "ia32" }, "sha512-YmJbfTlvU7Sdn9BB+4PRES4oB6pxgS37MAONj+hBr/cpXS1aBPKXxNnDbu+QCWPj0o9dgyxeq79g6c5P8KeuYA=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.28.2", "", { "os": "win32", "cpu": "x64" }, "sha512-5ebpxr3nWMzrL/rnUI755Jkuee0bHL/Gq0WTF9lvcpv73wAp5eu8MfBUgWK9bhWvZjj7yX8etf/8tI8Ney695g=="],
+
+    "@fontsource/shippori-mincho-b1": ["@fontsource/shippori-mincho-b1@5.3.0", "", {}, "sha512-H4NvSJntaViHN8LjwmPTzZgJ8pyWcNetaJMHT4kfg6n1VR60QO2cYl/KDEIP4z2SR83//nlZb5gfQyZUpeNVNA=="],
 
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.6.0", "", {}, "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw=="],
 

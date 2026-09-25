@@ -22,6 +22,7 @@ import { ART_L2D } from "../../art-l2d/index.ts";
 import { partImages, sharedRenderer } from "../../art-l2d/pixi-model.ts";
 import { CLAWD_RATE, clawdExtra, clawdModel, clawdSvg, SUITS, type SuitId } from "../../art-l2d/clawd.ts";
 import { CHARACTERS, GAME_SUBTITLE, GAME_TITLE, PLAYER_CHARACTER, type CharacterId } from "../../content/names.ts";
+import HakureiSeal from "./HakureiSeal.vue";
 import { STAGES } from "../../content/stages.ts";
 import { bossDef } from "../../content/bosses.ts";
 import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
@@ -533,14 +534,10 @@ onBeforeUnmount(() => {
     <div ref="track" class="track">
       <!-- Title card: fills the view when the roll starts. -->
       <section class="card">
-        <svg class="yy" viewBox="-1 -1 2 2" aria-hidden="true">
-          <circle r="1" fill="#fff" />
-          <path d="M0-1A1 1 0 0 1 0 1A.5.5 0 0 1 0 0A.5.5 0 0 0 0-1Z" fill="#e0314b" />
-          <circle cy="-.5" r=".15" fill="#e0314b" />
-          <circle cy=".5" r=".15" fill="#fff" />
-        </svg>
-        <h1 class="title">{{ GAME_TITLE }}</h1>
-        <p class="subtitle">{{ GAME_SUBTITLE }}</p>
+        <!-- The title's lockup (TitleScreen.vue): the kanji small above, the seal at the name's end. -->
+        <p class="kanji" lang="ja">幻想郷</p>
+        <h1 class="title">{{ GAME_TITLE }}<HakureiSeal class="seal" /></h1>
+        <p class="subtitle">～ {{ GAME_SUBTITLE }}</p>
       </section>
 
       <section class="sec">
@@ -749,12 +746,8 @@ onBeforeUnmount(() => {
 
       <!-- Closing card: the roll rests here. -->
       <section class="card end">
-        <svg class="yy big" viewBox="-1 -1 2 2" aria-hidden="true">
-          <circle r="1" fill="#fff" />
-          <path d="M0-1A1 1 0 0 1 0 1A.5.5 0 0 1 0 0A.5.5 0 0 0 0-1Z" fill="#e0314b" />
-          <circle cy="-.5" r=".15" fill="#e0314b" />
-          <circle cy=".5" r=".15" fill="#fff" />
-        </svg>
+        <!-- Signed with the shrine's seal, as a letter would be. -->
+        <HakureiSeal class="endseal" />
         <h2 class="thanks">Thank you for playing!</h2>
         <p class="subtitle">{{ GAME_TITLE }}</p>
         <div class="sweep" aria-hidden="true">
@@ -849,28 +842,40 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
 }
-.yy {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  margin-bottom: 18px;
-  animation: spin calc(8s * var(--anim)) linear infinite;
-}
-.yy.big {
-  width: 110px;
-  height: 110px;
+.kanji {
+  margin: 0 -0.9em 6px 0;
+  font: 700 1.5rem/1 "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif;
+  letter-spacing: 0.9em;
+  color: #d6c48c;
 }
 .title {
+  position: relative;
   margin: 0;
   font-size: clamp(2.6rem, 6vw, 4.4rem);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-shadow: 0 4px 0 #6a0f1f;
 }
+.title .seal {
+  position: absolute;
+  left: calc(100% + 0.16em);
+  top: 0.12em;
+  width: 0.86em;
+  height: 0.86em;
+  rotate: -7deg;
+}
+.endseal {
+  width: 92px;
+  height: 92px;
+  margin-bottom: 20px;
+  rotate: -5deg;
+}
 .subtitle {
-  margin: 10px 0 0;
-  color: #d8def5;
-  font-size: 1.1rem;
-  letter-spacing: 0.1em;
+  margin: 12px 0 0;
+  font-family: var(--display);
+  font-style: italic;
+  color: #d6c48c;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
 }
 .role {
   color: var(--gold);
@@ -1353,11 +1358,6 @@ code {
   background: #e8a040;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 @keyframes twinkle {
   from {
     opacity: 0.35;

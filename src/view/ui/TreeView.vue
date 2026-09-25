@@ -11,6 +11,38 @@ import { treeLevels, wallet } from "./useGame.ts";
 import NavHints from "./NavHints.vue";
 
 const UNIT = 104;
+/**
+ * Each node is a roundel with one kanji for what it is (a miko for the core, a sleeve for Deep
+ * Sleeves, a hot spring for Hot Spring Visit), over the one word of what it raises.
+ */
+const KANJI: Record<string, string> = {
+  core: "巫",
+  might1: "札",
+  cooldown1: "迅",
+  area1: "界",
+  spark: "炉",
+  amount1: "双",
+  might2: "極",
+  hp1: "守",
+  armor1: "衣",
+  regen1: "湯",
+  revive: "蘇",
+  hp2: "魂",
+  magnet1: "賽",
+  greed1: "祭",
+  growth1: "修",
+  speed1: "翔",
+  reroll: "籤",
+  spirit1: "瞑",
+  graze1: "掠",
+  hand1: "袖",
+  knives: "刃",
+  spiritMax: "霊",
+  duration1: "久",
+};
+const kanji = (n: TreeNode): string => KANJI[n.id] ?? n.name[0]!;
+/** The one word under the kanji: the stat it raises, or the weapon it unlocks. */
+const word = (n: TreeNode): string => (n.effect.kind === "unlock" ? weaponDef(n.effect.weapon).name.split(" ").pop()! : STAT_DEFS[n.effect.stat].label);
 const selected = ref<string>("core");
 const bought = ref<{ id: string; n: number } | null>(null);
 
@@ -137,7 +169,8 @@ function buy(): void {
             @focus="selected !== n.id && pick(n.id)"
             @navactivate.prevent="buy()"
           >
-            <span class="nname">{{ n.name }}</span>
+            <span class="kanji" lang="ja">{{ kanji(n) }}</span>
+            <span class="nname">{{ word(n) }}</span>
             <span class="pips">
               <i v-for="i in n.costs.length" :key="i" :class="{ on: i <= level(n.id) }"></i>
             </span>
@@ -193,11 +226,12 @@ function buy(): void {
   inset: 0;
 }
 .edges line {
-  stroke: rgba(255, 255, 255, 0.12);
-  stroke-width: 3;
+  stroke: rgba(214, 196, 140, 0.2);
+  stroke-width: 2;
 }
 .edges line.lit {
-  stroke: rgba(255, 201, 77, 0.6);
+  stroke: rgba(232, 193, 90, 0.7);
+  stroke-width: 3;
 }
 .node {
   position: absolute;
@@ -205,13 +239,14 @@ function buy(): void {
   height: 86px;
   margin: -43px 0 0 -43px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  background: radial-gradient(circle at 50% 35%, #2b355f, #151a33);
+  border: 2px solid rgba(214, 196, 140, 0.4);
+  background: #17110e;
+  color: #e9e1cf;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: safe center;
-  gap: 4px;
+  gap: 2px;
   padding: 6px;
   transition:
     transform calc(0.12s * var(--anim)),
@@ -223,48 +258,62 @@ function buy(): void {
   transform: scale(1.08);
 }
 .node.unlock {
-  border-radius: 16px;
+  border-radius: 8px;
+}
+.kanji {
+  font: 700 34px/1 "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif;
 }
 .nname {
-  font-size: 10.5px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.1;
   text-align: center;
+  color: #d6c48c;
 }
 .pips {
   display: flex;
   gap: 2px;
 }
 .pips i {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  border: 1px solid var(--gold);
+  border: 1.5px solid #e8c15a;
 }
 .pips i.on {
-  background: var(--gold);
+  background: #e8c15a;
 }
 .node.locked {
-  opacity: 0.35;
-}
-.node.poor {
-  border-color: rgba(255, 255, 255, 0.35);
+  opacity: 0.4;
+  border-color: rgba(214, 196, 140, 0.22);
 }
 .node.buyable {
-  border-color: var(--gold);
-  box-shadow: 0 0 16px rgba(255, 201, 77, 0.55);
-  animation: glow calc(1.4s * var(--anim)) ease-in-out infinite alternate;
+  /* Affordable: a second gold ring, steady (nothing at rest glows or pulses). */
+  border-color: #e8c15a;
+  box-shadow: 0 0 0 3px rgba(23, 17, 14, 0.9), 0 0 0 4px rgba(232, 193, 90, 0.6);
 }
+/* Owned: vermilion lacquer; fully upgraded: gold leaf with ink letters. */
 .node.owned {
-  background: radial-gradient(circle at 50% 35%, #6b4b12, #2a1d05);
+  background: #8e2319;
+  border-color: #e8c15a;
 }
 .node.maxed {
-  border-color: var(--gold);
-  background: radial-gradient(circle at 50% 35%, #a8791c, #4a3306);
+  background: #d9b04e;
+  border-color: #f3dc98;
+  color: #2a1a0c;
+}
+.node.maxed .nname {
+  color: #4a2e10;
+}
+.node.maxed .pips i {
+  border-color: #4a2e10;
+}
+.node.maxed .pips i.on {
+  background: #4a2e10;
 }
 .node.sel {
-  outline: 3px solid #fff;
-  outline-offset: 3px;
+  outline: 2px solid #f6f0e1;
+  outline-offset: 5px;
 }
 .node.justbought {
   animation: bought calc(0.5s * var(--anim)) cubic-bezier(0.2, 1.6, 0.4, 1);
@@ -273,7 +322,7 @@ function buy(): void {
   position: absolute;
   inset: -10px;
   border-radius: 50%;
-  border: 4px solid var(--gold);
+  border: 3px solid #e8c15a;
   animation: burst calc(0.6s * var(--anim)) ease-out forwards;
   pointer-events: none;
 }
@@ -298,14 +347,14 @@ function buy(): void {
   gap: 12px;
 }
 .row.next b {
-  color: #b6ffc8;
+  color: #e8c15a;
 }
 .help {
   font-size: 0.85rem;
   margin: 0;
 }
 .req {
-  color: #ffc0cc;
+  color: #e8806a;
   margin: 0;
   font-size: 0.9rem;
 }
@@ -315,11 +364,6 @@ function buy(): void {
 }
 .buy {
   margin-top: 6px;
-}
-@keyframes glow {
-  to {
-    box-shadow: 0 0 26px rgba(255, 201, 77, 0.9);
-  }
 }
 @keyframes bought {
   from {
