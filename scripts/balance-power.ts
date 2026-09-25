@@ -11,66 +11,19 @@
 //   bun scripts/balance-power.ts <out.json> [seeds=6]   (SHARD=i/n, ONLY=a,b)
 import { appendFileSync, writeFileSync } from "node:fs";
 import { fixtureGame } from "../test/helpers.ts";
-import { activeRun, runView, type Game, type RunPath } from "../src/sim/game.ts";
-import { botPick, playRun, SKILL } from "../src/sim/bot.ts";
+import { activeRun, runView } from "../src/sim/game.ts";
+import { playRun, SKILL } from "../src/sim/bot.ts";
 import { XP } from "../src/sim/tuning.ts";
 import { DAMAGE_PROBE } from "../src/sim/swarm.ts";
-import { PASSIVES } from "../src/content/passives.ts";
+import { STRATEGIES, TREES } from "./lib/strategies.ts";
 
 const [out = "power.json", nSeeds = "6"] = process.argv.slice(2);
 const only = process.env.ONLY?.split(",");
+// TREE=none|mid|full: the shrine tree bought (lib/strategies.ts).
+const tree = TREES[process.env.TREE ?? "none"]!;
 const seeds = process.env.SEEDS?.split(",") ?? Array.from({ length: Number(nSeeds) }, (_, i) => `c${i + 1}`);
 const STEP = 5;
 let logged = false;
-
-type Offer = { kind: string; id: string; level: number };
-type Pick = (k: Game, path: RunPath) => number;
-const offerOf = (k: Game, path: RunPath): Offer[] =>
-  ((k.view(`${path}/levelup` as "/").q("offer" as never)[0] as unknown as { offer: { choices: Offer[]; rerolls: number } } | undefined)?.offer.choices ?? []);
-const rerollsLeft = (k: Game, path: RunPath): number =>
-  ((k.view(`${path}/levelup` as "/").q("offer" as never)[0] as unknown as { offer: { rerolls: number } } | undefined)?.offer.rerolls ?? 0);
-/** The first of `ids` offered, else the default pick; `lucky` rerolls the first four offers for a missing piece. */
-const priority = (ids: string[], lucky = false) => (): Pick => {
-  let picks = 0;
-  return (k, path) => {
-    if (lucky && picks < 4) {
-      const missing = (o: Offer[]) => o.some((c) => ids.includes(c.id) && c.level === 1);
-      while (!missing(offerOf(k, path)) && rerollsLeft(k, path) > 0) k.dispatch(`${path}/levelup` as "/run:1/levelup", "levelup:reroll", {});
-    }
-    picks++;
-    const o = offerOf(k, path);
-    for (const id of ids) {
-      const i = o.findIndex((c) => c.id === id);
-      if (i >= 0) return i;
-    }
-    return botPick(k, path);
-  };
-};
-/** Uniformly random picks (a fixed stream per seed, not the game's rng). */
-const random = (seed: string) => (): Pick => {
-  let s = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
-  return (k, path) => {
-    s = (s * 1664525 + 1013904223) >>> 0;
-    return s % Math.max(1, offerOf(k, path).length);
-  };
-};
-
-interface Strategy { name: string; make: (seed: string) => () => Pick }
-const S = (name: string, ids: string[], lucky = false): Strategy => ({ name, make: () => priority(ids, lucky) });
-export const STRATEGIES: Strategy[] = [
-  { name: "default", make: () => () => botPick },
-  { name: "random", make: random },
-  S("amulet", ["amulet"]),
-  S("needle", ["needle"]),
-  S("orbs", ["orbs"]),
-  S("border", ["border"]),
-  ...PASSIVES.map((p) => S(p.id, [p.id])),
-  S("needle+tome+clock", ["needle", "tome", "clock"]),
-  S("needle+tome+clock (lucky)", ["needle", "tome", "clock"], true),
-  S("amulet+tome+clock", ["amulet", "tome", "clock"]),
-  S("amulet+tome+clock (lucky)", ["amulet", "tome", "clock"], true),
-  S("amulet+power+tome", ["amulet", "power", "tome"]),
-];
 
 const totalXp = (level: number, xp: number): number => {
   let s = xp;
@@ -88,7 +41,7 @@ for (const [si, st] of STRATEGIES.entries()) {
   if (si % shards !== shard || (only && !only.includes(st.name))) continue;
   result[st.name] = [];
   for (const seed of seeds) {
-    const k = fixtureGame(seed, { tree: { reroll: 30 } });
+    const k = fixtureGame(seed, { tree: { ...tree, reroll: 30 } });
     k.dispatch("/", "run:start", { stage: "lake" });
     const path = activeRun(k)!;
     const tally = { raw: 0, eff: 0, boss: 0 };
