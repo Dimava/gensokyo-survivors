@@ -111,45 +111,6 @@ export interface Model {
   physics: Pendulum[];
 }
 
-// ---------------------------------------------------------------- blending
-
-/** Weights of the keyform grid for the current parameters: [form index, weight][]. */
-function weights(k: Keyed<unknown>, p: Params): [number, number][] {
-  let out: [number, number][] = [[0, 1]];
-  for (let i = 0; i < k.params.length; i++) {
-    const keys = k.keys[i]!;
-    const v = p[k.params[i]!] ?? 0;
-    let j = 0;
-    while (j < keys.length - 2 && v > keys[j + 1]!) j++;
-    let t = keys.length < 2 ? 0 : (v - keys[j]!) / (keys[j + 1]! - keys[j]!);
-    t = Math.max(0, Math.min(1, t));
-    const next: [number, number][] = [];
-    for (const [idx, w] of out) {
-      next.push([idx * keys.length + j, w * (1 - t)]);
-      if (keys.length > 1) next.push([idx * keys.length + j + 1, w * t]);
-    }
-    out = next;
-  }
-  return out.filter(([, w]) => w > 1e-6);
-}
-
-function blendArray(k: Keyed<number[]>, p: Params): number[] {
-  const ws = weights(k, p);
-  const out = Array.from<number>({ length: k.forms[0]!.length }).fill(0);
-  for (const [idx, w] of ws) {
-    const f = k.forms[idx]!;
-    for (let i = 0; i < out.length; i++) out[i]! += f[i]! * w;
-  }
-  return out;
-}
-
-function blendObject<F extends object>(k: Keyed<F>, p: Params): F {
-  const ws = weights(k, p);
-  const out: Record<string, number> = {};
-  for (const [idx, w] of ws) for (const [key, val] of Object.entries(k.forms[idx]!)) out[key] = (out[key] ?? 0) + (val as number) * w;
-  return out as F;
-}
-
 // ---------------------------------------------------------------- building
 
 /** Every combination of keys, in form order (last parameter fastest). */
@@ -244,40 +205,63 @@ export function meshOf(part: Part): MeshData {
 }
 
 // ---------------------------------------------------------------- evaluation
+//
+// Compiled once per rig: every deformer's keyforms flattened into one typed
+// array, and each part's chain of deformers (its parent, the parent's parent,
+// ...) as indices. A frame blends each deformer in use once, into a buffer of
+// its own, then pushes every vertex up its chain in plain numbers: no
+// closures, no tuples, no garbage. The arithmetic is the same, in the same
+// order, as mapping through nested functions would do it, so the result is
+// the same to the bit.
 
-type Mapper = (x: number, y: number) => [number, number];
-
-function warpMapper(d: WarpDeformer, pts: number[]): Mapper {
-  const { rect, cols, rows } = d;
-  const stride = cols + 1;
-  return (x, y) => {
-    const u = ((x - rect.x) / rect.w) * cols;
-    const v = ((y - rect.y) / rect.h) * rows;
-    // Outside the grid the edge cell extends linearly.
-    const i = Math.max(0, Math.min(cols - 1, Math.floor(u)));
-    const j = Math.max(0, Math.min(rows - 1, Math.floor(v)));
-    const fu = u - i;
-    const fv = v - j;
-    const a = (j * stride + i) * 2;
-    const b = a + 2;
-    const c = a + stride * 2;
-    const e = c + 2;
-    const top = [pts[a]! + (pts[b]! - pts[a]!) * fu, pts[a + 1]! + (pts[b + 1]! - pts[a + 1]!) * fu];
-    const bot = [pts[c]! + (pts[e]! - pts[c]!) * fu, pts[c + 1]! + (pts[e + 1]! - pts[c + 1]!) * fu];
-    return [top[0]! + (bot[0]! - top[0]!) * fv, top[1]! + (bot[1]! - top[1]!) * fv];
-  };
+/**
+ * Where a point falls in a warp's grid: the index of its cell's first point
+ * and the fractions across the cell. Outside the grid the edge cell extends
+ * linearly. (deformInto inlines the same arithmetic.)
+ */
+function cellOf(d: Compiled, x: number, y: number): { a: number; fu: number; fv: number } {
+  const u = ((x - d.rx) / d.rw) * d.cols;
+  const s = ((y - d.ry) / d.rh) * d.rows;
+  let i = Math.floor(u);
+  if (i > d.cols - 1) i = d.cols - 1;
+  if (i < 0) i = 0;
+  let j = Math.floor(s);
+  if (j > d.rows - 1) j = d.rows - 1;
+  if (j < 0) j = 0;
+  return { a: (j * (d.cols + 1) + i) * 2, fu: u - i, fv: s - j };
 }
 
-function rotationMapper(d: RotationDeformer, f: RotationForm): Mapper {
-  const a = (f.angle * Math.PI) / 180;
-  const cos = Math.cos(a) * f.scale;
-  const sin = Math.sin(a) * f.scale;
-  const [ox, oy] = d.origin;
-  return (x, y) => {
-    const dx = x - ox;
-    const dy = y - oy;
-    return [ox + dx * cos - dy * sin + f.x, oy + dx * sin + dy * cos + f.y];
-  };
+/** A deformer ready to blend: flattened keyforms and its own output buffer. */
+interface Compiled {
+  warp: boolean;
+  /** Index of the parent deformer, -1 at the root. */
+  parent: number;
+  params: string[];
+  keys: number[][];
+  /** Floats per form: warp grid points, or rotation [angle, x, y, scale]. */
+  len: number;
+  forms: Float64Array;
+  /** Warp: the blended grid points. Rotation: [cos * scale, sin * scale, x, y]. */
+  out: Float64Array;
+  /** The parameter values `out` was blended for (NaN: never blended). */
+  seen: Float64Array;
+  /** Warp rect and grid. */
+  rx: number;
+  ry: number;
+  rw: number;
+  rh: number;
+  cols: number;
+  rows: number;
+  /** Rotation origin. */
+  ox: number;
+  oy: number;
+}
+
+/** A part's keyed opacities, flattened. */
+interface CompiledOpacity {
+  params: string[];
+  keys: number[][];
+  forms: Float64Array;
 }
 
 export interface PartFrame {
@@ -291,18 +275,105 @@ export interface PartFrame {
 export class Rig {
   readonly params: Params = {};
   readonly meshes: Record<string, MeshData> = {};
-  private readonly byId = new Map<string, Deformer>();
+  private readonly defs = new Map<string, ParamDef>();
   private readonly swing = new Map<Pendulum, { pos: number; vel: number }>();
+  private readonly compiled: Compiled[] = [];
+  /** The deformers some part hangs from, directly or through children (the rest are never blended). */
+  private readonly live: number[];
+  /** Per part (model order): its deformer chain, innermost first. */
+  private readonly chains: Int32Array[] = [];
+  private readonly opacities: (CompiledOpacity | null)[] = [];
+  /**
+   * Per part hanging straight from a warp: where each rest vertex falls in
+   * that warp's grid (the cell's first point index, and the fractions across
+   * it), which never changes; null for the others.
+   */
+  private readonly cells: ({ at: Int32Array; frac: Float64Array } | null)[] = [];
+  /** Weight scratch: two ping-pong lists of (form index, weight), as long as the biggest key grid corner count. */
+  private readonly wIdx: [Int32Array, Int32Array];
+  private readonly wVal: [Float64Array, Float64Array];
+  private wLen = 0;
 
   constructor(readonly model: Model) {
-    for (const p of model.params) this.params[p.id] = p.def;
-    for (const d of model.deformers) this.byId.set(d.id, d);
+    for (const p of model.params) {
+      this.params[p.id] = p.def;
+      this.defs.set(p.id, p);
+    }
     for (const part of model.parts) this.meshes[part.id] = meshOf(part);
+    const index = new Map<string, number>();
+    model.deformers.forEach((d, i) => index.set(d.id, i));
+    const at = (id: string): number => {
+      const i = index.get(id);
+      if (i === undefined) throw new Error(`rig ${model.id}: no deformer ${id}`);
+      return i;
+    };
+    let most = 1;
+    for (const d of model.deformers) {
+      const k = d.keyed;
+      most = Math.max(most, 2 ** k.params.length);
+      const warp = d.kind === "warp";
+      const len = warp ? (d.cols + 1) * (d.rows + 1) * 2 : 4;
+      const forms = new Float64Array(k.forms.length * len);
+      k.forms.forEach((f, n) => {
+        if (warp) forms.set(f as WarpForm, n * len);
+        else {
+          const r = f as RotationForm;
+          forms.set([r.angle, r.x, r.y, r.scale], n * len);
+        }
+      });
+      this.compiled.push({
+        warp,
+        parent: d.parent ? at(d.parent) : -1,
+        params: k.params,
+        keys: k.keys,
+        len,
+        forms,
+        out: new Float64Array(len),
+        seen: new Float64Array(k.params.length).fill(NaN),
+        rx: d.kind === "warp" ? d.rect.x : 0,
+        ry: d.kind === "warp" ? d.rect.y : 0,
+        rw: d.kind === "warp" ? d.rect.w : 1,
+        rh: d.kind === "warp" ? d.rect.h : 1,
+        cols: d.kind === "warp" ? d.cols : 0,
+        rows: d.kind === "warp" ? d.rows : 0,
+        ox: d.kind === "rotation" ? d.origin[0] : 0,
+        oy: d.kind === "rotation" ? d.origin[1] : 0,
+      });
+    }
+    const used = new Set<number>();
+    for (const part of model.parts) {
+      const chain: number[] = [];
+      for (let i = part.parent ? at(part.parent) : -1; i >= 0; i = this.compiled[i]!.parent) {
+        chain.push(i);
+        used.add(i);
+      }
+      this.chains.push(Int32Array.from(chain));
+      const k = part.keyed;
+      if (k) most = Math.max(most, 2 ** k.params.length);
+      this.opacities.push(k ? { params: k.params, keys: k.keys, forms: Float64Array.from(k.forms, (f) => f.opacity) } : null);
+    }
+    this.live = [...used].sort((a, b) => a - b);
+    model.parts.forEach((part, p) => {
+      const d = this.compiled[this.chains[p]![0] ?? -1];
+      if (!d?.warp) return void this.cells.push(null);
+      const rest = this.meshes[part.id]!.rest;
+      const at = new Int32Array(rest.length / 2);
+      const frac = new Float64Array(rest.length);
+      for (let v = 0; v < rest.length; v += 2) {
+        const c = cellOf(d, rest[v]!, rest[v + 1]!);
+        at[v / 2] = c.a;
+        frac[v] = c.fu;
+        frac[v + 1] = c.fv;
+      }
+      this.cells.push({ at, frac });
+    });
+    this.wIdx = [new Int32Array(most), new Int32Array(most)];
+    this.wVal = [new Float64Array(most), new Float64Array(most)];
   }
 
   /** Set a parameter, clamped to its range. */
   set(id: string, v: number): void {
-    const def = this.model.params.find((p) => p.id === id);
+    const def = this.defs.get(id);
     this.params[id] = def ? Math.max(def.min, Math.min(def.max, v)) : v;
   }
 
@@ -310,7 +381,8 @@ export class Rig {
   step(dt: number): void {
     const h = Math.min(dt, 0.05);
     for (const pen of this.model.physics) {
-      const target = pen.inputs.reduce((s, i) => s + (this.params[i.param] ?? 0) * i.weight, 0);
+      let target = 0;
+      for (const i of pen.inputs) target += (this.params[i.param] ?? 0) * i.weight;
       let st = this.swing.get(pen);
       if (!st) this.swing.set(pen, (st = { pos: target, vel: 0 }));
       // Two substeps keep stiff springs stable at low frame rates.
@@ -323,36 +395,189 @@ export class Rig {
     }
   }
 
-  /** Deform every part for the current parameters. */
-  evaluate(): PartFrame[] {
-    const mappers = new Map<string, Mapper>();
-    const own = (id: string): Mapper => {
-      let m = mappers.get(id);
-      if (m) return m;
-      const d = this.byId.get(id);
-      if (!d) throw new Error(`rig ${this.model.id}: no deformer ${id}`);
-      const local = d.kind === "warp" ? warpMapper(d, blendArray(d.keyed, this.params)) : rotationMapper(d, blendObject(d.keyed, this.params));
-      const up = d.parent ? own(d.parent) : null;
-      m = up
-        ? (x, y) => {
-            const [a, b] = local(x, y);
-            return up(a, b);
-          }
-        : local;
-      mappers.set(id, m);
-      return m;
-    };
-    return this.model.parts.map((part) => {
-      const { rest } = this.meshes[part.id]!;
-      const positions = new Float32Array(rest.length);
-      const map = part.parent ? own(part.parent) : null;
-      for (let i = 0; i < rest.length; i += 2) {
-        const [x, y] = map ? map(rest[i]!, rest[i + 1]!) : [rest[i]!, rest[i + 1]!];
-        positions[i] = x;
-        positions[i + 1] = y;
+  /**
+   * The keyform weights for the current parameters: multilinear over the key
+   * grid (the last parameter varying fastest), near-zero weights dropped.
+   * Leaves (form index, weight) pairs in wIdx/wVal[returned], wLen of them.
+   */
+  private weigh(params: string[], keys: number[][]): 0 | 1 {
+    let cur: 0 | 1 = 0;
+    this.wIdx[0][0] = 0;
+    this.wVal[0][0] = 1;
+    let len = 1;
+    for (let i = 0; i < params.length; i++) {
+      const ks = keys[i]!;
+      const v = this.params[params[i]!] ?? 0;
+      let j = 0;
+      while (j < ks.length - 2 && v > ks[j + 1]!) j++;
+      let t = ks.length < 2 ? 0 : (v - ks[j]!) / (ks[j + 1]! - ks[j]!);
+      t = Math.max(0, Math.min(1, t));
+      const fromI = this.wIdx[cur];
+      const fromW = this.wVal[cur];
+      const next: 0 | 1 = cur ? 0 : 1;
+      const toI = this.wIdx[next];
+      const toW = this.wVal[next];
+      let n = 0;
+      for (let q = 0; q < len; q++) {
+        const idx = fromI[q]!;
+        const w = fromW[q]!;
+        toI[n] = idx * ks.length + j;
+        toW[n++] = w * (1 - t);
+        if (ks.length > 1) {
+          toI[n] = idx * ks.length + j + 1;
+          toW[n++] = w * t;
+        }
       }
-      const opacity = part.keyed ? blendObject(part.keyed, this.params).opacity : 1;
-      return { id: part.id, positions, opacity };
-    });
+      len = n;
+      cur = next;
+    }
+    const I = this.wIdx[cur];
+    const W = this.wVal[cur];
+    let n = 0;
+    for (let q = 0; q < len; q++)
+      if (W[q]! > 1e-6) {
+        I[n] = I[q]!;
+        W[n++] = W[q]!;
+      }
+    this.wLen = n;
+    return cur;
+  }
+
+  /** Blend a deformer's keyforms into its buffer, unless its parameters are where they were last time. */
+  private blend(d: Compiled): void {
+    let same = true;
+    for (let i = 0; i < d.params.length; i++) {
+      const v = this.params[d.params[i]!] ?? 0;
+      if (v !== d.seen[i]) {
+        same = false;
+        d.seen[i] = v;
+      }
+    }
+    if (same) return;
+    const r = this.weigh(d.params, d.keys);
+    const I = this.wIdx[r];
+    const W = this.wVal[r];
+    const { len, forms, out } = d;
+    if (d.warp) {
+      out.fill(0);
+      for (let q = 0; q < this.wLen; q++) {
+        const base = I[q]! * len;
+        const w = W[q]!;
+        for (let i = 0; i < len; i++) out[i]! += forms[base + i]! * w;
+      }
+      return;
+    }
+    let angle = 0;
+    let x = 0;
+    let y = 0;
+    let scale = 0;
+    for (let q = 0; q < this.wLen; q++) {
+      const base = I[q]! * 4;
+      const w = W[q]!;
+      angle += forms[base]! * w;
+      x += forms[base + 1]! * w;
+      y += forms[base + 2]! * w;
+      scale += forms[base + 3]! * w;
+    }
+    const a = (angle * Math.PI) / 180;
+    out[0] = Math.cos(a) * scale;
+    out[1] = Math.sin(a) * scale;
+    out[2] = x;
+    out[3] = y;
+  }
+
+  private opacity(k: CompiledOpacity): number {
+    const r = this.weigh(k.params, k.keys);
+    const I = this.wIdx[r];
+    const W = this.wVal[r];
+    let o = 0;
+    for (let q = 0; q < this.wLen; q++) o += k.forms[I[q]!]! * W[q]!;
+    return o;
+  }
+
+  /**
+   * Deform every part for the current parameters into `out` (one array per
+   * part in model order, each as long as the part's rest positions) and its
+   * opacity into `opacity`. Allocates nothing.
+   */
+  deformInto(out: Float32Array[], opacity: Float64Array): void {
+    const C = this.compiled;
+    for (const i of this.live) this.blend(C[i]!);
+    const parts = this.model.parts;
+    for (let p = 0; p < parts.length; p++) {
+      const rest = this.meshes[parts[p]!.id]!.rest;
+      const pos = out[p]!;
+      const chain = this.chains[p]!;
+      const cell = this.cells[p];
+      const first = cell ? C[chain[0]!]!.out : null;
+      for (let v = 0; v < rest.length; v += 2) {
+        let x = rest[v]!;
+        let y = rest[v + 1]!;
+        let c = 0;
+        if (cell && first) {
+          // The first warp: the cell is known, only the grid moved.
+          const o = first;
+          const a = cell.at[v >> 1]!;
+          const fu = cell.frac[v]!;
+          const fv = cell.frac[v + 1]!;
+          const d = C[chain[0]!]!;
+          const e = a + (d.cols + 1) * 2;
+          const top0 = o[a]! + (o[a + 2]! - o[a]!) * fu;
+          const top1 = o[a + 1]! + (o[a + 3]! - o[a + 1]!) * fu;
+          const bot0 = o[e]! + (o[e + 2]! - o[e]!) * fu;
+          const bot1 = o[e + 1]! + (o[e + 3]! - o[e + 1]!) * fu;
+          x = top0 + (bot0 - top0) * fv;
+          y = top1 + (bot1 - top1) * fv;
+          c = 1;
+        }
+        for (; c < chain.length; c++) {
+          const d = C[chain[c]!]!;
+          const o = d.out;
+          if (d.warp) {
+            const cols = d.cols;
+            const rows = d.rows;
+            const u = ((x - d.rx) / d.rw) * cols;
+            const s = ((y - d.ry) / d.rh) * rows;
+            // Outside the grid the edge cell extends linearly (as in cellOf).
+            let i = Math.floor(u);
+            if (i > cols - 1) i = cols - 1;
+            if (i < 0) i = 0;
+            let j = Math.floor(s);
+            if (j > rows - 1) j = rows - 1;
+            if (j < 0) j = 0;
+            const fu = u - i;
+            const fv = s - j;
+            const a = (j * (cols + 1) + i) * 2;
+            const b = a + 2;
+            const e = a + (cols + 1) * 2;
+            const f = e + 2;
+            const top0 = o[a]! + (o[b]! - o[a]!) * fu;
+            const top1 = o[a + 1]! + (o[b + 1]! - o[a + 1]!) * fu;
+            const bot0 = o[e]! + (o[f]! - o[e]!) * fu;
+            const bot1 = o[e + 1]! + (o[f + 1]! - o[e + 1]!) * fu;
+            x = top0 + (bot0 - top0) * fv;
+            y = top1 + (bot1 - top1) * fv;
+          } else {
+            const dx = x - d.ox;
+            const dy = y - d.oy;
+            x = d.ox + dx * o[0]! - dy * o[1]! + o[2]!;
+            y = d.oy + dx * o[1]! + dy * o[0]! + o[3]!;
+          }
+        }
+        pos[v] = x;
+        pos[v + 1] = y;
+      }
+      const k = this.opacities[p];
+      opacity[p] = k ? this.opacity(k) : 1;
+    }
+  }
+
+  /** Deform every part for the current parameters, into fresh arrays (deformInto reuses the caller's). */
+  evaluate(): PartFrame[] {
+    const parts = this.model.parts;
+    const out = parts.map((p) => new Float32Array(this.meshes[p.id]!.rest.length));
+    const opacity = new Float64Array(parts.length);
+    this.deformInto(out, opacity);
+    return parts.map((p, i) => ({ id: p.id, positions: out[i]!, opacity: opacity[i]! }));
   }
 }

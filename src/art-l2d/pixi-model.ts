@@ -72,6 +72,10 @@ export function drawInto(renderer: Renderer, target: Container, ctx: CanvasRende
 export class RigView extends Container {
   private readonly meshes = new Map<string, { mesh: Mesh; geometry: MeshGeometry }>();
   private readonly textures: Texture[] = [];
+  /** In the model's part order: each part's mesh, and its geometry's own position array (the rig deforms straight into it). */
+  private readonly byPart: Mesh[] = [];
+  private readonly positions: Float32Array[] = [];
+  private readonly alphas: Float64Array;
   /** Clipped parts' meshes and the stencil copies that clip them. */
   private readonly clips: { mesh: Mesh; stencil: Mesh }[] = [];
 
@@ -92,6 +96,12 @@ export class RigView extends Container {
       this.meshes.set(part.id, { mesh, geometry });
       this.addChild(mesh);
     }
+    for (const part of rig.model.parts) {
+      const m = this.meshes.get(part.id)!;
+      this.byPart.push(m.mesh);
+      this.positions.push(m.geometry.positions);
+    }
+    this.alphas = new Float64Array(rig.model.parts.length);
     // Clipping: a second mesh on the mask part's geometry draws into the stencil only.
     for (const part of sorted) {
       if (!part.mask) continue;
@@ -153,11 +163,14 @@ export class RigView extends Container {
   }
 
   update(): void {
-    for (const f of this.rig.evaluate()) {
-      const m = this.meshes.get(f.id)!;
-      m.geometry.positions = f.positions;
-      m.mesh.alpha = f.opacity;
-      m.mesh.visible = f.opacity > 0.004;
+    // Deformed in place: the same buffers are re-uploaded, nothing is allocated.
+    this.rig.deformInto(this.positions, this.alphas);
+    for (let i = 0; i < this.byPart.length; i++) {
+      const mesh = this.byPart[i]!;
+      const alpha = this.alphas[i]!;
+      mesh.geometry.getBuffer("aPosition").update();
+      mesh.alpha = alpha;
+      mesh.visible = alpha > 0.004;
     }
     // A stencil shows only while the part it clips does. Pixi draws a mask only
     // with its target, so a stencil left "visible" under a hidden target (eyes
