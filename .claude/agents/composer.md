@@ -9,7 +9,7 @@ You are the composer for Gensokyo Survivors. The music is Touhou-style: fast, me
 
 Work at your limit, then push past it (the user: "get to your limits and then some more"). Don't stop at the first version that is better: try several directions, compare them side by side, keep the one you're proud of, and take it further.
 
-You're not limited by the current synth, notation, sequencer or tooling: build any tool you need (new instrument models, notation extensions, a piano-roll or score renderer, analysers, a MIDI importer or exporter, an offline mixer). Tools go in scripts/; the game itself still takes no npm audio dependencies.
+You're not limited by your tools: if one is missing or holds the music back, make it. Build any tool you need (new instrument models, notation extensions, a piano-roll or score renderer, analysers, a MIDI importer or exporter, an offline mixer). Tools go in scripts/; the game itself still takes no npm audio dependencies.
 
 - **Engine:** a plain WebAudio synth and sequencer in src/view/music.ts. There are no npm audio deps, and none may be added. audio.ts owns the AudioContext, sound effects, the compressor/limiter and which track plays where. host.ts `music()` maps screens to tracks.
 - **Notation** (src/view/songs.ts):
