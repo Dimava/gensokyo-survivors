@@ -153,3 +153,88 @@ describe("Reimu's chibi", () => {
     expect(RATE.slowWalk).toBeLessThan(RATE.walk);
   });
 });
+
+describe("chibi arms", () => {
+  const fairies = sprites.filter(([, m]) => m.parts.some((p) => p.id === "armL"));
+
+  test.each(fairies)("%s: the hands swing in turn while walking, away from the body, and settle standing", (_id, model) => {
+    const rig = new Rig(model);
+    const anim = new Animator(rig, () => 0.99);
+    anim.move = { x: 0, y: 1 };
+    for (let i = 0; i < 120; i++) anim.step(1 / 60);
+    // Over a stride each hand moves relative to the dress, and the two swing in turn (one out as the other comes in).
+    const rel = (part: string) => {
+      const [x, y] = centre(rig, part);
+      const [dx, dy] = centre(rig, "dress");
+      return [x - dx, y - dy] as const;
+    };
+    const lo = [Infinity, Infinity];
+    const hi = [-Infinity, -Infinity];
+    let turnLo = Infinity;
+    let turnHi = -Infinity;
+    for (let i = 0; i < Math.round(60 / RATE.walk); i++) {
+      anim.step(1 / 60);
+      const turn = rig.params.ArmL! - rig.params.ArmR!;
+      turnLo = Math.min(turnLo, turn);
+      turnHi = Math.max(turnHi, turn);
+      const [x, y] = rel("armL");
+      lo[0] = Math.min(lo[0]!, x);
+      lo[1] = Math.min(lo[1]!, y);
+      hi[0] = Math.max(hi[0]!, x);
+      hi[1] = Math.max(hi[1]!, y);
+    }
+    expect(Math.hypot(hi[0]! - lo[0]!, hi[1]! - lo[1]!)).toBeGreaterThan(8);
+    expect(turnLo).toBeLessThan(-0.6);
+    expect(turnHi).toBeGreaterThan(0.6);
+    anim.move = { x: 0, y: 0 };
+    anim.idle = false;
+    for (let i = 0; i < 300; i++) anim.step(1 / 60);
+    expect(Math.abs(rig.params.ArmL!)).toBeLessThan(0.02);
+    expect(Math.abs(rig.params.ArmR!)).toBeLessThan(0.02);
+  });
+
+  test("a hit flings both arms out; down they fall open; up again they come back", () => {
+    const rig = new Rig(ART_L2D.reimu!.sprite!.model);
+    const anim = new Animator(rig, () => 0.99);
+    anim.idle = false;
+    anim.recoil = 1;
+    for (let i = 0; i < 10; i++) anim.step(1 / 60);
+    expect(rig.params.ArmL!).toBeGreaterThan(0.6);
+    expect(rig.params.ArmR!).toBeGreaterThan(0.6);
+    anim.recoil = 0;
+    anim.down = 1;
+    for (let i = 0; i < 120; i++) anim.step(1 / 60);
+    expect(rig.params.ArmL!).toBeGreaterThan(0.4);
+    anim.down = 0;
+    for (let i = 0; i < 300; i++) anim.step(1 / 60);
+    expect(Math.abs(rig.params.ArmL!)).toBeLessThan(0.02);
+  });
+
+  test("a hit-stop (frames with no time passing) holds the springs instead of piling onto them", () => {
+    const rig = new Rig(ART_L2D.reimu!.sprite!.model);
+    const anim = new Animator(rig, () => 0.99);
+    anim.move = { x: 1, y: 0 };
+    for (let i = 0; i < 60; i++) anim.step(1 / 60);
+    anim.recoil = 1;
+    anim.knock = -1;
+    anim.step(0);
+    const held = { ...rig.params };
+    for (let i = 0; i < 20; i++) anim.step(0);
+    for (const id of ["HairSide", "HairBack", "Ribbon", "Sleeve", "ArmL", "ArmR"]) expect(rig.params[id]!).toBeCloseTo(held[id]!, 9);
+  });
+
+  test("backpedalling with the facing held, the hair trails the way she moves, not the way she faces", () => {
+    const rig = new Rig(ART_L2D.reimu!.sprite!.model);
+    const anim = new Animator(rig, () => 0.99);
+    anim.idle = false;
+    anim.face = { x: 1, y: 0 };
+    anim.move = { x: -1, y: 0 };
+    anim.slow = true;
+    let sleeve = 0;
+    for (let i = 0; i < 240; i++) {
+      anim.step(1 / 60);
+      if (i >= 120) sleeve += rig.params.Sleeve! / 120;
+    }
+    expect(sleeve).toBeGreaterThan(0);
+  });
+});

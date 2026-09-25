@@ -7,7 +7,7 @@
 // and Spin (for orbs); one idle cycle is Flap = sin, Bob = sin shifted
 // (animator.ts), which the field bakes as a few frames per look.
 
-import { opacityKeys, rotation, warp, type Deformer, type Model, type ParamDef, type Part, type Rect } from "./rig.ts";
+import { opacityKeys, rotation, warp, type Deformer, type Model, type ParamDef, type Part, type Pendulum, type Rect } from "./rig.ts";
 import { ANGLE_KEYS, dome, turnFn } from "./turn.ts";
 import { clamp01, grid, ln, PARAMS, PHYSICS, SKIN, WHITE } from "./kit.ts";
 
@@ -34,7 +34,14 @@ export const CHIBI_PARAMS: ParamDef[] = [
   /** Walking: the feet lift in turn (+1 left up, -1 right up); the sleeves trail (+1 = toward +x). */
   { id: "Step", min: -1, max: 1, def: 0 },
   { id: "Sleeve", min: -1, max: 1, def: 0 },
+  /** Each arm about its shoulder: +1 swung out and up, away from the body; -1 in, across it. */
+  { id: "ArmL", min: -1, max: 1, def: 0 },
+  { id: "ArmR", min: -1, max: 1, def: 0 },
 ];
+
+/** The left shoulder (the right mirrors it), and how far (degrees) an arm swings at ArmL = ±1. */
+export const SHOULDER: [number, number] = [80, 122];
+const ARM_SWING = 18;
 
 /** The left eye: centre, lid line (where it closes) and warp rect. */
 const EYE = { cx: 82, lid: 92, rect: { x: 62, y: 62, w: 40, h: 44 } };
@@ -124,14 +131,38 @@ export function chibiDeformers(opts: ChibiRig = {}): Deformer[] {
       const k = clamp01((y - 124) / 56);
       return [x + f * 10 * k, y - Math.abs(f) * 3 * k];
     }),
+    // Each arm turns about its shoulder, the swing foreshortening it a little (swung forward or back).
+    ...(["L", "R"] as const).map((s) =>
+      rotation(`arm${s}`, "sleeves", [s === "L" ? SHOULDER[0] : CW - SHOULDER[0], SHOULDER[1]], [[`Arm${s}`, SWAY]], ([a = 0]) => ({
+        angle: (s === "L" ? 1 : -1) * a * ARM_SWING,
+        scale: 1 - 0.05 * Math.abs(a),
+      })),
+    ),
     warp("feet", "body", { x: 70, y: 170, w: 60, h: 30 }, 2, 1, [["Step", SWAY]], (x, y, [f = 0]) => [x, y - 6 * Math.max(0, (x < 100 ? 1 : x > 100 ? -1 : 0) * f)]),
     wingWarp("L", wing.root, wing.amp),
     wingWarp("R", wing.root, wing.amp),
   ];
 }
 
-/** The portrait pendulums, also pushed by the bob so a floating fairy's hair and ribbons sway. */
-const CHIBI_PHYSICS = PHYSICS.map((p) => ({ ...p, inputs: [...p.inputs, { param: "Bob", weight: 0.35 }] }));
+/**
+ * The portrait pendulums, also pushed by the bob so a floating fairy's hair
+ * and ribbons sway; and one per arm: the hands lag the bob (flaring out as she
+ * sinks, dropping in as she rises) and the body's turn (the arm on the far
+ * side swings out), then settle.
+ */
+const CHIBI_PHYSICS: Pendulum[] = [
+  ...PHYSICS.map((p) => ({ ...p, inputs: [...p.inputs, { param: "Bob", weight: 0.35 }] })),
+  ...(["L", "R"] as const).map((s) => ({
+    output: `Arm${s}`,
+    inputs: [
+      { param: "Bob", weight: -0.35 },
+      { param: "BodyAngleX", weight: (s === "L" ? -1 : 1) / 10 },
+    ],
+    stiffness: 90,
+    damping: 9,
+    gain: 1.2,
+  })),
+];
 
 /** A chibi model from the chibi deformers and a character's parts. */
 export function chibiModel(id: string, parts: Part[], opts: ChibiRig = {}, extra: Deformer[] = []): Model {

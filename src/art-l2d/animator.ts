@@ -43,6 +43,10 @@ export class Animator {
   private walkW = 0;
   private slowW = 0;
   private dir: Look = { x: 0, y: 0 };
+  /** The eased direction of the motion itself (what hair and sleeves trail from, even while the facing is held). */
+  private vel: Look = { x: 0, y: 0 };
+  /** The springs' outputs as of the last physics step (a frame with no time passing reuses them). */
+  private readonly spring: Record<string, number> = {};
   private phase = 0;
   private look: Look = { x: 0, y: 0 };
   private eyes: Look = { x: 0, y: 0 };
@@ -82,6 +86,9 @@ export class Animator {
     const len = Math.hypot(heading.x, heading.y) || 1;
     this.dir.x += ((moving ? heading.x / len : 0) - this.dir.x) * ease;
     this.dir.y += ((moving ? heading.y / len : 0) - this.dir.y) * ease;
+    const mlen = Math.hypot(this.move.x, this.move.y) || 1;
+    this.vel.x += ((moving ? this.move.x / mlen : 0) - this.vel.x) * ease;
+    this.vel.y += ((moving ? this.move.y / mlen : 0) - this.vel.y) * ease;
     const stand = Math.max(0, 1 - this.walkW - this.slowW);
     // Strides per second: brisk walking, a deliberate slow walk, or the idle cycle.
     this.phase += dt * (stand * this.rate + this.walkW * RATE.walk + this.slowW * RATE.slowWalk);
@@ -143,9 +150,14 @@ export class Animator {
       r.set("Step", (r.params.Step ?? 0) * (1 - down));
       r.set("Breath", (r.params.Breath ?? 0) * (1 - down * 0.8));
     }
-    if (dt > 0) r.step(dt);
-    // Hair, ribbons and sleeves trail opposite the motion, swinging with the stride.
-    const trail = -lean * (0.75 * walk + 0.3 * slow);
+    // The springs move only when time passes; a still frame (a hit-stop) holds
+    // them, so the additions below land on the same base however many times it is drawn.
+    if (dt > 0) {
+      r.step(dt);
+      for (const p of r.model.physics) this.spring[p.output] = r.params[p.output] ?? 0;
+    } else for (const [id, v] of Object.entries(this.spring)) r.params[id] = v;
+    // Hair, ribbons and sleeves trail opposite the motion (not the held facing), swinging with the stride.
+    const trail = -this.vel.x * (0.75 * walk + 0.3 * slow);
     const swing = (k: number, lag: number) => (walk + slow * 0.5) * k * Math.sin(a - lag);
     const add = (id: string, v: number) => r.set(id, (r.params[id] ?? 0) + v);
     add("HairSide", trail + swing(0.2, 1.2));
@@ -169,6 +181,24 @@ export class Animator {
       add("HairSide", down * 0.45);
       add("HairBack", down * 0.3);
     }
+    if ("ArmL" in r.params) this.arms(stand, walk, slow, a, trail);
+  }
+
+  /**
+   * The arms (chibis: ArmL, ArmR, +1 out from the body), on top of their
+   * springs: they rise a touch with each breath, swing in turn with the
+   * stride (the left one out as the left foot lifts), trail the motion, are
+   * drawn in close while walking slowly (focus), fly out on a hit and fall
+   * open, limp, while she is down.
+   */
+  private arms(stand: number, walk: number, slow: number, a: number, trail: number): void {
+    const r = this.rig;
+    const breath = this.idle ? stand * 0.14 * ((r.params.Breath ?? 0) - 0.5) : 0;
+    const stride = (walk * 0.45 + slow * 0.25) * Math.sin(a);
+    const both = breath - slow * 0.3 + this.recoil * 0.85 + this.down * 0.55;
+    const lag = -trail * 0.2;
+    r.set("ArmL", (r.params.ArmL ?? 0) + both + stride + lag);
+    r.set("ArmR", (r.params.ArmR ?? 0) + both - stride - lag);
   }
 }
 
@@ -187,6 +217,9 @@ export function cycle(rig: Rig, phase: number, sway = true): void {
   rig.set("HairSide", Math.sin(a - 1.2) * 0.4);
   rig.set("HairBack", Math.sin(a - 1.5) * 0.35);
   rig.set("Ribbon", Math.sin(a - 1.1) * 0.45);
+  // The arms flare out as the body sinks and in as it rises, a little behind it.
+  rig.set("ArmL", Math.sin(a - 1) * 0.3);
+  rig.set("ArmR", Math.sin(a - 1) * 0.3);
 }
 
 /** Default rig parameters for a still pose looking toward `look` (for pre-renders). */

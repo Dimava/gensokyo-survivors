@@ -1,7 +1,7 @@
 // Pose sheet of a rigged model (src/art-l2d), rendered by the real Pixi
 // renderer in headless Chrome through the running dev server (it imports
 // src/art-l2d/lab.ts), laid out on dark and light tiles with labels.
-//   bun scripts/l2d-lab.ts [reimu | fairy.sprite] [--scale 1] [--crop x,y,w,h] [--only 0,9,11] [--cols 5] [--gait] [--out lab.png]
+//   bun scripts/l2d-lab.ts [reimu | fairy.sprite] [--scale 1] [--crop x,y,w,h] [--only 0,9,11] [--cols 5] [--gait | --film] [--out lab.png]
 import { Resvg } from "@resvg/resvg-js";
 import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -25,6 +25,9 @@ const light = opt("bg", "dark") === "light";
 /** --gait: stand / walk / slow-walk rows of a sprite rig instead of the pose sheet. */
 const gait = args.includes("--gait");
 if (gait) args.splice(args.indexOf("--gait"), 1);
+/** --film: a sprite rig through stand, walk, focus backpedal, the hit, down and up again (lab.ts renderFilm). */
+const film = args.includes("--film");
+if (film) args.splice(args.indexOf("--film"), 1);
 const id = args[0] ?? "reimu";
 const crop = cropArg.length === 4 ? { x: cropArg[0]!, y: cropArg[1]!, w: cropArg[2]!, h: cropArg[3]! } : undefined;
 
@@ -39,14 +42,15 @@ try {
   p.on("console", (m: { type(): string; text(): string }) => m.type() === "error" && console.error("console:", m.text()));
   await p.goto(`${url}/?screen=menu`);
   const res: { urls: string[]; labels: string[] } = await p.evaluate(
-    async ([id, scale, crop, only, gait, cols]: readonly [string, number, unknown, number[], boolean, number]) => {
+    async ([id, scale, crop, only, gait, film, cols]: readonly [string, number, unknown, number[], boolean, boolean, number]) => {
       const lab = (await import(/* @vite-ignore */ `${"/src/art-l2d/lab.ts"}`)) as typeof import("../src/art-l2d/lab.ts");
       if (gait) return lab.renderGait(id.split(".")[0]!, cols, scale);
+      if (film) return lab.renderFilm(id.split(".")[0]!, cols, scale);
       const poses = only.length ? only.map((i: number) => lab.SHEET[i]!) : lab.SHEET;
       const urls = await lab.renderPoses(id, poses, scale, crop as { x: number; y: number; w: number; h: number } | undefined);
       return { urls, labels: poses.map((q) => q.label ?? "") };
     },
-    [id, scale, crop, only, gait, cols] as const,
+    [id, scale, crop, only, gait, film, cols] as const,
   );
   const first = res.urls[0]!;
   const png = Buffer.from(first.split(",")[1]!, "base64");
