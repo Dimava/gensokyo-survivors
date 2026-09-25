@@ -60,6 +60,6 @@ export const STRATEGIES: Strategy[] = [
 /** Shrine trees bought for a sweep (TREE=none|mid|full; full: every node at its last level). Rerolls come on top. */
 export const TREES: Record<string, Record<string, number>> = {
   none: {},
-  mid: { core: 3, magnet1: 3, might1: 3, hp1: 3, spirit1: 3, greed1: 2, growth1: 2, graze1: 2, cooldown1: 2, area1: 2, regen1: 2, armor1: 2, speed1: 2 },
+  mid: { core: 3, dmg1: 2, hp1: 3, headStart: 1, spirit1: 2, regen1: 1, armor1: 1, reroll: 1, speed1: 1 },
   full: Object.fromEntries(TREE.map((n) => [n.id, n.costs.length])),
 };
