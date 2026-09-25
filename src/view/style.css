@@ -109,23 +109,30 @@ button {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/*
+ * Primary is vermilion lacquer with a gold hairline, gold is flat gold leaf
+ * (refs/gui/NOTES.md, Button): one colour each, no sheen gradient. The two
+ * stops stay (equal) so the lit colour still glides in.
+ */
 .btn.primary {
-  --g1: #ef4863;
-  --g2: #b8213a;
+  --g1: #b3261e;
+  --g2: #b3261e;
   background: linear-gradient(180deg, var(--g1), var(--g2));
-  border-color: #ff8098;
+  border-color: rgba(232, 193, 90, 0.55);
+  color: #f6f0e1;
 }
 .btn.primary:hover:not(:disabled) {
-  --g1: #ff5c77;
-  --g2: #c92a44;
+  --g1: #cc3528;
+  --g2: #cc3528;
   background: linear-gradient(180deg, var(--g1), var(--g2));
+  border-color: #e8c15a;
 }
 .btn.gold {
-  --g1: #ffcf5c;
-  --g2: #d69a1e;
+  --g1: #e0b64e;
+  --g2: #e0b64e;
   background: linear-gradient(180deg, var(--g1), var(--g2));
-  color: #2a1a00;
-  border-color: #ffe39a;
+  color: #1b1512;
+  border-color: rgba(255, 241, 184, 0.6);
 }
 .btn.ghost {
   background: transparent;
@@ -171,14 +178,15 @@ button {
 }
 /* The red back: going back into the game (Resume). */
 .btn.back.primary {
-  --edge: #ff8098;
-  --fill: linear-gradient(180deg, #ef4863, #b8213a);
+  --edge: rgba(232, 193, 90, 0.55);
+  --fill: #b3261e;
+  color: #f6f0e1;
 }
 .btn.back.primary:hover:not(:disabled),
 .btn.back.primary:focus-visible,
 .btn.back.primary[data-nav-sel]:not(:disabled) {
-  --edge: #ffc2cf;
-  --fill: linear-gradient(180deg, #ff5c77, #c92a44);
+  --edge: #e8c15a;
+  --fill: #cc3528;
   background: var(--edge);
 }
 
@@ -192,16 +200,16 @@ button {
   border-color: rgba(255, 255, 255, 0.45);
 }
 .btn.primary[data-nav-sel]:not(:disabled) {
-  --g1: #ff5c77;
-  --g2: #c92a44;
+  --g1: #cc3528;
+  --g2: #cc3528;
   background: linear-gradient(180deg, var(--g1), var(--g2));
-  border-color: #ffc2cf;
+  border-color: #e8c15a;
 }
 .btn.gold[data-nav-sel]:not(:disabled) {
-  --g1: #ffe08a;
-  --g2: #e8ae35;
+  --g1: #f0cb6a;
+  --g2: #f0cb6a;
   background: linear-gradient(180deg, var(--g1), var(--g2));
-  border-color: #fff6d8;
+  border-color: #fff1b8;
 }
 .btn.ghost[data-nav-sel]:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
