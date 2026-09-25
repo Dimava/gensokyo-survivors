@@ -384,17 +384,22 @@ export function botThink(k: Game, path: RunPath, last: BotInputs, opts: BotOptio
   if (order.move || order.focus !== undefined || order.card) orders.push(order);
 }
 
-/** The XP of the enemies within `r` of (x, y), and how many they are. */
-function crowdAt(v: ReturnType<typeof runView>, x: number, y: number, r: number): { value: number; count: number } {
+/** The enemies' columns a crowd search reads, fetched once per search. */
+function crowdCols(v: ReturnType<typeof runView>) {
   const e = v.packed("enemies");
+  return { n: e.count, x: e.col("x"), y: e.col("y"), kind: e.col("kind"), phase: e.col("phase") };
+}
+
+/** The XP of the enemies within `r` of (x, y), and how many they are. */
+function crowdAt(c: ReturnType<typeof crowdCols>, x: number, y: number, r: number): { value: number; count: number } {
   let value = 0;
   let count = 0;
-  for (let i = 0; i < e.count; i++) {
-    if (e.col("phase")[i] === PHASE.leaving) continue;
-    const dx = e.col("x")[i]! - x;
-    const dy = e.col("y")[i]! - y;
+  for (let i = 0; i < c.n; i++) {
+    if (c.phase[i] === PHASE.leaving) continue;
+    const dx = c.x[i]! - x;
+    const dy = c.y[i]! - y;
     if (dx * dx + dy * dy < r * r) {
-      value += ENEMIES[e.col("kind")[i]!]!.xp;
+      value += ENEMIES[c.kind[i]!]!.xp;
       count++;
     }
   }
@@ -402,15 +407,14 @@ function crowdAt(v: ReturnType<typeof runView>, x: number, y: number, r: number)
 }
 
 /** The crowd worth the most XP within `r` of one of its members, among the enemies within `reach` of (x, y). */
-function bestCrowd(v: ReturnType<typeof runView>, x: number, y: number, r: number, reach: number): { x: number; y: number; value: number; count: number } | null {
-  const e = v.packed("enemies");
+function bestCrowd(c: ReturnType<typeof crowdCols>, x: number, y: number, r: number, reach: number): { x: number; y: number; value: number; count: number } | null {
   let best: { x: number; y: number; value: number; count: number } | null = null;
-  for (let i = 0; i < e.count; i++) {
-    const cx = e.col("x")[i]!;
-    const cy = e.col("y")[i]!;
+  for (let i = 0; i < c.n; i++) {
+    const cx = c.x[i]!;
+    const cy = c.y[i]!;
     if ((cx - x) ** 2 + (cy - y) ** 2 > reach * reach) continue;
-    const c = crowdAt(v, cx, cy, r);
-    if (!best || c.value > best.value) best = { x: cx, y: cy, ...c };
+    const here = crowdAt(c, cx, cy, r);
+    if (!best || here.value > best.value) best = { x: cx, y: cy, ...here };
   }
   return best;
 }
@@ -443,18 +447,20 @@ function botDive(k: Game, path: RunPath, last: BotInputs, from: { x: number; y: 
     }
     const card = v.req(d.card, "card").card;
     const r = cardParams(cardDef(card.id), card.level).radius!;
-    const here = crowdAt(v, from.x, from.y, r);
+    const cols = crowdCols(v);
+    const here = crowdAt(cols, from.x, from.y, r);
     if (here.value >= d.value * 0.75 || (clock >= d.until - 10 && here.count >= 4)) {
       last.dive = null;
       return cardDef(card.id).cost <= spirit + 1e-9 ? d.card : null;
     }
     // The crowd moves: follow its heart.
-    const c = bestCrowd(v, d.x, d.y, r * 0.85, 120);
+    const c = bestCrowd(cols, d.x, d.y, r * 0.85, 120);
     if (c) Object.assign(d, { x: c.x, y: c.y, value: c.value });
     return null;
   }
 
-  // A new dive: an area card ready, and a crowd worth it within reach.
+  // A new dive: an area card ready, and a crowd worth it within reach (looked for every few ticks: the search is the costly part).
+  if (clock % 6 !== 0) return null;
   const seal = hand.find((c) => ready(c) && cardDef(v.req(c.id, "card").card.id).effect === "burst");
   if (!seal) return null;
   const sc = v.req(seal.id, "card").card;
@@ -462,7 +468,7 @@ function botDive(k: Game, path: RunPath, last: BotInputs, from: { x: number; y: 
   if (sdef.cost > spirit + 1e-9) return null;
   const r = cardParams(sdef, sc.level).radius!;
   const full = spirit >= v.derived("stats").spiritMax - 0.05;
-  const c = bestCrowd(v, from.x, from.y, r * 0.85, 380);
+  const c = bestCrowd(crowdCols(v), from.x, from.y, r * 0.85, 380);
   if (!c || c.value < (full ? 10 : 20) || c.count < 5) return null;
   last.dive = { card: seal.id, x: c.x, y: c.y, value: c.value, until: clock + sec(3.5) };
   // Too hot to walk in: a shield first, if both cards can be paid for.
