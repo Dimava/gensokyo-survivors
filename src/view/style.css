@@ -411,7 +411,18 @@ input[type="range"] {
   position: absolute;
   inset: calc(-1 * var(--fab-et)) calc(-1 * var(--fab-er)) calc(-1 * var(--fab-eb)) calc(-1 * var(--fab-el));
 }
+/*
+ * A lit button (hovered or selected) shows it in the cloth rather than the
+ * colour: the scattered patches give way to the whole print, stronger and
+ * drifting about three times as fast (its own quicker loop plus the boost).
+ */
 .btn:is(:hover:not(:disabled), :focus-visible, [data-nav-sel]:not(:disabled))::after {
+  --fab-img: var(--fab-lit-img);
+  --fab-w: var(--fab-lit-w);
+  --fab-h: var(--fab-lit-h);
+  --fab-dx: var(--fab-lit-dx);
+  --fab-dy: var(--fab-lit-dy);
+  --fab-t: var(--fab-lit-t);
   opacity: var(--fab-hi);
   animation-play-state: running, running;
 }
@@ -483,9 +494,15 @@ input[type="range"] {
   --fab-h: var(--fab-sayagata-sparse-h);
   --fab-dx: var(--fab-sayagata-sparse-dx);
   --fab-dy: var(--fab-sayagata-sparse-dy);
+  --fab-lit-img: var(--fab-sayagata);
+  --fab-lit-w: var(--fab-sayagata-w);
+  --fab-lit-h: var(--fab-sayagata-h);
+  --fab-lit-dx: var(--fab-sayagata-dx);
+  --fab-lit-dy: var(--fab-sayagata-dy);
+  --fab-lit-t: 3s;
   --fab-t: 50s;
   --fab-o: 0.07;
-  --fab-hi: 0.14;
+  --fab-hi: 0.24;
 }
 /* Primary: seigaiha (waves) rolling along their rows (179px, ~3.5px/s). */
 .btn.primary {
@@ -494,9 +511,15 @@ input[type="range"] {
   --fab-h: var(--fab-seigaiha-sparse-h);
   --fab-dx: var(--fab-seigaiha-sparse-dx);
   --fab-dy: var(--fab-seigaiha-sparse-dy);
+  --fab-lit-img: var(--fab-seigaiha);
+  --fab-lit-w: var(--fab-seigaiha-w);
+  --fab-lit-h: var(--fab-seigaiha-h);
+  --fab-lit-dx: var(--fab-seigaiha-dx);
+  --fab-lit-dy: var(--fab-seigaiha-dy);
+  --fab-lit-t: 3s;
   --fab-t: 50s;
   --fab-o: 0.13;
-  --fab-hi: 0.24;
+  --fab-hi: 0.36;
 }
 /* Gold: shippō (seven treasures) in dark ink (170px, ~3.5px/s). */
 .btn.gold {
@@ -505,9 +528,15 @@ input[type="range"] {
   --fab-h: var(--fab-shippo-sparse-h);
   --fab-dx: var(--fab-shippo-sparse-dx);
   --fab-dy: var(--fab-shippo-sparse-dy);
+  --fab-lit-img: var(--fab-shippo);
+  --fab-lit-w: var(--fab-shippo-w);
+  --fab-lit-h: var(--fab-shippo-h);
+  --fab-lit-dx: var(--fab-shippo-dx);
+  --fab-lit-dy: var(--fab-shippo-dy);
+  --fab-lit-t: 3s;
   --fab-t: 50s;
   --fab-o: 0.12;
-  --fab-hi: 0.2;
+  --fab-hi: 0.34;
 }
 /* Ghost: an outline on nothing, so only a breath of sakura that shows when lit (44px, ~3px/s). */
 .btn.ghost {
@@ -517,6 +546,12 @@ input[type="range"] {
   --fab-dx: var(--fab-sakura-dx);
   --fab-dy: var(--fab-sakura-dy);
   --fab-t: 15s;
+  --fab-lit-img: var(--fab-sakura);
+  --fab-lit-w: var(--fab-sakura-w);
+  --fab-lit-h: var(--fab-sakura-h);
+  --fab-lit-dx: var(--fab-sakura-dx);
+  --fab-lit-dy: var(--fab-sakura-dy);
+  --fab-lit-t: 7s;
   --fab-o: 0.03;
   --fab-hi: 0.14;
 }
@@ -527,9 +562,15 @@ input[type="range"] {
   --fab-h: var(--fab-kikko-sparse-h);
   --fab-dx: var(--fab-kikko-sparse-dx);
   --fab-dy: var(--fab-kikko-sparse-dy);
+  --fab-lit-img: var(--fab-kikko);
+  --fab-lit-w: var(--fab-kikko-w);
+  --fab-lit-h: var(--fab-kikko-h);
+  --fab-lit-dx: var(--fab-kikko-dx);
+  --fab-lit-dy: var(--fab-kikko-dy);
+  --fab-lit-t: 3.5s;
   --fab-t: 60s;
   --fab-o: 0.09;
-  --fab-hi: 0.18;
+  --fab-hi: 0.26;
 }
 /* Back: yagasuri (arrow feathers) pointing and flying the way Back goes (160px, 4px/s). */
 .btn.back {
@@ -538,11 +579,17 @@ input[type="range"] {
   --fab-h: var(--fab-yagasuri-sparse-h);
   --fab-dx: var(--fab-yagasuri-sparse-dx);
   --fab-dy: var(--fab-yagasuri-sparse-dy);
+  --fab-lit-img: var(--fab-yagasuri);
+  --fab-lit-w: var(--fab-yagasuri-w);
+  --fab-lit-h: var(--fab-yagasuri-h);
+  --fab-lit-dx: var(--fab-yagasuri-dx);
+  --fab-lit-dy: var(--fab-yagasuri-dy);
+  --fab-lit-t: 4.5s;
   --fab-t: 40s;
   --fab-o: 0.08;
-  --fab-hi: 0.17;
+  --fab-hi: 0.26;
 }
 .btn.back.primary {
   --fab-o: 0.12;
-  --fab-hi: 0.19;
+  --fab-hi: 0.3;
 }
