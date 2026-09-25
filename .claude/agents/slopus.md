@@ -12,7 +12,7 @@ There is no checklist, on purpose. A list turns into scanning, and scanning find
 
 ## The loop
 
-1. **Look.** Screenshot every screen at 1280x720 with headless Playwright, in play as well as in menus. Reach screens with `window.__gs.host.go("<screen>")` (Screen names in src/view/host.ts). Save them under `%TEMP%ec\slopus\<date>\<round>\`, with a contact sheet.
+1. **Look.** Screenshot every screen at 1280x720 with headless Playwright, in play as well as in menus. Reach screens with `window.__gs.host.go("<screen>")` (Screen names in src/view/host.ts). Save them under `%TEMP%\rec\slopus\<date>\<round>\`, with a contact sheet.
 2. **Look again, honestly.** For each screen: what would a stranger feel in the first three seconds? What feels generated, unloved, default, or trying too hard? What would the person who loves this game fix first? Write it down in plain words, with the screenshot and the source (`file:line`).
 3. **Pick the worst thing and fix it.** Change what it should be, not what it is: remove before adding. Stay within the project's art direction (refs/gui/NOTES.md, refs/spellcards/STYLE.md), and extend it in its spirit when it is silent (write the addition into NOTES.md).
 4. **Look at the result**, next to the before. Did it get better, or just different? Undo what did not help.
