@@ -6,7 +6,7 @@
 import { reactive, markRaw } from "vue";
 import type { DispatchResult } from "gamebones";
 import { activeRun, newGame, runView, type Game, type RunPath } from "../sim/game.ts";
-import { botCard, botPick, botSteer, type BotInputs } from "../sim/bot.ts";
+import { botFlush, botPick, botSteer, botThink, SKILL, type BotInputs } from "../sim/bot.ts";
 import { navConfirm, navMove, navSelected, navTop } from "./keynav.ts";
 import { handSlots } from "../sim/cards.ts";
 import { audio, type Track } from "./audio.ts";
@@ -321,11 +321,9 @@ class Host {
       if (this.botWaited(`vn:${scene?.script}:${scene?.index}`, ms)) this.dispatchRun(vn, "vn:next", {});
       return;
     }
-    botSteer(this.k, path, this.bot);
-    if (runView(this.k, path).now("fixed") % 20 === 0) {
-      const c = botCard(this.k, path);
-      if (c) this.k.queue(path, "card:play", { card: c });
-    }
+    // A person's hands: it decides every tick, and each move, focus and card goes out half a second later (SKILL.human).
+    botFlush(this.k, path, this.bot);
+    botThink(this.k, path, this.bot, SKILL.human);
   }
 
   /**
