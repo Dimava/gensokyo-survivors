@@ -221,8 +221,8 @@ dd {
   justify-content: space-between;
   padding: 14px;
   border-radius: 12px;
-  background: rgba(111, 211, 255, 0.08);
-  border: 1px solid rgba(111, 211, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(214, 196, 140, 0.35);
 }
 .stage.locked {
   opacity: 0.55;
