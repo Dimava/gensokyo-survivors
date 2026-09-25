@@ -29,6 +29,6 @@ A game by **Dimava**. Code, art, music and sound by **Claude Opus 5.5** (Anthrop
 
 ---
 
-This branch holds only the built game (v1.0.0, build of `22815e7`).
+This branch holds only the built game (v1.0.0, build of `372a026`).
 
 Gensokyo Survivors is an unofficial fan work of the Touhou Project. It is not affiliated with Team Shanghai Alice. Touhou Project characters and world © ZUN / Team Shanghai Alice.
