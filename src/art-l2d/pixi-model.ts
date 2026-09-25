@@ -72,6 +72,8 @@ export function drawInto(renderer: Renderer, target: Container, ctx: CanvasRende
 export class RigView extends Container {
   private readonly meshes = new Map<string, { mesh: Mesh; geometry: MeshGeometry }>();
   private readonly textures: Texture[] = [];
+  /** Clipped parts' meshes and the stencil copies that clip them. */
+  private readonly clips: { mesh: Mesh; stencil: Mesh }[] = [];
 
   constructor(
     readonly rig: Rig,
@@ -97,7 +99,9 @@ export class RigView extends Container {
       if (!src) throw new Error(`rig ${rig.model.id}: part ${part.id} masks by missing ${part.mask}`);
       const stencil = new Mesh({ geometry: src.geometry, texture: src.mesh.texture });
       this.addChild(stencil);
-      this.meshes.get(part.id)!.mesh.mask = stencil;
+      const clipped = this.meshes.get(part.id)!.mesh;
+      clipped.mask = stencil;
+      this.clips.push({ mesh: clipped, stencil });
     }
     this.update();
   }
@@ -155,6 +159,13 @@ export class RigView extends Container {
       m.mesh.alpha = f.opacity;
       m.mesh.visible = f.opacity > 0.004;
     }
+    // A stencil shows only while the part it clips does. Pixi draws a mask only
+    // with its target, so a stencil left "visible" under a hidden target (eyes
+    // shut) still takes the geometry's updates into the batch slot it had the
+    // last time it was drawn, which by then belongs to other parts: their
+    // vertices get overwritten (torn strips across the face), or, never drawn
+    // yet, it has no batch at all and the render throws.
+    for (const c of this.clips) c.stencil.visible = c.mesh.visible;
   }
 
   override destroy(): void {
