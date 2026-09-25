@@ -683,7 +683,10 @@ export interface PlayResult {
  * Plays the active run until it ends (or maxTicks): the bot answers overlays,
  * steers, and plays cards; every decision goes in as input.
  */
-export function playRun(k: Game, opts: BotOptions & { maxTicks?: number; onTick?: (i: number) => void } = {}): PlayResult {
+export function playRun(
+  k: Game,
+  opts: BotOptions & { maxTicks?: number; onTick?: (i: number) => void; /** Level-up choice (default botPick); balance sweeps force builds with it. */ pick?: (k: Game, path: RunPath) => number } = {},
+): PlayResult {
   const path = activeRun(k);
   if (!path) throw new Error("playRun: no active run; dispatch run:start first");
   const p = path as "/run:1";
@@ -695,7 +698,7 @@ export function playRun(k: Game, opts: BotOptions & { maxTicks?: number; onTick?
     const v = runView(k, path);
     const overlay = v.derived("state").run.overlay;
     if (overlay === "levelup") {
-      k.dispatch(`${p}/levelup` as "/run:1/levelup", "levelup:pick", { index: botPick(k, path) });
+      k.dispatch(`${p}/levelup` as "/run:1/levelup", "levelup:pick", { index: (opts.pick ?? botPick)(k, path) });
     } else if (overlay === "vn") {
       k.dispatch(`${p}/vn` as "/run:1/vn", "vn:next", {});
     } else {
