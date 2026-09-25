@@ -30,8 +30,8 @@ describe("fabric", () => {
       let ink = 0;
       for (const v of a) ink += v;
       const mean = ink / a.length / 255;
-      // Visible but not a solid fill.
-      expect(mean).toBeGreaterThan(0.04);
+      // Visible but not a solid fill (the sparse prints only in patches).
+      expect(mean).toBeGreaterThan(name.endsWith("-sparse") ? 0.01 : 0.04);
       expect(mean).toBeLessThan(0.7);
 
       const sx = fab.step[0] * SCALE;

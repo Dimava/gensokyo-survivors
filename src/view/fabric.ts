@@ -13,7 +13,8 @@
  * scale, a cloud, a petal notch) is simply painted black on top.
  */
 
-export type FabricName = "asanoha" | "sayagata" | "seigaiha" | "kikko" | "yagasuri" | "shippo" | "kumo" | "sakura";
+type BaseName = "asanoha" | "sayagata" | "seigaiha" | "kikko" | "yagasuri" | "shippo" | "kumo" | "sakura";
+export type FabricName = BaseName | "sayagata-sparse" | "seigaiha-sparse" | "kikko-sparse" | "yagasuri-sparse" | "shippo-sparse";
 
 export interface Fabric {
   w: number;
@@ -28,6 +29,8 @@ export interface Fabric {
   ink: string;
   /** Mask content (white strokes and fills on black), in tile coordinates. */
   body: string;
+  /** Definitions the body refers to (patterns, masks, gradients). */
+  defs?: string;
 }
 
 const f = (n: number): string => String(Math.round(n * 100) / 100);
@@ -220,7 +223,33 @@ function sakura(): Fabric {
   return { w, h, step: [0, h], ink: "#ffe3ea", body };
 }
 
-export const FABRICS: Record<FabricName, Fabric> = {
+/**
+ * The same cloth printed only here and there: the base tile repeated kx×ky
+ * times under a few soft patches, so a button shows a scrap of pattern or two
+ * instead of a solid print. The patches repeat with the big tile, so the loop
+ * step becomes `m` base steps, the shortest multiple that is a whole big tile.
+ */
+function sparse(base: Fabric, kx: number, ky: number, m: number): Fabric {
+  const w = base.w * kx;
+  const h = base.h * ky;
+  const k = Math.sqrt((w * h) / 12800);
+  // Where the patches sit (as a share of the tile) and their radius in px (for a 160×80 tile).
+  const blobs: [number, number, number][] = [
+    [0.12, 0.28, 34],
+    [0.3, 0.55, 18],
+    [0.63, 0.86, 30],
+    [0.86, 0.22, 20],
+    [0.5, 0.12, 12],
+  ];
+  const patches = wrap(w, h, (dx, dy) => blobs.map(([x, y, r]) => `<circle cx="${f(x * w + dx)}" cy="${f(y * h + dy)}" r="${f(r * k)}" fill="url(#g)"/>`).join(""));
+  const defs =
+    `<pattern id="b" patternUnits="userSpaceOnUse" x="0" y="0" width="${base.w}" height="${base.h}">${base.body}</pattern>` +
+    `<radialGradient id="g"><stop offset="0" stop-color="#fff" stop-opacity="0.9"/><stop offset="0.35" stop-color="#fff" stop-opacity="0.55"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.15"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>` +
+    `<mask id="p" maskUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="#000"/>${patches}</mask>`;
+  return { w, h, step: [base.step[0] * m, base.step[1] * m], ink: base.ink, defs, body: `<rect width="${w}" height="${h}" fill="url(#b)" mask="url(#p)"/>` };
+}
+
+const BASE: Record<BaseName, Fabric> = {
   asanoha: asanoha(),
   sayagata: sayagata(),
   seigaiha: seigaiha(),
@@ -231,6 +260,15 @@ export const FABRICS: Record<FabricName, Fabric> = {
   sakura: sakura(),
 };
 
+export const FABRICS: Record<FabricName, Fabric> = {
+  ...BASE,
+  "sayagata-sparse": sparse(BASE.sayagata, 4, 2, 10),
+  "seigaiha-sparse": sparse(BASE.seigaiha, 5, 5, 10),
+  "kikko-sparse": sparse(BASE.kikko, 5, 5, 10),
+  "yagasuri-sparse": sparse(BASE.yagasuri, 5, 3, 5),
+  "shippo-sparse": sparse(BASE.shippo, 5, 5, 10),
+};
+
 /** How strong the ink is baked for the still cloth of scrolling panels (a sliding panel layer's opacity). */
 export const FAINT = 0.07;
 
@@ -239,6 +277,7 @@ export function fabricSvg(fab: Fabric, alpha = 1): string {
   const { w, h } = fab;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+    (fab.defs ? `<defs>${fab.defs}</defs>` : "") +
     `<mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="#000"/>${fab.body}</mask>` +
     `<rect width="${w}" height="${h}" fill="${fab.ink}" fill-opacity="${alpha}" mask="url(#m)"/></svg>`
   );
