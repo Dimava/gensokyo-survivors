@@ -192,7 +192,7 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
     // ----- effects: one rule per effect, matched on the card's data -----
     r.on("card:played").when({ card: { card: { effect: "burst" } } }).as("Fantasy Seal").apply((ev, ctx) => {
       const p = params(ctx, ev.card);
-      ctx.emit("blast", { x: ev.x, y: ev.y, radius: p.radius!, dmg: p.dmg!, source: "card" });
+      ctx.emit("blast", { x: ev.x, y: ev.y, radius: p.radius!, dmg: p.dmg!, source: ctx.req(ev.card, "card").card.id });
     }),
     r.on("card:played").when({ card: { card: { effect: "clear" } } }).as("Barrier").apply((ev, ctx) => {
       const p = params(ctx, ev.card);
@@ -238,7 +238,7 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
     }),
     r.on("card:played").when({ card: { card: { effect: "spark" } } }).as("Master Spark").apply((ev, ctx) => {
       const p = params(ctx, ev.card);
-      ctx.emit("beam", { x: ev.x, y: ev.y, dx: ev.fx, dy: ev.fy, length: p.length!, width: p.width!, dmg: p.dmg!, color: 0xfff27a, source: "card" });
+      ctx.emit("beam", { x: ev.x, y: ev.y, dx: ev.fx, dy: ev.fy, length: p.length!, width: p.width!, dmg: p.dmg!, color: 0xfff27a, source: ctx.req(ev.card, "card").card.id });
     }),
     r.on("card:played").when({ card: { card: { effect: "gap" } } }).as("Gap Travel").apply((ev, ctx) => {
       const p = params(ctx, ev.card);

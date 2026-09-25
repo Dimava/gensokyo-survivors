@@ -419,16 +419,16 @@ function stepJob(ctx: C, e: EnemyCols, i: number, def: EnemyDef, t: number, px: 
 }
 
 /**
- * Damage dealt, for balance scripts (scripts/balance-power.ts): outside the kernel's state and
- * never read by the sim. `raw` counts every hit in full, `eff` only up to the HP the target had left.
+ * Every hit, for balance scripts (scripts/balance-power.ts): `src` is the weapon or card id, `eff`
+ * the part of `dmg` the target had HP left for (the boss: all of it), `t` the action tick. Outside
+ * the kernel's state and never read by the sim; null in the game.
  */
-export const DAMAGE_TALLY = { raw: 0, eff: 0, boss: 0 };
+export const DAMAGE_PROBE: { on: ((src: string, target: "swarm" | "boss", dmg: number, eff: number, t: number) => void) | null } = { on: null };
 
-/** Damage to one enemy row; knockback away from (sx, sy). */
-export function hurtEnemy(e: EnemyCols, i: number, dmg: number, sx: number, sy: number, knock: number, t: number): void {
+/** Damage to one enemy row from `src` (a weapon or card id); knockback away from (sx, sy). */
+export function hurtEnemy(e: EnemyCols, i: number, dmg: number, sx: number, sy: number, knock: number, t: number, src: string): void {
   const hp = e.col("hp");
-  DAMAGE_TALLY.raw += dmg;
-  DAMAGE_TALLY.eff += Math.min(dmg, Math.max(0, hp[i]!));
+  if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(src, "swarm", dmg, Math.min(dmg, Math.max(0, hp[i]!)), t);
   hp[i] = hp[i]! - dmg;
   e.col("hitAt")[i] = t;
   if (knock > 0) {

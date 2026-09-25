@@ -7,7 +7,7 @@ import { ENEMIES } from "../content/enemies.ts";
 import { WEAPONS, WEAPON_INDEX, weaponDef, type WeaponStats } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
 import type { RS0 } from "./run.ts";
-import { enemyGrid, hurtEnemy, rebuildGrid } from "./swarm.ts";
+import { DAMAGE_PROBE, enemyGrid, hurtEnemy, rebuildGrid } from "./swarm.ts";
 import { bossPos, bossVulnerable } from "./boss.ts";
 import { BOSS, FOCUS } from "./tuning.ts";
 
@@ -141,7 +141,7 @@ export function applyVolley(ctx: C, w: EntityOf<RS0> & { weapon: { id: string; l
     case "aura": {
       const r = (s.radius ?? 80) * stats.area;
       ctx.emit("aura", { x: body.x, y: body.y, radius: r, color: def.color });
-      damageArea(ctx, body.x, body.y, r, dmg, (s.knock ?? 8) * (focus ? FOCUS.auraKnock : 1), dmg * bossFactor(ctx, def.id, w.weapon.level));
+      damageArea(ctx, body.x, body.y, r, dmg, (s.knock ?? 8) * (focus ? FOCUS.auraKnock : 1), def.id, dmg * bossFactor(ctx, def.id, w.weapon.level));
       return;
     }
     case "beam":
@@ -211,7 +211,9 @@ export function stepShots(ctx: C): ShotResult {
       const ddy = bp.y - sy;
       const rr = bossR + r;
       if (ddx * ddx + ddy * ddy < rr * rr) {
-        res.bossDmg += dmg[s]! * factors![weapon[s]!]!;
+        const d = dmg[s]! * factors![weapon[s]!]!;
+        res.bossDmg += d;
+        if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(WEAPONS[weapon[s]!]!.id, "boss", d, d, t);
         if (res.struckX.length < 24) {
           res.struckX.push(sx);
           res.struckY.push(sy);
@@ -229,7 +231,7 @@ export function stepShots(ctx: C): ShotResult {
       const ddy = ey[i]! - sy;
       const rr = ENEMIES[ekind[i]!]!.radius + r;
       if (ddx * ddx + ddy * ddy >= rr * rr) continue;
-      hurtEnemy(e, i, dmg[s]!, sx - vx[s]!, sy - vy[s]!, knock[s]!, t);
+      hurtEnemy(e, i, dmg[s]!, sx - vx[s]!, sy - vy[s]!, knock[s]!, t, WEAPONS[weapon[s]!]!.id);
       if (res.struckX.length < 24) {
         res.struckX.push(sx);
         res.struckY.push(sy);
@@ -278,14 +280,16 @@ export function stepOrbits(ctx: C): number {
         const rr = ENEMIES[e.col("kind")[i]!]!.radius + size;
         if (ddx * ddx + ddy * ddy >= rr * rr) continue;
         orbAt[i] = t;
-        hurtEnemy(e, i, w.weapon.armed, body.x, body.y, s.knock ?? 5, t);
+        hurtEnemy(e, i, w.weapon.armed, body.x, body.y, s.knock ?? 5, t, w.weapon.id);
       }
       if (bossOn && boss && t - boss.boss.orbAt >= s.cooldown) {
         const ddx = bp.x - ox;
         const ddy = bp.y - oy;
         const rr = bossDef(boss.boss.id).radius + size;
         if (ddx * ddx + ddy * ddy < rr * rr) {
-          bossDmg += w.weapon.armed * bossFactor(ctx, w.weapon.id, w.weapon.level);
+          const d = w.weapon.armed * bossFactor(ctx, w.weapon.id, w.weapon.level);
+          bossDmg += d;
+          if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(w.weapon.id, "boss", d, d, t);
           ctx.mut(boss, "boss").orbAt = t;
         }
       }
@@ -294,8 +298,8 @@ export function stepOrbits(ctx: C): number {
   return bossDmg;
 }
 
-/** Damages every enemy within r of (x, y) and the boss if it is inside (with `bossDmg`, a weapon's after its boss share). */
-export function damageArea(ctx: C, x: number, y: number, r: number, dmg: number, knock: number, bossDmg = dmg): void {
+/** Damages every enemy within r of (x, y) and the boss if it is inside (with `bossDmg`, a weapon's after its boss share); `src` is the weapon or card id. */
+export function damageArea(ctx: C, x: number, y: number, r: number, dmg: number, knock: number, src: string, bossDmg = dmg): void {
   const t = ctx.now("action");
   const e = rebuildGrid(ctx);
   const hp = e.col("hp");
@@ -306,7 +310,7 @@ export function damageArea(ctx: C, x: number, y: number, r: number, dmg: number,
     const ddx = e.col("x")[i]! - x;
     const ddy = e.col("y")[i]! - y;
     const rr = r + ENEMIES[e.col("kind")[i]!]!.radius;
-    if (ddx * ddx + ddy * ddy < rr * rr) hurtEnemy(e, i, dmg, x, y, knock, t);
+    if (ddx * ddx + ddy * ddy < rr * rr) hurtEnemy(e, i, dmg, x, y, knock, t, src);
   }
   const boss = ctx.derived("boss");
   if (boss && bossVulnerable(boss, t)) {
@@ -314,12 +318,15 @@ export function damageArea(ctx: C, x: number, y: number, r: number, dmg: number,
     const ddx = bp.x - x;
     const ddy = bp.y - y;
     const rr = r + bossDef(boss.boss.id).radius;
-    if (ddx * ddx + ddy * ddy < rr * rr) ctx.emit("boss:hit", { dmg: bossDmg });
+    if (ddx * ddx + ddy * ddy < rr * rr) {
+      if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(src, "boss", bossDmg, bossDmg, t);
+      ctx.emit("boss:hit", { dmg: bossDmg });
+    }
   }
 }
 
 /** Damages everything in a beam from (x, y) along the unit vector (dx, dy) (the boss takes `bossDmg`, see damageArea). */
-export function damageLine(ctx: C, x: number, y: number, dx: number, dy: number, length: number, width: number, dmg: number, knock: number, bossDmg = dmg): void {
+export function damageLine(ctx: C, x: number, y: number, dx: number, dy: number, length: number, width: number, dmg: number, knock: number, src: string, bossDmg = dmg): void {
   const t = ctx.now("action");
   const e = ctx.packed("enemies");
   const hp = e.col("hp");
@@ -335,13 +342,16 @@ export function damageLine(ctx: C, x: number, y: number, dx: number, dy: number,
   for (let i = 0; i < e.count; i++) {
     if (hp[i]! <= 0) continue;
     if (hitsLine(e.col("x")[i]!, e.col("y")[i]!, ENEMIES[e.col("kind")[i]!]!.radius)) {
-      hurtEnemy(e, i, dmg, e.col("x")[i]! - dx, e.col("y")[i]! - dy, knock, t);
+      hurtEnemy(e, i, dmg, e.col("x")[i]! - dx, e.col("y")[i]! - dy, knock, t, src);
     }
   }
   const boss = ctx.derived("boss");
   if (boss && bossVulnerable(boss, t)) {
     bossPos(boss, t, bp);
-    if (hitsLine(bp.x, bp.y, bossDef(boss.boss.id).radius)) ctx.emit("boss:hit", { dmg: bossDmg });
+    if (hitsLine(bp.x, bp.y, bossDef(boss.boss.id).radius)) {
+      if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(src, "boss", bossDmg, bossDmg, t);
+      ctx.emit("boss:hit", { dmg: bossDmg });
+    }
   }
 }
 

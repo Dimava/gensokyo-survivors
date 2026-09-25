@@ -14,7 +14,7 @@ import type { Ctx } from "gamebones";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
-import { collectDead, contactDamage, DAMAGE_TALLY, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
+import { collectDead, contactDamage, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
 import { applyVolley, bossFactor, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, pullAll, stepDrops } from "./drops.ts";
@@ -233,14 +233,14 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     collectDead(ctx);
   }),
   r.on("blast", (ev, ctx) => {
-    damageArea(ctx, ev.x, ev.y, ev.radius, ev.dmg, 14);
+    damageArea(ctx, ev.x, ev.y, ev.radius, ev.dmg, 14, ev.source);
     collectDead(ctx);
   }),
   r.on("beam", (ev, ctx) => {
     // A weapon's beam hits the boss at its boss share; a card's at full.
     const w = ctx.derived("weapons").find((x) => x.weapon.id === ev.source);
     const bossDmg = w ? ev.dmg * bossFactor(ctx, w.weapon.id, w.weapon.level) : ev.dmg;
-    damageLine(ctx, ev.x, ev.y, ev.dx, ev.dy, ev.length, ev.width, ev.dmg, 16, bossDmg);
+    damageLine(ctx, ev.x, ev.y, ev.dx, ev.dy, ev.length, ev.width, ev.dmg, 16, ev.source, bossDmg);
     collectDead(ctx);
   }),
   r.on("enemies:died", (ev, ctx) => {
@@ -521,7 +521,6 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("boss:hit", (ev, ctx) => {
     const boss = ctx.derived("boss");
     if (!boss || ev.dmg <= 0) return;
-    DAMAGE_TALLY.boss += Math.min(ev.dmg, boss.boss.hp);
     ctx.mut(boss, "boss").hp = Math.max(0, boss.boss.hp - ev.dmg);
   }),
   r.on("boss:hit").react((_, ctx) => {
