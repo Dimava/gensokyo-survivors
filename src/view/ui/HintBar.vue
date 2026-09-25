@@ -111,19 +111,19 @@ function dismiss(): void {
 </template>
 
 <style scoped>
+/* Low on the left, clear of the boss, her bars and her spell card's name, and of the level-up. */
 .hintbar {
   position: absolute;
-  top: 110px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(640px, 90vw);
+  bottom: 150px;
+  left: 16px;
+  width: 460px;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(20, 26, 52, 0.95);
-  border: 1px solid rgba(255, 201, 77, 0.55);
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.94);
+  border: 1px solid rgba(232, 193, 90, 0.55);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   font-size: 0.95rem;
   pointer-events: auto;

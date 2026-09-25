@@ -12,6 +12,8 @@ import { ui } from "../presenter.ts";
 import { CARD_KINDS, cardDef } from "../../content/cards.ts";
 import { cardIcon } from "./cardIcons.ts";
 import SpellBar from "./SpellBar.vue";
+import CardFace from "./CardFace.vue";
+import CardBack from "./CardBack.vue";
 import { itemIcon } from "./itemIcons.ts";
 
 const h = computed(() => hud.value!);
@@ -39,18 +41,6 @@ const cast = computed(() => {
   const def = cardDef(ui.cardFlash.card);
   return { id: ui.cardFlash.id, def, icon: cardIcon(def.id), kc: CARD_KINDS[def.kind].css };
 });
-/** The hand card's look: its kind's colour and badge, its glyph, and how charged its cost is. */
-function face(id: string, cost: number) {
-  const def = cardDef(id);
-  return {
-    def,
-    icon: cardIcon(id),
-    style: {
-      "--kc": CARD_KINDS[def.kind].css,
-      "--charge": Math.max(0, Math.min(1, h.value.spirit / cost)),
-    },
-  };
-}
 
 /** Touch screens have no Shift: focus is a button held with the other thumb. */
 const touch = matchMedia("(pointer: coarse)").matches;
@@ -215,7 +205,7 @@ function pause(): void {
       </TransitionGroup>
     </div>
 
-    <!-- Bottom: spirit, hand, graze meter -->
+    <!-- Bottom: Spirit, the hand, the draw pile with the graze meter -->
     <div class="bottom">
       <Transition name="cast">
         <div
@@ -237,9 +227,7 @@ function pause(): void {
         class="spirit"
         :title="`Spirit: cards cost Spirit. It refills by ${h.spiritRate.toFixed(2)} per second.`"
       >
-        <div class="blabel">
-          Spirit {{ h.spirit.toFixed(1) }} / {{ h.spiritMax }}
-        </div>
+        <div class="blabel">Spirit</div>
         <div class="orbs">
           <div v-for="(f, i) in spiritOrbs" :key="i" class="orb">
             <div
@@ -252,66 +240,41 @@ function pause(): void {
       </div>
       <div class="hand">
         <!-- Fixed slots: a played card leaves its slot empty; a drawn card takes the first empty one.
-             The empty frame always holds the slot; the card animates in and out on top of it. -->
+             The empty frame always holds the slot; the card animates in and out on top of it.
+             The cards are the collection's own faces, held low: their foot runs off the screen. -->
         <div v-for="(c, i) in h.slots" :key="i" class="hslot">
-          <div
-            class="card emptycard"
-            title="Empty hand slot: graze bullets to draw a card"
-          >
+          <div class="card emptycard" title="Empty hand slot: graze bullets to draw a card">
             <span class="ckey key">{{ i + 1 }}</span>
-            <span class="muted">Graze<br />to draw</span>
           </div>
           <Transition name="card">
             <button
               v-if="c"
               class="card slotted"
               :key="c.entity"
-              :class="[
-                'kind-' + face(c.id, c.cost).def.kind,
-                { off: !c.affordable },
-              ]"
-              :style="face(c.id, c.cost).style"
-              :title="`${c.name} (${CARD_KINDS[face(c.id, c.cost).def.kind].label}, ${c.rarity}, level ${c.level}) costs ${c.cost} Spirit: ${c.text}`"
+              :class="{ off: !c.affordable }"
+              :style="{ '--charge': Math.max(0, Math.min(1, h.spirit / c.cost)) }"
+              :title="`${c.name} (${CARD_KINDS[cardDef(c.id).kind].label}, ${c.rarity}, level ${c.level}) costs ${c.cost} Spirit: ${c.text}`"
               @click="play(c.slot)"
             >
-              <span class="cbadge">
-                <svg
-                  class="cicon"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  v-html="face(c.id, c.cost).icon"
-                ></svg>
-              </span>
+              <span class="cf"><CardFace :card="c.id" :level="c.level" /></span>
               <span class="ckey key">{{ c.slot + 1 }}</span>
-              <span class="ccost" title="Spirit cost">
-                <i
-                  v-for="n in c.cost"
-                  :key="n"
-                  :class="{ lit: h.spirit >= n }"
-                ></i>
-              </span>
-              <span class="cname">{{ face(c.id, c.cost).def.short }}</span>
             </button>
           </Transition>
         </div>
       </div>
       <div
-        class="meter"
+        class="pile"
         :title="`Graze meter: pass close to enemy bullets to fill it; when full you draw a card. Grazes this run: ${h.grazes}`"
       >
-        <div class="blabel">
-          {{
-            h.hand.length >= h.handMax && h.meter >= 1
-              ? "Hand full"
-              : "Graze → next card"
-          }}
+        <div class="blabel">{{ h.hand.length >= h.handMax && h.meter >= 1 ? "Hand full" : "Graze" }}</div>
+        <div class="deck">
+          <span class="cb"><CardBack /></span>
+          <span class="count">{{ h.deck }}</span>
         </div>
         <div class="mbar">
           <div class="mfill" :style="{ width: h.meter * 100 + '%' }"></div>
         </div>
-        <div class="piles muted">
-          Deck {{ h.deck }} · Discard {{ h.discard }}
-        </div>
+        <div class="piles">Discard {{ h.discard }}</div>
       </div>
     </div>
 
@@ -364,8 +327,8 @@ function pause(): void {
   left: 0;
   right: 0;
   height: 18px;
-  background: rgba(10, 14, 30, 0.85);
-  border-bottom: 1px solid rgba(77, 163, 255, 0.4);
+  background: rgba(23, 17, 14, 0.9);
+  border-bottom: 1px solid rgba(232, 193, 90, 0.45);
 }
 .xpfill {
   height: 100%;
@@ -393,9 +356,9 @@ function pause(): void {
   position: relative;
   width: 260px;
   height: 22px;
-  border-radius: 6px;
-  background: rgba(10, 14, 30, 0.85);
-  border: 1px solid rgba(255, 92, 122, 0.5);
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.88);
+  border: 1px solid rgba(232, 193, 90, 0.55);
   overflow: hidden;
 }
 .hpfill {
@@ -423,14 +386,14 @@ function pause(): void {
 .slotlabel {
   width: 58px;
   font-size: 11px;
-  color: var(--muted);
+  color: #b9ab8a;
 }
 .slot {
   width: 43px;
   height: 26px;
-  border-radius: 6px;
-  background: rgba(10, 14, 30, 0.8);
-  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.82);
+  border: 1px solid rgba(232, 193, 90, 0.28);
   display: flex;
   align-items: center;
   justify-content: safe center;
@@ -472,7 +435,7 @@ function pause(): void {
 }
 .stage {
   font-size: 12px;
-  color: var(--muted);
+  color: #b9ab8a;
 }
 .boss {
   position: absolute;
@@ -533,9 +496,9 @@ function pause(): void {
 .bbar {
   margin-top: 4px;
   height: 10px;
-  border-radius: 5px;
-  background: rgba(10, 14, 30, 0.85);
-  border: 1px solid rgba(255, 92, 122, 0.5);
+  border-radius: 0;
+  background: rgba(23, 17, 14, 0.88);
+  border: 1px solid rgba(232, 193, 90, 0.45);
   overflow: hidden;
 }
 .bfill {
@@ -554,12 +517,15 @@ function pause(): void {
 }
 .stat {
   padding: 3px 10px;
-  border-radius: 8px;
-  background: rgba(10, 14, 30, 0.8);
-  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.85);
+  border: 1px solid rgba(232, 193, 90, 0.35);
+}
+.stat .muted {
+  color: #b9ab8a;
 }
 .stat.gold b {
-  color: var(--gold);
+  color: #e8c15a;
 }
 .pausebtn {
   pointer-events: auto;
@@ -576,14 +542,14 @@ function pause(): void {
   padding: 3px 10px;
   border-radius: 2px;
   border: 1px solid;
-  background: rgba(10, 14, 30, 0.85);
+  background: rgba(23, 17, 14, 0.88);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
 }
 .bottom {
   position: absolute;
-  bottom: 10px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -631,50 +597,89 @@ function pause(): void {
   opacity: 0;
   transform: translate(-50%, -24px);
 }
+/* Labels on lacquer: small straw caps. */
 .blabel {
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--head);
+  margin-bottom: 5px;
   white-space: nowrap;
 }
 .spirit,
-.meter {
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(10, 14, 30, 0.85);
-  border: 1px solid var(--line);
+.pile {
+  margin-bottom: 10px;
+  padding: 7px 10px 8px;
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.88);
+  border: 1px solid rgba(232, 193, 90, 0.35);
 }
 .orbs {
   display: flex;
   gap: 5px;
 }
+/* Spirit is SWR's blue spirit orbs: a dark socket that fills from the foot. */
 .orb {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  border: 2px solid #9ad7ff;
+  border: 1.5px solid #9cc8ee;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5);
 }
 .orbfill {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #6fd3ff;
-  opacity: 0.6;
+  background: #6fb6ff;
+  opacity: 0.55;
 }
 .orbfill.full {
   opacity: 1;
 }
-.meter {
-  width: 150px;
+/* The draw pile: a small stack of card backs with the count on it, the graze meter under it. */
+.pile {
+  width: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.deck {
+  position: relative;
+  width: 58px;
+  height: 85px;
+  margin-bottom: 6px;
+}
+.deck .cb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: scale(0.34);
+  transform-origin: top left;
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.6));
+}
+.deck .count {
+  position: absolute;
+  right: -8px;
+  bottom: -4px;
+  min-width: 22px;
+  padding: 0 4px;
+  border: 1px solid #1b1512;
+  border-radius: 1px;
+  background: #f6f0e1;
+  box-shadow: 0 2px 0 #b9ab8a;
+  color: #1b1512;
+  font: 700 12px/18px var(--display);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .mbar {
-  height: 10px;
-  border-radius: 5px;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
 .mfill {
@@ -684,8 +689,11 @@ function pause(): void {
 }
 .piles {
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 10px;
+  color: #b9ab8a;
 }
+/* The hand: the collection's card faces at 68%, held low: the art, the emblem and the name show,
+   the rules are below the screen's edge and rise into view on hover. */
 .hand {
   display: flex;
   gap: 8px;
@@ -693,167 +701,79 @@ function pause(): void {
 }
 .hslot {
   position: relative;
-}
-.card.slotted {
-  position: absolute;
-  inset: 0;
+  width: 116px;
+  height: 106px;
 }
 .card {
-  --kc: #888;
-  position: relative;
-  width: 118px;
-  height: 128px;
-  padding: 0 6px 7px;
-  border-radius: 12px;
-  border: 2px solid var(--kc);
-  background: rgba(20, 22, 38, 0.96);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  overflow: visible;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
-  transition:
-    transform calc(0.12s * var(--anim)),
-    opacity calc(0.12s * var(--anim)),
-    filter calc(0.12s * var(--anim));
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 116px;
+  height: 170px;
+  padding: 0;
+  border: none;
+  background: none;
   pointer-events: auto;
 }
-.card:hover {
-  transform: translateY(-8px);
+.card.slotted {
+  cursor: pointer;
+  transition:
+    transform calc(0.12s * var(--anim)),
+    filter calc(0.12s * var(--anim));
 }
-/* The badge: the kind's colour in the kind's shape, holding the card's glyph.
-   It fills from the bottom as Spirit charges towards the card's cost. */
-.cbadge {
+.card.slotted:hover {
+  transform: translateY(-62px);
+}
+.cf {
   position: absolute;
-  top: 10px;
-  left: 50%;
-  width: 80px;
-  height: 80px;
-  transform: translateX(-50%);
-  display: grid;
-  place-items: center;
-  color: #0b0f22;
-  background: linear-gradient(
-    0deg,
-    var(--kc) calc(var(--charge, 1) * 100%),
-    #3b4058 calc(var(--charge, 1) * 100%)
-  );
-  clip-path: circle(50%);
+  left: 0;
+  top: 0;
+  transform: scale(0.68);
+  transform-origin: top left;
+  filter: drop-shadow(0 -2px 0 rgba(0, 0, 0, 0.45));
 }
-.cicon {
-  width: 52px;
-  height: 52px;
+/* Not enough Spirit: the card is veiled from the top, and the veil sinks as Spirit charges
+   toward its cost; its lower edge is a thin spirit-blue line, the level. */
+.card.slotted::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc((1 - var(--charge, 1)) * 106px);
+  background: rgba(8, 6, 12, 0.62);
+  border-bottom: 1px solid rgba(111, 182, 255, 0.8);
+  border-radius: 3px 3px 0 0;
+  pointer-events: none;
 }
-.kind-attack .cbadge {
-  clip-path: polygon(
-    50% 0%, 60.4% 11.4%, 75% 6.7%, 78.3% 21.7%, 93.3% 25%, 88.6% 39.6%,
-    100% 50%, 88.6% 60.4%, 93.3% 75%, 78.3% 78.3%, 75% 93.3%, 60.4% 88.6%,
-    50% 100%, 39.6% 88.6%, 25% 93.3%, 21.7% 78.3%, 6.7% 75%, 11.4% 60.4%,
-    0% 50%, 11.4% 39.6%, 6.7% 25%, 21.7% 21.7%, 25% 6.7%, 39.6% 11.4%
-  );
+.card.slotted:not(.off)::after {
+  display: none;
 }
-.kind-attack .cicon {
-  width: 46px;
-  height: 46px;
-}
-.kind-guard .cbadge {
-  clip-path: polygon(50% 0%, 100% 14%, 100% 56%, 50% 100%, 0% 56%, 0% 14%);
-}
-.kind-guard .cicon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 8px;
-}
-.kind-buff .cbadge {
-  clip-path: polygon(50% 0%, 100% 40%, 100% 100%, 0% 100%, 0% 40%);
-}
-.kind-buff .cicon {
-  width: 46px;
-  height: 46px;
-  margin-top: 12px;
-}
-.kind-utility .cbadge {
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-}
-.kind-utility .cicon {
-  width: 44px;
-  height: 44px;
-}
-/* Not enough Spirit: the card greys out except the charged part of its badge. */
 .card.off {
-  border-color: color-mix(in srgb, var(--kc) 35%, #555);
-  background: rgba(22, 23, 34, 0.95);
+  filter: saturate(0.55);
 }
-.card.off .cbadge {
-  --hole: #262a3c;
-  color: #c3c8dc;
-  background: linear-gradient(
-    0deg,
-    color-mix(in srgb, var(--kc) 45%, #262a3c) calc(var(--charge) * 100%),
-    #262a3c calc(var(--charge) * 100%)
-  );
-}
-.card.off .cname {
-  color: #8a90a8;
-}
-/* An empty slot is a quiet frame, not a dashed drop zone. */
 .emptycard {
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(200, 205, 220, 0.6);
-  box-shadow: none;
-  align-items: center;
-  justify-content: safe center;
-  text-align: center;
-  font-size: 11px;
-  background: rgba(10, 14, 30, 0.5);
+  height: 106px;
+  border: 1px solid rgba(232, 193, 90, 0.2);
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  background: rgba(23, 17, 14, 0.4);
 }
+/* The slot's key: a scrap of washi with an ink number. */
 .ckey {
   position: absolute;
-  top: -10px;
-  left: -9px;
-  min-width: 26px;
-  height: 26px;
-  font-size: 15px;
-  font-weight: 900;
-  line-height: 22px;
-  border: 2px solid var(--kc);
-  background: #111;
-  color: #fff;
-}
-.ccost {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.ccost i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid #6fd3ff;
-  background: rgba(0, 0, 0, 0.6);
-}
-.ccost i.lit {
-  background: #6fd3ff;
-}
-.off .ccost i:not(.lit) {
-  border-color: #ff6b6b;
-}
-.cname {
-  position: relative;
-  max-width: 100%;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.1;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #fff;
-  text-shadow: 0 1px 2px #000;
+  top: -9px;
+  left: -7px;
+  z-index: 1;
+  min-width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 1px;
+  border: 1px solid #1b1512;
+  background: #f6f0e1;
+  box-shadow: 0 2px 0 #b9ab8a;
+  color: #1b1512;
+  font: 700 13px/18px var(--display);
 }
 .card-enter-active {
   transition: all calc(0.35s * var(--anim)) cubic-bezier(0.2, 1.3, 0.4, 1);
