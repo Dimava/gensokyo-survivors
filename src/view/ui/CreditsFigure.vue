@@ -113,6 +113,11 @@ onBeforeUnmount(() => io?.disconnect());
   animation: breathe calc(4.5s * var(--anim)) ease-in-out calc(var(--delay) * var(--anim)) infinite alternate;
   transform-origin: 50% 100%;
 }
+/* A bust fades out below the waist instead of stopping at a ruled edge. */
+.portrait .drawn,
+.portrait .live {
+  mask-image: linear-gradient(180deg, #000 68%, transparent 97%);
+}
 .flip {
   overflow: hidden;
 }

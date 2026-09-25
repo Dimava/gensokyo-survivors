@@ -638,7 +638,7 @@ onBeforeUnmount(() => {
         <div class="bill">
           <CreditsFigure :art="star.id" kind="portrait" :zoom="0.82" />
           <div class="who">
-            <div class="name big" :style="{ color: '#ff8a9c' }">{{ star.name }}</div>
+            <div class="name big" :style="{ color: '#f0735a' }">{{ star.name }}</div>
             <div class="title-line">{{ star.title }}</div>
             <p class="line">She only wanted a quiet day and a full donation box.</p>
             <div class="spells">
@@ -878,7 +878,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.04em;
 }
 .role {
-  color: var(--gold);
+  color: #e8c15a;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.28em;
@@ -890,9 +890,11 @@ onBeforeUnmount(() => {
   margin-bottom: 2px;
 }
 .name {
+  font-family: var(--display);
   font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
 }
 .name.big {
   font-size: 2.3rem;
@@ -994,9 +996,7 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid var(--gold);
-  box-shadow:
-    0 0 0 3px #c0203a,
-    0 0 24px rgba(255, 201, 77, 0.45);
+  box-shadow: 0 0 0 3px #c0203a;
 }
 .avatar img,
 .avatar-live {
@@ -1024,22 +1024,20 @@ onBeforeUnmount(() => {
 .name.huge {
   font-size: 3.2rem;
   letter-spacing: 0.06em;
-  text-shadow:
-    0 0 26px rgba(255, 201, 77, 0.45),
-    0 3px 0 #5a3a0a;
+  text-shadow: 0 3px 0 #5a3a0a;
 }
 .name.small {
   font-size: 1.1rem;
 }
 .jobs {
-  color: var(--cyan);
+  color: #d6c48c;
   font-size: 0.95rem;
   letter-spacing: 0.08em;
   margin-top: 6px;
 }
 .line {
   margin: 8px 0 0;
-  color: #d8def5;
+  color: #e6dfcd;
   max-width: 620px;
   line-height: 1.5;
 }
@@ -1051,9 +1049,10 @@ onBeforeUnmount(() => {
 }
 .aside {
   margin: 0;
+  font-family: var(--display);
   font-size: 1.35rem;
   font-style: italic;
-  color: #ffd6de;
+  color: #d6c48c;
 }
 .caption {
   margin: 2px 0 10px;
@@ -1062,7 +1061,9 @@ onBeforeUnmount(() => {
   min-height: 1.3em;
 }
 .title-line {
-  color: var(--cyan);
+  color: #d6c48c;
+  font-family: var(--display);
+  font-style: italic;
   font-size: 1.05rem;
   margin-top: 2px;
 }
@@ -1122,7 +1123,8 @@ code {
 }
 .insp-by {
   font-weight: 400;
-  color: var(--cyan);
+  font-style: italic;
+  color: #d6c48c;
   font-size: 0.95rem;
 }
 .insp-gave {
@@ -1188,11 +1190,11 @@ code {
 }
 .dot-row i {
   flex: 1;
-  border-bottom: 2px dotted rgba(200, 210, 255, 0.35);
+  border-bottom: 2px dotted rgba(214, 196, 140, 0.35);
   transform: translateY(-4px);
 }
 .dot-row span {
-  color: #d8def5;
+  color: #e6dfcd;
 }
 .dot-row b {
   color: #ffb08a;
@@ -1208,7 +1210,7 @@ code {
 }
 .calls li::before {
   content: "✦ ";
-  color: var(--gold);
+  color: #e8c15a;
 }
 
 /* A character beside her lines. */
@@ -1236,7 +1238,8 @@ code {
   flex-direction: column;
   gap: 4px;
   margin-top: 12px;
-  color: #ffd6de;
+  color: #eadcc6;
+  font-family: var(--display);
   font-size: 0.95rem;
 }
 .lenders {
@@ -1286,7 +1289,7 @@ code {
   align-items: baseline;
 }
 .no {
-  color: var(--gold);
+  color: #e8c15a;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -1308,7 +1311,7 @@ code {
 .you {
   margin-top: 28px;
   font-size: 1.9rem;
-  color: #ff8a9c;
+  color: #e8c15a;
 }
 
 /* The end: thanks, and Reimu sweeping the shrine steps. */

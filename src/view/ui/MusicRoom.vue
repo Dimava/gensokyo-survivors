@@ -274,9 +274,9 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(232, 193, 90, 0.12);
+  border-radius: 2px;
+  background: rgba(10, 8, 7, 0.35);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -285,11 +285,11 @@ onBeforeUnmount(() => {
 }
 .track:hover,
 .track.picked {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(46, 35, 28, 0.9);
 }
 .track.on {
-  border-color: #ffd166;
-  background: rgba(255, 209, 102, 0.12);
+  border-color: #e8c15a;
+  background: rgba(232, 193, 90, 0.1);
 }
 .track .no {
   opacity: 0.6;

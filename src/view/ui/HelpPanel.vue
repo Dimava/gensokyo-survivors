@@ -6,11 +6,19 @@ import { STAGES } from "../../content/stages.ts";
 import { bossDef } from "../../content/bosses.ts";
 import { fmtTime, hex } from "./useGame.ts";
 import Keys from "./Keys.vue";
+import { ART } from "../../art/index.ts";
+import { svgOf } from "../../art/drawing.ts";
 const first = STAGES[0]!;
 const spells = bossDef(first.boss).spells.length;
 const mid = first.script.find((b) => b.form === "midboss");
 const midMove = mid ? ENEMIES[enemyIndex(mid.enemy)]!.move : undefined;
 const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
+/** Each foe as it looks in the field, drawn to fit a small box. */
+const MOB = 34;
+const mob = (id: string): string => {
+  const d = ART[id]?.sprite;
+  return d ? svgOf(d, Math.min(MOB / d.w, MOB / d.h)) : "";
+};
 </script>
 
 <template>
@@ -34,7 +42,7 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
       <h3>How a run goes</h3>
       <ul>
         <li>Your weapons fire on their own. You only move.</li>
-        <li>Defeated enemies drop <b style="color: #4da3ff">point items</b> (experience). A full EXP bar is a level-up: pick one of three upgrades.</li>
+        <li>Defeated enemies drop <b><i class="pt"></i>point items</b> (experience). A full EXP bar is a level-up: pick one of three upgrades.</li>
         <li>Enemies come in <b>formations</b>: fairies fly across in lines and streams, take up posts around you, or circle you, fire, and leave. Defeat them before they go. Only the fuzzballs simply chase you.</li>
         <li>Halfway through, a <b>midboss</b> holds the stage for up to {{ midStay }} seconds. Defeat her and every bullet on screen turns into points.</li>
         <li>At {{ fmtTime(first.bossAt) }} (plus the time the midboss held you up) strong winds blow the swarm away, spiral the drops near you in, and the stage boss arrives. She has {{ spells }} <b>spell cards</b>, each with its own HP bar and timer. Break each by damage before its timer runs out for a bonus (after that it must still be broken, without bonus); take no hits during one to <b>capture</b> it for double.</li>
@@ -61,7 +69,8 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
       <h3>Who you will meet</h3>
       <div class="codex">
         <div v-for="e in ENEMIES" :key="e.id" class="enemy">
-          <i :style="{ background: hex(e.color) }"></i>
+          <span v-if="mob(e.id)" class="mob" v-html="mob(e.id)"></span>
+          <i v-else :style="{ background: hex(e.color) }"></i>
           <div>
             <b>{{ e.name }}</b> <span class="muted">HP {{ e.hp }} · contact {{ e.dmg }} · EXP {{ gemValue(e, e.hp) }}</span>
             <div class="muted">{{ e.blurb }}</div>
@@ -121,5 +130,29 @@ ul {
   height: 18px;
   border-radius: 50%;
   margin-top: 2px;
+}
+.mob {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+}
+.mob :deep(svg) {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45));
+}
+/* A point item, as it lies in the field: a small blue tile with a lit bevel. */
+.pt {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin: 0 5px 0 1px;
+  border: 1.5px solid #1a2a55;
+  background: #4a7cd0;
+  box-shadow: inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.3);
+  vertical-align: -0.02em;
 }
 </style>

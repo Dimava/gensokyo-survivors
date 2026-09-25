@@ -32,7 +32,8 @@ defineEmits<{ close: [] }>();
   align-self: stretch;
   height: 64px;
   margin-top: -64px;
-  background: linear-gradient(rgba(21, 32, 45, 0), rgb(21, 32, 45) 75%);
+  /* Into the night ground at the foot of the backdrop (NightSky), not a band of its own. */
+  background: linear-gradient(rgba(12, 9, 23, 0), rgb(12, 9, 23) 75%);
   pointer-events: none;
 }
 </style>
