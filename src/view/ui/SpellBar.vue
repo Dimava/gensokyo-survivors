@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // The boss's spell card name bar, Touhou style (refs/spellcards/STYLE.md §6):
-// it slides in from the right when a card is declared, the sign small over
-// 「name」 in outlined white serif, on a bar that runs from clear through the
-// boss's colour to dark with halftone dots at the end, a hairline under it and
-// the capture bonus below. Keyed by the card index, so each card slides in anew.
+// it slides in from the right when a card is declared, the sign small in her
+// colour beside 「name」 in the display serif, on a lacquer plate with a stripe
+// of her colour at its leading edge, a hairline under it and the capture bonus
+// below. Keyed by the card index, so each card slides in anew.
 import { computed } from "vue";
 import { CHARACTERS, CURRENCY, type CharacterId } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
@@ -40,65 +40,46 @@ const ac = computed(() => hex(CHARACTERS[props.who].color));
 }
 .plate {
   position: relative;
-  padding: 3px 14px 4px 48px;
+  padding: 4px 14px 5px 22px;
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ac) 70%, transparent) 30%, color-mix(in srgb, var(--ac) 45%, #120812) 75%, #0c0610);
-  clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
-}
-.plate::after {
-  /* Halftone dots fading in toward the bar's right end. */
-  content: "";
-  position: absolute;
-  inset: 0 0 0 55%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0.9px, transparent 1.5px) 0 0 / 5px 5px;
-  mask-image: linear-gradient(90deg, transparent, #000);
-  pointer-events: none;
+  gap: 10px;
+  background: rgba(20, 15, 12, 0.9);
+  border-left: 4px solid var(--ac);
 }
 .sign {
-  font: 700 10px/1 "Segoe UI", system-ui, sans-serif;
-  letter-spacing: 0.14em;
+  font: 700 10px/1 var(--display);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ac2);
-  text-shadow: 0 1px 2px #000;
   white-space: nowrap;
 }
 .nm {
-  font: 700 17px/1.15 Georgia, "Yu Mincho", "Times New Roman", serif;
-  color: #fff;
+  font: 700 18px/1.15 var(--display);
+  color: #f6f0e1;
   white-space: nowrap;
-  text-shadow:
-    0 0 2px #000,
-    1px 1px 0 #000,
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000;
 }
 .nm b {
-  color: #ff8a8a;
+  color: #e5532d;
   font-weight: 700;
 }
 .sub {
   margin-top: 2px;
   padding: 1px 14px 0 30px;
-  border-top: 1px solid color-mix(in srgb, var(--ac2) 70%, transparent);
+  border-top: 1px solid rgba(232, 193, 90, 0.55);
   font: 600 11px/1.3 "Segoe UI", system-ui, sans-serif;
-  color: #e8e2f0;
+  color: #d6cdb8;
   text-shadow: 0 1px 2px #000;
 }
 .sub b {
-  color: var(--gold, #ffc94d);
+  color: #e8c15a;
   font-variant-numeric: tabular-nums;
 }
 .late .sub {
-  color: var(--red-2, #ff5c7a);
+  color: #e5532d;
 }
 .late .plate {
   filter: saturate(0.4) brightness(0.8);
-}
-.intro .plate {
-  animation: flash calc(0.9s * var(--anim, 1)) ease-out 0.4s both;
 }
 @keyframes declare {
   from {
@@ -110,14 +91,6 @@ const ac = computed(() => hex(CHARACTERS[props.who].color));
   }
   to {
     transform: none;
-  }
-}
-@keyframes flash {
-  from {
-    filter: brightness(1.9);
-  }
-  to {
-    filter: none;
   }
 }
 </style>

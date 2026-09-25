@@ -12,6 +12,7 @@ import { runView, type Game, type RunPath } from "../sim/game.ts";
 import { audio, type Sfx } from "./audio.ts";
 import type { Playfield } from "./renderer.ts";
 import { CHARACTERS, type CharacterId } from "../content/names.ts";
+import { bossDef } from "../content/bosses.ts";
 import { EXPEDITIONS_ENABLED, destination } from "../content/expeditions.ts";
 import { END_DELAY } from "../sim/tuning.ts";
 import { DeathFx } from "./fx-death.ts";
@@ -196,7 +197,7 @@ export class Presenter {
       case "player:hurt":
         if (player) {
           f.burst(player.x, player.y, 0xff3355, 18, 4, 1.2);
-          f.floater(player.x, player.y - 26, `-${Math.round(p.dmg as number)}`, 0xff5c7a);
+          f.floater(player.x, player.y - 26, `-${Math.round(p.dmg as number)}`, 0xf0604a);
         }
         f.flash(0xff2040, 0.35);
         f.shake(10);
@@ -223,7 +224,7 @@ export class Presenter {
         if ((p.coins as number) > 0) this.sfx("coin");
         if ((p.hearts as number) > 0) this.sfx("heart");
         if ((p.xp as number) > 0) this.sfx("pickup");
-        if (player && (p.coins as number) > 0) f.floater(player.x + 18, player.y - 30, `+${p.coins} ¥`, 0xffc94d, 15);
+        if (player && (p.coins as number) > 0) f.floater(player.x + 18, player.y - 30, `+${p.coins} ¥`, 0xe8c15a, 15);
         break;
       }
       case "level:up":
@@ -267,9 +268,13 @@ export class Presenter {
       case "spell:start": {
         const boss = v?.derived("boss");
         if (boss) {
-          // The name bar (SpellBar) and the cut-in (SpellCutIn) declare the card.
+          // The name bar (SpellBar) and the cut-in (SpellCutIn) declare the card; the last
+          // card's result banner makes way, or her portrait would sweep across its words.
+          if (!this.quiet) ui.banners.splice(0);
           this.sfx("spell");
-          f.flash(0x6fd3ff, 0.3);
+          // The declaration flashes in the boss's own colour (Rumia's near-black reads as violet, as her spell circle does).
+          const c = CHARACTERS[bossDef(boss.boss.id).character].color;
+          f.flash(c === 0x2b2238 ? 0xb9a6ff : c, 0.3);
         }
         break;
       }
@@ -294,8 +299,8 @@ export class Presenter {
         f.flash(0xffffff, 0.9);
         f.shake(22);
         if (player) {
-          f.ring(player.x, player.y - 150, 20, 600, 0x6fd3ff, 1.2);
-          f.burst(player.x, player.y - 150, 0x6fd3ff, 80, 8, 2, true);
+          f.ring(player.x, player.y - 150, 20, 600, 0xe8c15a, 1.2);
+          f.burst(player.x, player.y - 150, 0xf0e6cc, 80, 8, 2, true);
         }
         this.sfx("bossDown");
         break;

@@ -188,6 +188,8 @@ export class Playfield {
   private zoom = 1;
   /** Screen position of the player, for pointer steering. */
   playerScreen = { x: 0, y: 0 };
+  /** Screen position of the boss (or a midboss holding the stage) for the enemy marker (EnemyMark.vue); null when none. */
+  enemyMark: { x: number; y: number } | null = null;
   /** The player's alpha while fx-death.ts plays (null: the renderer's own). */
   playerAlpha: number | null = null;
   /**
@@ -333,7 +335,7 @@ export class Playfield {
 
   floater(x: number, y: number, text: string, color: number, size = 18): void {
     if (this.floaters.length > 40) return;
-    const t = new Text({ text, style: { fontFamily: "system-ui, sans-serif", fontSize: size, fontWeight: "800", fill: color, stroke: { color: 0x000000, width: 4 } } });
+    const t = new Text({ text, style: { fontFamily: '"Shippori Mincho B1", "Yu Mincho", Georgia, serif', fontSize: size, fontWeight: "700", fill: color, stroke: { color: 0x120d0a, width: 4, join: "round" } } });
     t.anchor.set(0.5);
     this.floatLayer.addChild(t);
     this.floaters.push({ text: t, x, y, age: 0, dur: 0.9 });
@@ -480,6 +482,7 @@ export class Playfield {
       this.world.visible = false;
       this.playerTop.visible = false;
       this.ground.tint = 0xffffff;
+      this.enemyMark = null;
       this.drawScreen(W, H, fdt, opts.dim ?? 0);
       return;
     }
@@ -512,6 +515,8 @@ export class Playfield {
     this.ground.tilePosition.set(-camX * this.zoom + sx + W / 2, -camY * this.zoom + sy + H / 2);
     this.playerScreen = { x: W / 2 + (p.body.x - camX) * this.zoom, y: H / 2 + (p.body.y - camY) * this.zoom };
     const viewR = Math.sqrt(W * W + H * H) / 2 / this.zoom + 40;
+    const mark = (x: number, y: number) => (this.enemyMark = { x: this.world.position.x + x * this.zoom, y: this.world.position.y + y * this.zoom });
+    this.enemyMark = null;
 
     // Boss arena and the spell-card background.
     this.arena.clear();
@@ -548,6 +553,7 @@ export class Playfield {
     if (boss) {
       const def = bossDef(boss.boss.id);
       bossPos(boss, t, pos);
+      mark(pos.x, pos.y);
       focusX = pos.x;
       focusY = pos.y;
       focused = true;
@@ -572,11 +578,13 @@ export class Playfield {
       this.spellBg.rotation = -this.time * 0.15;
       this.spellBg.scale.set(6.5);
       this.spellBg.alpha = 0.12 * intro;
-      this.spellBg.tint = [0x6fd3ff, 0xb6f0ff, 0xffffff][boss.boss.spell % 3]!;
-      // Spell HP as a ring around the boss (Touhou style).
+      this.spellBg.tint = this.bossCircle.tint;
+      // Spell HP as a ring around the boss (Touhou style): washi, like the bar at the top, on a dark track.
       const frac = boss.boss.max > 0 ? boss.boss.hp / boss.boss.max : 0;
       if (frac > 0) {
-        this.under.moveTo(pos.x, pos.y - (def.radius + 26)).arc(pos.x, pos.y, def.radius + 26, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac).stroke({ width: 4, color: 0xff5c8a, alpha: 0.9 });
+        const hr = def.radius + 26;
+        this.under.circle(pos.x, pos.y, hr).stroke({ width: 5, color: 0x120d0a, alpha: 0.45 });
+        this.under.moveTo(pos.x, pos.y - hr).arc(pos.x, pos.y, hr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac).stroke({ width: 3, color: 0xf0e6cc, alpha: 0.9 });
       }
     }
 
@@ -615,6 +623,7 @@ export class Playfield {
       const kind = ek[i]!;
       const flash = t - ehit[i]! < SWARM.flash;
       const def = ENEMIES[kind]!;
+      if (def.midboss && !boss && ephase[i] !== PHASE.leaving) mark(ex[i]!, ey[i]!);
       if (!boss) {
         const fdx = ex[i]! - p.body.x;
         const fdy = ey[i]! - p.body.y;

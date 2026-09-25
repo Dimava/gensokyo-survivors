@@ -140,21 +140,27 @@ export function buildAtlas(renderer: Renderer): Atlas {
     // Grazed ("spent"): the coloured glow stays, the white inner glow goes out. Tint only multiplies, so this is its own texture.
     cells.push({ name: `bulletS${i}`, w: s, h: s, draw: (g, cx, cy) => drawBullet(g, cx, cy, b.shape, b.size, b.color, spentCore(b.color)) });
   });
-  const gem = (color: number) => (g: Graphics, cx: number, cy: number) => {
-    g.poly([cx, cy - 8, cx + 6, cy, cx, cy + 8, cx - 6, cy]).fill(color);
-    g.poly([cx, cy - 4, cx + 3, cy, cx, cy + 4, cx - 3, cy]).fill({ color: 0xffffff, alpha: 0.7 });
+  // EXP drops are Touhou's point items: small square tiles with a dark rim, a
+  // lit top-left bevel and a white mark, in blue, then green, then red as they grow.
+  // Small and quiet: a field can hold hundreds of them, so no bright centre, only the lit bevel.
+  const gem = (color: number, rim: number) => (g: Graphics, cx: number, cy: number) => {
+    g.rect(cx - 5, cy - 5, 10, 10).fill(rim);
+    g.rect(cx - 3.8, cy - 3.8, 7.6, 7.6).fill(color);
+    g.poly([cx - 3.8, cy - 3.8, cx + 3.8, cy - 3.8, cx + 2.4, cy - 2.4, cx - 2.4, cy - 2.4, cx - 2.4, cy + 2.4, cx - 3.8, cy + 3.8]).fill({ color: 0xffffff, alpha: 0.3 });
   };
-  cells.push({ name: "gem", w: 20, h: 22, draw: gem(0x4da3ff) });
-  cells.push({ name: "gemGreen", w: 20, h: 22, draw: gem(0x4dff88) });
-  cells.push({ name: "gemRed", w: 20, h: 22, draw: gem(0xff4d6d) });
+  cells.push({ name: "gem", w: 20, h: 22, draw: gem(0x4a7cd0, 0x1a2a55) });
+  cells.push({ name: "gemGreen", w: 20, h: 22, draw: gem(0x4aa66a, 0x173d25) });
+  cells.push({ name: "gemRed", w: 20, h: 22, draw: gem(0xc9434a, 0x4f1216) });
   cells.push({
+    // A mon: a round coin with a square hole.
     name: "coin",
     w: 22,
     h: 22,
     draw: (g, cx, cy) => {
-      g.circle(cx, cy, 8).fill(0xffc94d);
-      g.circle(cx, cy, 5.5).stroke({ width: 1.5, color: 0xa87414 });
-      g.rect(cx - 1, cy - 3, 2, 6).fill(0xa87414);
+      g.circle(cx, cy, 8).fill(0x8a6418);
+      g.circle(cx, cy, 6.8).fill(0xe8c15a);
+      g.circle(cx, cy, 5).stroke({ width: 1, color: 0xb48a2c });
+      g.rect(cx - 2.2, cy - 2.2, 4.4, 4.4).fill(0x3a2a0c);
     },
   });
   cells.push({
@@ -162,10 +168,10 @@ export function buildAtlas(renderer: Renderer): Atlas {
     w: 24,
     h: 22,
     draw: (g, cx, cy) => {
-      g.circle(cx - 4, cy - 2, 5).fill(0xff5c8a);
-      g.circle(cx + 4, cy - 2, 5).fill(0xff5c8a);
-      g.poly([cx - 9, cy, cx + 9, cy, cx, cy + 9]).fill(0xff5c8a);
-      g.circle(cx - 5, cy - 4, 1.8).fill(0xffffff);
+      g.circle(cx - 4, cy - 2, 5).fill(0xe8506a);
+      g.circle(cx + 4, cy - 2, 5).fill(0xe8506a);
+      g.poly([cx - 9, cy, cx + 9, cy, cx, cy + 9]).fill(0xe8506a);
+      g.circle(cx - 5, cy - 4, 1.8).fill({ color: 0xffffff, alpha: 0.8 });
     },
   });
   WEAPONS.forEach((w, i) => {

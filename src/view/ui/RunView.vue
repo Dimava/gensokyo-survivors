@@ -9,6 +9,7 @@ import LevelUpView from "./LevelUpView.vue";
 import DialogueView from "./DialogueView.vue";
 import PauseMenu from "./PauseMenu.vue";
 import HintBar from "./HintBar.vue";
+import EnemyMark from "./EnemyMark.vue";
 
 const h = computed(() => hud.value);
 </script>
@@ -17,6 +18,7 @@ const h = computed(() => hud.value);
   <div class="run">
     <SpellCutIn v-if="h" />
     <HudView v-if="h" />
+    <EnemyMark v-if="h && h.overlay === 'none' && h.phase !== 'over' && !state.paused" />
     <!-- The ending's words replace the banners: "Stage clear!" is not said twice. -->
     <div v-if="!(h && h.phase === 'over')" class="banners">
       <TransitionGroup name="banner">
