@@ -33,8 +33,11 @@ export interface EnemyDef {
   /** Contact damage. */
   dmg: number;
   radius: number;
-  /** Experience value of the gem it drops. */
-  xp: number;
+  /**
+   * Experience per HP of the gem it drops (default XP.perHp): the gem is worth the
+   * enemy's HP when it spawned (grown with run time) times this.
+   */
+  xpPerHp?: number;
   /** Chance of also dropping a donation coin, and of a heart. */
   coin: number;
   heart: number;
@@ -65,7 +68,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 1.05,
     dmg: 5,
     radius: 10,
-    xp: 2,
+    xpPerHp: 0.04,
     coin: 0.01,
     heart: 0.002,
     color: 0xf3e6ff,
@@ -81,7 +84,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 1.9,
     dmg: 7,
     radius: 12,
-    xp: 3,
     coin: 0.02,
     heart: 0.003,
     color: 0x6fb6ff,
@@ -99,7 +101,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 2.1,
     dmg: 8,
     radius: 12,
-    xp: 4,
     coin: 0.03,
     heart: 0.004,
     color: 0x9fe8ff,
@@ -117,7 +118,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 1.55,
     dmg: 8,
     radius: 11,
-    xp: 4,
     coin: 0.03,
     heart: 0.004,
     color: 0xb9fff4,
@@ -135,7 +135,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 1.7,
     dmg: 10,
     radius: 15,
-    xp: 6,
     coin: 0.06,
     heart: 0.01,
     color: 0xffd23f,
@@ -153,7 +152,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 0.8,
     dmg: 14,
     radius: 20,
-    xp: 10,
     coin: 0.25,
     heart: 0.03,
     color: 0xd04a6a,
@@ -171,7 +169,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 1.6,
     dmg: 9,
     radius: 13,
-    xp: 4,
     coin: 0.04,
     heart: 0.004,
     color: 0x5a3d8a,
@@ -189,7 +186,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 1.4,
     dmg: 16,
     radius: 24,
-    xp: 30,
     coin: 1,
     heart: 1,
     color: 0x7bd88f,
@@ -208,7 +204,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 2,
     dmg: 16,
     radius: 26,
-    xp: 60,
     coin: 1,
     heart: 1,
     color: 0x7bd88f,
@@ -232,7 +227,6 @@ export const ENEMIES: readonly EnemyDef[] = [
     speed: 2,
     dmg: 18,
     radius: 26,
-    xp: 80,
     coin: 1,
     heart: 1,
     color: 0x7a55c0,

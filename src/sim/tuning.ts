@@ -60,6 +60,20 @@ export const PICKUP = {
   softCap: 2500,
 } as const;
 
+/**
+ * The winds at the boss's approach: the swarm is blown away (no experience), and
+ * the drops within `reach` of the player spiral in over `spiral` ticks; the rest blow away.
+ */
+export const WIND = {
+  reach: 700,
+  spiral: 90,
+  /** Radians per tick the cyclone turns. */
+  spin: 0.07,
+  /** Blown enemies fly off at this speed (px per tick), growing by `accel` per tick. */
+  speed: 3,
+  accel: 0.3,
+} as const;
+
 export const SWARM = {
   /** Spawn ring around the player. */
   spawnMin: 720,
@@ -115,8 +129,13 @@ export const FORMATION = {
 } as const;
 
 export const XP = {
-  /** Experience needed for level n -> n+1. */
-  next: (level: number): number => (level < 20 ? 5 + (level - 1) * 10 : 195 + (level - 20) * 30),
+  /** Experience per HP of an enemy's gem (EnemyDef.xpPerHp overrides it): tough enemies are worth their HP. */
+  perHp: 0.3,
+  /**
+   * Experience needed for level n -> n+1: cheap at first, steeper as gems grow
+   * with the enemies' HP (fitted so levels come at about the old times).
+   */
+  next: (level: number): number => Math.round(5 + 1.8 * (level - 1) ** 1.85),
 } as const;
 
 export const CARDS_TUNING = {
@@ -155,8 +174,18 @@ export const HITSTOP = { hurt: 6, spellBreak: 14 } as const;
 /** Ticks between the run ending (death or clear) and the results screen. */
 export const END_DELAY = 100;
 
-/** Run donations: per this many seconds survived, per this many kills. */
-export const REWARD = { perSeconds: 8, perKills: 20 } as const;
+/**
+ * Run donations: the swarm pays about 1 coin a second (time, kills and coin drops
+ * together), a second of the boss fight 2, and each spell card its bonus (twice when captured).
+ */
+export const REWARD = {
+  /** Swarm seconds per coin. */
+  perSeconds: 2,
+  /** Kills per coin. */
+  perKills: 60,
+  /** Coins per second of the boss fight. */
+  bossPerSecond: 2,
+} as const;
 
 /** Bullets further than this from the player (or the arena) are culled when checked. */
 export const BULLET_CULL = 900;

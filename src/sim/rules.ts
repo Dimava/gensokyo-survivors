@@ -14,10 +14,10 @@ import type { Ctx } from "gamebones";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
-import { collectDead, contactDamage, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
+import { blowAway, collectDead, contactDamage, enemyFire, migrateGemValue, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
 import { applyVolley, bossFactor, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
-import { DROP, HEART_HEAL, addDrop, pullAll, stepDrops } from "./drops.ts";
+import { DROP, HEART_HEAL, addDrop, cyclone, pullAll, stepDrops } from "./drops.ts";
 import { cardRules } from "./cards.ts";
 import { bossPos, bossVulnerable } from "./boss.ts";
 import { COIN_OFFER, HEAL_FRACTION, rollOffer } from "./offers.ts";
@@ -84,18 +84,27 @@ function closeOverlay(ctx: C): void {
   if (run.run.phase !== "over") ctx.setScale("game", 1, 1);
 }
 
+/** A run's donations so far, before greed, at action tick `t`: the swarm's time, kills and drops, the boss fight's time, and spell bonuses. */
+export function runCoins(pr: { kills: number; coinDrops: number; coinSpells: number; bossFrom: number }, t: number) {
+  const swarm = pr.bossFrom ? pr.bossFrom : t;
+  const coins = {
+    drops: Math.floor(pr.coinDrops),
+    survival: Math.floor(swarm / 60 / REWARD.perSeconds),
+    kills: Math.floor(pr.kills / REWARD.perKills),
+    boss: pr.bossFrom ? Math.floor(((t - pr.bossFrom) / 60) * REWARD.bossPerSecond) : 0,
+    spells: Math.floor(pr.coinSpells),
+  };
+  return { ...coins, sum: coins.drops + coins.survival + coins.kills + coins.boss + coins.spells };
+}
+
 function summary(ctx: C): RunSummary {
   const run = ctx.derived("state").run;
   const pr = ctx.derived("player").progress;
   const stats = ctx.derived("stats");
   const boss = bossDef(stageDef(run.stage).boss);
   const seconds = Math.floor(ctx.now("action") / 60);
-  const drops = Math.floor(pr.coinDrops);
-  const survival = Math.floor(seconds / REWARD.perSeconds);
-  const kills = Math.floor(pr.kills / REWARD.perKills);
-  const spells = Math.floor(pr.coinSpells);
-  const clear = Math.floor(pr.coinClear);
-  const total = Math.round((drops + survival + kills + spells + clear) * stats.greed);
+  const { sum, ...coins } = runCoins(pr, run.endedAt || ctx.now("action"));
+  const total = Math.round(sum * stats.greed);
   return {
     stage: run.stage,
     outcome: run.outcome,
@@ -107,7 +116,7 @@ function summary(ctx: C): RunSummary {
     spellsCaptured: pr.spellsCaptured,
     spellsTotal: boss.spells.length,
     bossDefeated: run.phase === "over" && run.outcome === "clear",
-    coins: { drops, survival, kills, spells, clear, greed: Math.round(stats.greed * 100) / 100, total },
+    coins: { ...coins, greed: Math.round(stats.greed * 100) / 100, total },
   };
 }
 
@@ -139,7 +148,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
           rerollsUsed: 0,
           coinDrops: 0,
           coinSpells: 0,
-          coinClear: 0,
+          bossFrom: 0,
         },
         spirit: { base: 1, t0: 0 },
         meter: { graze: 0 },
@@ -251,7 +260,9 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
       const def = ENEMIES[ev.kinds[i]!]!;
       const x = ev.xs[i]!;
       const y = ev.ys[i]!;
-      addDrop(ctx, DROP.xp, x, y, def.xp);
+      // Blown away by the boss's winds: worth nothing.
+      if (!ev.xp[i]) continue;
+      addDrop(ctx, DROP.xp, x, y, ev.xp[i]!);
       if (loot.chance(def.coin)) addDrop(ctx, DROP.coin, x + 6, y - 4, def.coin >= 1 ? 10 : 1);
       if (loot.chance(def.heart)) addDrop(ctx, DROP.heart, x - 6, y + 4, 1);
       if (def.midboss) {
@@ -423,12 +434,11 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("boss:approach", (_, ctx) => {
     const run = ctx.derived("state");
     const { body } = ctx.derived("player");
-    // The boss clears the field: every enemy and bullet turns into points (experience only) that fly to the player.
-    const e = ctx.packed("enemies");
-    for (let i = 0; i < e.count; i++) addDrop(ctx, DROP.xp, r1(e.col("x")[i]!), r1(e.col("y")[i]!), ENEMIES[e.col("kind")[i]!]!.xp);
-    e.clear();
-    ctx.emit("bullets:erase", { x: body.x, y: body.y, radius: 1e6, gems: true });
-    ctx.emit("drops:pullAll", {});
+    // Strong winds herald the boss: they blow the swarm and its bullets away (worth nothing),
+    // and spiral the drops within a screen of the player in; the rest blow away.
+    blowAway(ctx);
+    ctx.emit("bullets:erase", { x: body.x, y: body.y, radius: 1e6, gems: false });
+    cyclone(ctx);
     ctx.mut(run, "run").phase = "warning";
     ctx.emit("banner", { text: "WARNING: a powerful presence approaches", tone: "warn" });
     ctx.after("action", BOSS.warning, "boss:dialogue", {});
@@ -456,6 +466,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
     closeOverlay(ctx);
     ctx.mut(run, "run").phase = "boss";
     const t = ctx.now("action");
+    ctx.mut(ctx.derived("player"), "progress").bossFrom = t;
     const x = run.run.ax;
     const y = run.run.ay - BOSS.hover;
     ctx.spawn(
@@ -562,11 +573,8 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("boss:defeated", (_, ctx) => {
     const run = ctx.derived("state");
     const boss = ctx.derived("boss");
-    const stage = stageDef(run.run.stage);
     if (boss) ctx.despawn(boss);
     ctx.mut(run, "run").phase = "cleared";
-    const p = ctx.derived("player");
-    ctx.mut(p, "progress").coinClear = stage.clearBonus;
     ctx.packed("enemies").clear();
     ctx.emit("drops:pullAll", {});
     ctx.emit("banner", { text: "Stage clear!", tone: "good" });
@@ -586,7 +594,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("run:finish", (_, ctx) => ctx.send("/", Meta, "run:ended", summary(ctx))),
 
   ...cardRules(r),
-]).migrations([migrateToFormations, migrateSalvoAim, migrateFocus]);
+]).migrations([migrateToFormations, migrateSalvoAim, migrateFocus, migrateGemValue]);
 
 function r1(v: number): number {
   return Math.round(v * 10) / 10;

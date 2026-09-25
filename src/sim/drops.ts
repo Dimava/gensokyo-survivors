@@ -6,7 +6,7 @@
 
 import type { Ctx } from "gamebones";
 import type { RS0 } from "./run.ts";
-import { PICKUP } from "./tuning.ts";
+import { PICKUP, WIND } from "./tuning.ts";
 
 export const DROP = { xp: 0, coin: 1, heart: 2 } as const;
 export const HEART_HEAL = 25;
@@ -49,6 +49,22 @@ export function stepDrops(ctx: C, magnetScale: number, playerSpeed: number): Col
     const ddx = body.x - x[i]!;
     const ddy = body.y - y[i]!;
     const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+    if (pulled[i] === 2) {
+      // In the cyclone: closing in by `spd` a tick while turning around the player.
+      const r = dist - spd[i]!;
+      if (r <= PICKUP.collect) {
+        if (kind[i] === DROP.xp) out.xp += value[i]!;
+        else if (kind[i] === DROP.coin) out.coins += value[i]!;
+        else out.hearts += 1;
+        out.n++;
+        d.remove(i);
+        continue;
+      }
+      const a = Math.atan2(-ddy, -ddx) + WIND.spin;
+      x[i] = body.x + Math.cos(a) * r;
+      y[i] = body.y + Math.sin(a) * r;
+      continue;
+    }
     if (pulled[i]) {
       const s = Math.min(PICKUP.pullMax, spd[i]! + PICKUP.pullAccel);
       spd[i] = s;
@@ -72,6 +88,26 @@ export function stepDrops(ctx: C, magnetScale: number, playerSpeed: number): Col
     check[i] = t + Math.max(1, Math.floor((dist - R) / Math.max(playerSpeed, 0.01)));
   }
   return out;
+}
+
+/**
+ * The boss's winds: drops within WIND.reach of the player spiral in over
+ * WIND.spiral ticks (pulled = 2); the rest are blown away.
+ */
+export function cyclone(ctx: C): void {
+  const d = ctx.packed("drops");
+  const { body } = ctx.derived("player");
+  const x = d.col("x");
+  const y = d.col("y");
+  for (let i = d.count - 1; i >= 0; i--) {
+    const dist = Math.sqrt((x[i]! - body.x) ** 2 + (y[i]! - body.y) ** 2);
+    if (dist > WIND.reach) {
+      d.remove(i);
+      continue;
+    }
+    d.col("pulled")[i] = 2;
+    d.col("spd")[i] = Math.max(1, dist / WIND.spiral);
+  }
 }
 
 export function pullAll(ctx: C): void {

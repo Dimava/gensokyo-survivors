@@ -16,6 +16,8 @@ const midbossName = (s: StageDef): string => {
   const mid = s.script.find((b) => b.form === "midboss");
   return mid ? ENEMIES[enemyIndex(mid.enemy)]!.name : "none";
 };
+/** What capturing every spell card of the stage's boss pays (a capture pays twice the bonus). */
+const captures = (s: StageDef): number => bossDef(s.boss).spells.reduce((sum, c) => sum + c.bonus * 2, 0);
 const locked = (s: StageDef): boolean => !!s.requires && !profile.value.cleared.includes(s.requires);
 
 const picking = ref(false);
@@ -106,8 +108,8 @@ function hover(): void {
               </div>
               <div class="muted">{{ s.blurb }}</div>
               <div class="muted small">
-                Midboss {{ midbossName(s) }}; boss at {{ fmtTime(s.bossAt) }}: {{ bossName(bossDef(s.boss)) }} with {{ bossDef(s.boss).spells.length }} spell cards · clear bonus {{ CURRENCY.icon }}
-                {{ s.clearBonus }}
+                Midboss {{ midbossName(s) }}; boss at {{ fmtTime(s.bossAt) }}: {{ bossName(bossDef(s.boss)) }} with {{ bossDef(s.boss).spells.length }} spell cards · spell captures pay {{ CURRENCY.icon }}
+                {{ captures(s) }}
               </div>
             </div>
             <button v-if="!locked(s)" class="btn primary" @click="start(s.id)">Go</button>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
+import { gemValue } from "../../sim/swarm.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { STAGES } from "../../content/stages.ts";
 import { bossDef } from "../../content/bosses.ts";
@@ -36,7 +37,7 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
         <li>Defeated enemies drop <b style="color: #4da3ff">point items</b> (experience). A full EXP bar is a level-up: pick one of three upgrades.</li>
         <li>Enemies come in <b>formations</b>: fairies fly across in lines and streams, take up posts around you, or circle you, fire, and leave. Defeat them before they go. Only the fuzzballs simply chase you.</li>
         <li>Halfway through, a <b>midboss</b> holds the stage for up to {{ midStay }} seconds. Defeat her and every bullet on screen turns into points.</li>
-        <li>At {{ fmtTime(first.bossAt) }} (plus the time the midboss held you up) the field turns into points and the stage boss arrives. She has {{ spells }} <b>spell cards</b>, each with its own HP bar and timer. Break each by damage before its timer runs out for a bonus (after that it must still be broken, without bonus); take no hits during one to <b>capture</b> it for double.</li>
+        <li>At {{ fmtTime(first.bossAt) }} (plus the time the midboss held you up) strong winds blow the swarm away, spiral the drops near you in, and the stage boss arrives. She has {{ spells }} <b>spell cards</b>, each with its own HP bar and timer. Break each by damage before its timer runs out for a bonus (after that it must still be broken, without bonus); take no hits during one to <b>capture</b> it for double.</li>
         <li>Clearing the stage, surviving, kills and coins pay out <b>{{ CURRENCY.name }}</b> ({{ CURRENCY.icon }}) when the run ends, even if you fall.</li>
       </ul>
     </section>
@@ -62,7 +63,7 @@ const midStay = midMove?.kind === "hover" ? Math.round(midMove.stay / 60) : 0;
         <div v-for="e in ENEMIES" :key="e.id" class="enemy">
           <i :style="{ background: hex(e.color) }"></i>
           <div>
-            <b>{{ e.name }}</b> <span class="muted">HP {{ e.hp }} · contact {{ e.dmg }} · EXP {{ e.xp }}</span>
+            <b>{{ e.name }}</b> <span class="muted">HP {{ e.hp }} · contact {{ e.dmg }} · EXP {{ gemValue(e, e.hp) }}</span>
             <div class="muted">{{ e.blurb }}</div>
           </div>
         </div>

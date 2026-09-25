@@ -136,10 +136,15 @@ ${renderField(k, path)}`);
     advance(k, path, 200 * 60, () => v.derived("state").run.phase !== "swarm");
     expect(v.derived("state").run.phase).toBe("warning");
     expect(t()).toBeGreaterThanOrEqual(stage.bossAt * 60 + heldFor);
-    expect(v.packed("enemies").count).toBe(0);
+    // The winds blow the swarm away (worth nothing) and the bullets with it; nearby drops spiral in.
+    const e = v.packed("enemies");
+    expect([...e.col("phase").subarray(0, e.count)].every((ph) => ph === PHASE.blown)).toBe(true);
+    expect([...e.col("xp").subarray(0, e.count)].every((xp) => xp === 0)).toBe(true);
     expect(v.packed("bullets").count).toBe(0);
+    const d = v.packed("drops");
+    expect([...d.col("pulled").subarray(0, d.count)].every((p) => p === 2)).toBe(true);
     h.tick(path, "fixed");
-    h.note(`the boss approaches at ${(t() / 60).toFixed(1)} s: the field turned into points that fly to the player:
+    h.note(`the boss approaches at ${(t() / 60).toFixed(1)} s: strong winds blow the swarm away and spiral the nearby drops in:
 ${renderField(k, path)}`);
 
     h.play("/", "run:abandon", {});

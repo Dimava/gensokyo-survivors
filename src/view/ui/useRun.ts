@@ -10,6 +10,7 @@ import { weaponDef } from "../../content/weapons.ts";
 import { passiveDef } from "../../content/passives.ts";
 import { bossDef, bossName } from "../../content/bosses.ts";
 import { stageDef } from "../../content/stages.ts";
+import { runCoins } from "../../sim/rules.ts";
 import type { CharacterId } from "../../content/names.ts";
 
 export const hud = computed(() => {
@@ -106,7 +107,7 @@ export const hud = computed(() => {
     next: XP.next(p.progress.level),
     seconds: t / 60,
     kills: p.progress.kills,
-    coins: Math.floor(p.progress.coinDrops + p.progress.coinSpells + p.progress.coinClear),
+    coins: runCoins(p.progress, t).sum,
     grazes: p.progress.grazes,
     weapons: v.derived("weapons").map((w) => {
       const def = weaponDef(w.weapon.id);

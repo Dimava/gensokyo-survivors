@@ -12,7 +12,7 @@ import { ENEMIES, type EnemyDef } from "../content/enemies.ts";
 import type { Beat, Side } from "../content/stages.ts";
 import type { RS0 } from "./run.ts";
 import { Grid } from "./spatial.ts";
-import { CAP, FORMATION, SWARM } from "./tuning.ts";
+import { CAP, FORMATION, SWARM, WIND, XP } from "./tuning.ts";
 import { emitPattern } from "./danmaku.ts";
 import { stageDef } from "../content/stages.ts";
 
@@ -20,8 +20,9 @@ import { stageDef } from "../content/stages.ts";
  * Enemy rows. Besides position and health: `vx, vy` a heading (crossers, and
  * everyone leaving) or the orbit's spin in `vx`; `ax, ay` the post as an offset
  * from the player (snipers) or the orbit's angle and radius (orbiters);
- * `phase` 0 arriving or on the job, 1 holding a post, 2 leaving; `until` the
- * tick the job ends.
+ * `phase` 0 arriving or on the job, 1 holding a post, 2 leaving, 3 blown away
+ * by the boss's winds; `until` the tick the job ends (blown: the tick the wind
+ * caught it). `xp` is the value of the gem it drops (0 once blown).
  */
 export const ENEMY_FIELDS = [
   "x",
@@ -43,10 +44,12 @@ export const ENEMY_FIELDS = [
   "until",
   // Last, for the v1 -> v2 save migration: the direction a salvo locked on its first volley.
   "aim",
+  // After it, for the v3 -> v4 migration: the gem's value, fixed at spawn.
+  "xp",
 ] as const;
 export type EnemyCols = Columns<(typeof ENEMY_FIELDS)[number]>;
 
-export const PHASE = { active: 0, holding: 1, leaving: 2 } as const;
+export const PHASE = { active: 0, holding: 1, leaving: 2, blown: 3 } as const;
 
 /** Scratch grid over the enemies, rebuilt from the store whenever a rule needs it. */
 export const enemyGrid = new Grid(SWARM.cell, SWARM.leash + 200, CAP.enemies);
@@ -84,10 +87,12 @@ export function spawnEnemy(ctx: C, kind: number, x: number, y: number, job: Job 
   const t = ctx.now("action");
   const scale = def.midboss ? 1 : 1 + stageDef(run.run.stage).hpPerMinute * (t / 3600);
   const first = def.shoots?.[0];
+  const hp = Math.round(def.hp * scale);
+  if (SPAWN_PROBE.on) SPAWN_PROBE.on(kind, hp, gemValue(def, hp), t);
   return e.add({
     x,
     y,
-    hp: Math.round(def.hp * scale),
+    hp,
     kind,
     uid,
     hitAt: -100,
@@ -103,7 +108,13 @@ export function spawnEnemy(ctx: C, kind: number, x: number, y: number, job: Job 
     phase: PHASE.active,
     until: job.until ?? 0,
     aim: 0,
+    xp: gemValue(def, hp),
   });
+}
+
+/** The experience an enemy of `hp` HP at spawn drops. */
+export function gemValue(def: EnemyDef, hp: number): number {
+  return Math.round(hp * (def.xpPerHp ?? XP.perHp) * 100) / 100;
 }
 
 /** Spawns n chasers at random points of the spawn ring around the player. */
@@ -226,6 +237,12 @@ export function enemyVelocity(e: EnemyCols, i: number, px: number, py: number, t
   const y = e.col("y")[i]!;
   const phase = e.col("phase")[i]!;
   const move = def.move;
+  if (phase === PHASE.blown) {
+    const k = WIND.speed + WIND.accel * (t - e.col("until")[i]!);
+    out.x = e.col("vx")[i]! * k;
+    out.y = e.col("vy")[i]! * k;
+    return;
+  }
   if (phase === PHASE.leaving || move.kind === "cross") {
     const k = phase === PHASE.leaving ? FORMATION.leaveSpeed : 1;
     out.x = e.col("vx")[i]! * def.speed * k;
@@ -296,6 +313,22 @@ function leave(e: EnemyCols, i: number, px: number, py: number): void {
   e.col("vy")[i] = dy;
 }
 
+/**
+ * The boss's winds: every enemy is blown straight away from the player, harmless
+ * and worth nothing (stepEnemies drops it once out of sight).
+ */
+export function blowAway(ctx: C): void {
+  const e = ctx.packed("enemies");
+  const { body } = ctx.derived("player");
+  const t = ctx.now("action");
+  for (let i = 0; i < e.count; i++) {
+    leave(e, i, body.x, body.y);
+    e.col("phase")[i] = PHASE.blown;
+    e.col("until")[i] = t;
+    e.col("xp")[i] = 0;
+  }
+}
+
 /** Job changes (arrive, hold, leave), movement, knockback, separation; chasers are leashed, everyone else leaves the field. */
 export function stepEnemies(ctx: C): void {
   const e = rebuildGrid(ctx);
@@ -317,7 +350,12 @@ export function stepEnemies(ctx: C): void {
     const ddx = body.x - x[i]!;
     const ddy = body.y - y[i]!;
     const d2 = ddx * ddx + ddy * ddy;
-    if (move.kind === "chase") {
+    if (phase[i] === PHASE.blown) {
+      if (d2 > FORMATION.gone * FORMATION.gone) {
+        (gone ??= []).push(i);
+        continue;
+      }
+    } else if (move.kind === "chase") {
       if (d2 > SWARM.leash * SWARM.leash && !run.arena) {
         // Too far behind: reappear ahead of the player, on the far side.
         const d = Math.sqrt(d2);
@@ -328,7 +366,7 @@ export function stepEnemies(ctx: C): void {
     } else if (offField(e, i, ddx, ddy, d2)) {
       (gone ??= []).push(i);
       continue;
-    } else if (phase[i] !== PHASE.leaving) {
+    } else if (phase[i] === PHASE.active || phase[i] === PHASE.holding) {
       stepJob(ctx, e, i, def, t, body.x, body.y);
     }
     enemyVelocity(e, i, body.x, body.y, t, vel);
@@ -366,7 +404,7 @@ export function stepEnemies(ctx: C): void {
     // Descending, so swap-remove only moves rows already visited.
     for (let g = gone.length - 1; g >= 0; g--) {
       const def = ENEMIES[kind[gone[g]!]!]!;
-      if (def.midboss) ctx.emit("banner", { text: `${def.name} retreats`, tone: "info" });
+      if (def.midboss && phase[gone[g]!] !== PHASE.blown) ctx.emit("banner", { text: `${def.name} retreats`, tone: "info" });
       e.remove(gone[g]!);
     }
     rebuildGrid(ctx);
@@ -425,6 +463,9 @@ function stepJob(ctx: C, e: EnemyCols, i: number, def: EnemyDef, t: number, px: 
  */
 export const DAMAGE_PROBE: { on: ((src: string, target: "swarm" | "boss", dmg: number, eff: number, t: number) => void) | null } = { on: null };
 
+/** Every enemy spawned, for balance scripts: its kind, HP, gem value and action tick. Null in the game. */
+export const SPAWN_PROBE: { on: ((kind: number, hp: number, xp: number, t: number) => void) | null } = { on: null };
+
 /** Damage to one enemy row from `src` (a weapon or card id); knockback away from (sx, sy). */
 export function hurtEnemy(e: EnemyCols, i: number, dmg: number, sx: number, sy: number, knock: number, t: number, src: string): void {
   const hp = e.col("hp");
@@ -453,16 +494,18 @@ export function collectDead(ctx: C): number {
   const xs: number[] = [];
   const ys: number[] = [];
   const kinds: number[] = [];
+  const xp: number[] = [];
   // Descending, so swap-remove only moves rows already visited.
   for (let i = e.count - 1; i >= 0; i--) {
     if (hp[i]! > 0) continue;
     xs.push(round1(e.col("x")[i]!));
     ys.push(round1(e.col("y")[i]!));
     kinds.push(e.col("kind")[i]!);
+    xp.push(e.col("xp")[i]!);
     e.remove(i);
   }
   if (xs.length) {
-    ctx.emit("enemies:died", { xs, ys, kinds });
+    ctx.emit("enemies:died", { xs, ys, kinds, xp });
     rebuildGrid(ctx);
   }
   return xs.length;
@@ -475,10 +518,12 @@ export function contactDamage(ctx: C): number {
   const x = e.col("x");
   const y = e.col("y");
   const kind = e.col("kind");
+  const phase = e.col("phase");
   const found = enemyGrid.query(body.x, body.y, 40);
   let dmg = 0;
   for (let k = 0; k < found; k++) {
     const i = enemyGrid.hits[k]!;
+    if (phase[i] === PHASE.blown) continue;
     const def = ENEMIES[kind[i]!]!;
     const ddx = x[i]! - body.x;
     const ddy = y[i]! - body.y;
@@ -506,7 +551,7 @@ export function enemyFire(ctx: C): void {
   for (let i = 0; i < e.count; i++) {
     const def = ENEMIES[kind[i]!]!;
     const list = def.shoots;
-    if (!list || fireAt[i]! > t || phase[i] === PHASE.leaving) continue;
+    if (!list || fireAt[i]! > t || phase[i] === PHASE.leaving || phase[i] === PHASE.blown) continue;
     const ddx = x[i]! - body.x;
     const ddy = y[i]! - body.y;
     const d2 = ddx * ddx + ddy * ddy;
@@ -530,8 +575,9 @@ function round1(v: number): number {
 }
 
 const OLD_ENEMY_FIELDS = 11;
-/** Enemy columns in run save v1 (before `aim`). */
+/** Enemy columns in run save v1 (before `aim`), and v2 (before `xp`). */
 const V1_ENEMY_FIELDS = 17;
+const V2_ENEMY_FIELDS = 18;
 
 /**
  * Run save v0 -> v1 (formations): enemy rows gain the job columns, and the
@@ -582,9 +628,37 @@ export function migrateToFormations(data: ScopeData): ScopeData {
 export function migrateSalvoAim(data: ScopeData): ScopeData {
   const old = fromBase64(data.packed.enemies!);
   const n = new DataView(old.buffer, old.byteOffset, old.byteLength).getUint32(0, true);
-  const bytes = new Uint8Array(8 + n * 8 * ENEMY_FIELDS.length);
+  const bytes = new Uint8Array(8 + n * 8 * V2_ENEMY_FIELDS);
   new DataView(bytes.buffer).setUint32(0, n, true);
   // Columns are stored one after another, so the new last column is zeros past the old ones.
-  new Float64Array(bytes.buffer, 8, n * ENEMY_FIELDS.length).set(new Float64Array(old.slice(8).buffer, 0, n * V1_ENEMY_FIELDS));
+  new Float64Array(bytes.buffer, 8, n * V2_ENEMY_FIELDS).set(new Float64Array(old.slice(8).buffer, 0, n * V1_ENEMY_FIELDS));
   return { ...data, packed: { ...data.packed, enemies: toBase64(bytes) } };
+}
+
+/**
+ * Run save v3 -> v4 (gems worth HP): enemy rows gain `xp`, their gem's value, at
+ * their kind's base HP (their spawn time is not saved); the stage clear bonus
+ * (`coinClear`) gives way to the tick the boss fight began, if it has.
+ */
+export function migrateGemValue(data: ScopeData): ScopeData {
+  const old = fromBase64(data.packed.enemies!);
+  const n = new DataView(old.buffer, old.byteOffset, old.byteLength).getUint32(0, true);
+  const F = ENEMY_FIELDS.length;
+  const bytes = new Uint8Array(8 + n * 8 * F);
+  new DataView(bytes.buffer).setUint32(0, n, true);
+  const cols = new Float64Array(bytes.buffer, 8, n * F);
+  cols.set(new Float64Array(old.slice(8).buffer, 0, n * V2_ENEMY_FIELDS));
+  const kind = ENEMY_FIELDS.indexOf("kind") * n;
+  const xp = ENEMY_FIELDS.indexOf("xp") * n;
+  for (let i = 0; i < n; i++) {
+    const def = ENEMIES[cols[kind + i]!];
+    if (def) cols[xp + i] = gemValue(def, def.hp);
+  }
+  const boss = data.entities.find((e) => e.boss) as { boss: { spellStart: number } } | undefined;
+  const entities = data.entities.map((e) => {
+    if (!e.progress) return e;
+    const { coinClear: _, ...progress } = e.progress as Record<string, unknown>;
+    return { ...e, progress: { ...progress, bossFrom: boss?.boss.spellStart ?? 0 } };
+  });
+  return { ...data, entities, packed: { ...data.packed, enemies: toBase64(bytes) } };
 }

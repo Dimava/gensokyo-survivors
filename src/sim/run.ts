@@ -63,7 +63,8 @@ const RunDecl = defineScope("run", {
       rerollsUsed: int,
       coinDrops: num,
       coinSpells: num,
-      coinClear: num,
+      /** Action tick the boss fight began (0 before it): the swarm and the boss pay by the second at different rates. */
+      bossFrom: int,
     }),
     /** Computable Spirit: value(t) = min(max, base + rate * (t - t0)); rate and max come from stats. */
     spirit: z.strictObject({ base: num, t0: int }),
@@ -117,7 +118,7 @@ const RunDecl = defineScope("run", {
 
     // Combat.
     "weapon:fire": event({ weapon: ref(), dmg: num }, { subject: "weapon" }),
-    "enemies:died": event({ xs: nums, ys: nums, kinds: z.array(int) }),
+    "enemies:died": event({ xs: nums, ys: nums, kinds: z.array(int), xp: nums }),
     "swarm:struck": event({ n: int, xs: nums, ys: nums }),
     blast: event({ x: num, y: num, radius: num, dmg: num, source: z.string() }),
     beam: event({ x: num, y: num, dx: num, dy: num, length: num, width: num, dmg: num, color: int, source: z.string() }),

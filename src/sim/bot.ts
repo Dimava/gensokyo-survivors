@@ -7,6 +7,7 @@ import { ENEMIES } from "../content/enemies.ts";
 import { BULLET_STYLES } from "../content/patterns.ts";
 import { cardDef, cardParams } from "../content/cards.ts";
 import { weaponDef } from "../content/weapons.ts";
+import type { DispatchResult } from "gamebones";
 import { activeRun, runView, type Game, type RunPath } from "./game.ts";
 import { spiritAt, handCards } from "./cards.ts";
 import { bossPos } from "./boss.ts";
@@ -408,7 +409,7 @@ export function botThink(k: Game, path: RunPath, last: BotInputs, opts: BotOptio
 /** The enemies' columns a crowd search reads, fetched once per search. */
 function crowdCols(v: ReturnType<typeof runView>) {
   const e = v.packed("enemies");
-  return { n: e.count, x: e.col("x"), y: e.col("y"), kind: e.col("kind"), phase: e.col("phase") };
+  return { n: e.count, x: e.col("x"), y: e.col("y"), xp: e.col("xp"), phase: e.col("phase") };
 }
 
 /** The XP of the enemies within `r` of (x, y), and how many they are. */
@@ -416,11 +417,11 @@ function crowdAt(c: ReturnType<typeof crowdCols>, x: number, y: number, r: numbe
   let value = 0;
   let count = 0;
   for (let i = 0; i < c.n; i++) {
-    if (c.phase[i] === PHASE.leaving) continue;
+    if (c.phase[i] === PHASE.leaving || c.phase[i] === PHASE.blown) continue;
     const dx = c.x[i]! - x;
     const dy = c.y[i]! - y;
     if (dx * dx + dy * dy < r * r) {
-      value += ENEMIES[c.kind[i]!]!.xp;
+      value += c.xp[i]!;
       count++;
     }
   }
@@ -706,7 +707,14 @@ export interface PlayResult {
  */
 export function playRun(
   k: Game,
-  opts: BotOptions & { maxTicks?: number; onTick?: (i: number) => void; /** Level-up choice (default botPick); balance sweeps force builds with it. */ pick?: (k: Game, path: RunPath) => number } = {},
+  opts: BotOptions & {
+    maxTicks?: number;
+    onTick?: (i: number) => void;
+    /** Every dispatch and tick result, with its trace (balance scripts record the run's events from it). */
+    onResult?: (res: DispatchResult, i: number) => void;
+    /** Level-up choice (default botPick); balance sweeps force builds with it. */
+    pick?: (k: Game, path: RunPath) => number;
+  } = {},
 ): PlayResult {
   const path = activeRun(k);
   if (!path) throw new Error("playRun: no active run; dispatch run:start first");
@@ -719,9 +727,11 @@ export function playRun(
     const v = runView(k, path);
     const overlay = v.derived("state").run.overlay;
     if (overlay === "levelup") {
-      k.dispatch(`${p}/levelup` as "/run:1/levelup", "levelup:pick", { index: (opts.pick ?? botPick)(k, path) });
+      const res = k.dispatch(`${p}/levelup` as "/run:1/levelup", "levelup:pick", { index: (opts.pick ?? botPick)(k, path) });
+      opts.onResult?.(res, i);
     } else if (overlay === "vn") {
-      k.dispatch(`${p}/vn` as "/run:1/vn", "vn:next", {});
+      const res = k.dispatch(`${p}/vn` as "/run:1/vn", "vn:next", {});
+      opts.onResult?.(res, i);
     } else {
       if (opts.latency) {
         botFlush(k, path, last);
@@ -735,7 +745,8 @@ export function playRun(
       }
     }
     if (activeRun(k) !== path) break;
-    k.tick(p, "fixed");
+    const res = k.tick(p, "fixed");
+    opts.onResult?.(res, i);
     opts.onTick?.(i);
   }
   return { ticks: i, path };

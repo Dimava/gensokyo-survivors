@@ -85,8 +85,6 @@ export interface StageDef {
   hpPerMinute: number;
   /** Damage of a stage enemy's bullet (armor applies); the boss's bullets use the boss's own number. */
   bulletDmg: number;
-  /** Donations for clearing the stage. */
-  clearBonus: number;
   /** Tint the renderer multiplies over the ground tiles (0xffffff: as drawn). */
   tint: number;
 }
@@ -99,7 +97,6 @@ export const STAGES: readonly StageDef[] = [
     bossAt: 200,
     boss: "cirno",
     dialogue: "cirno-pre",
-    clearBonus: 150,
     hpPerMinute: 0.8,
     bulletDmg: 14,
     tint: 0xffffff,
@@ -169,7 +166,6 @@ export const STAGES: readonly StageDef[] = [
     bossAt: 200,
     boss: "rumia",
     dialogue: "rumia-pre",
-    clearBonus: 300,
     hpPerMinute: 1.8,
     bulletDmg: 17,
     tint: 0xb0e8b4,
