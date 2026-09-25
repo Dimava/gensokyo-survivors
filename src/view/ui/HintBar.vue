@@ -137,4 +137,9 @@ function dismiss(): void {
   font-weight: 800;
   font-size: 0.8rem;
 }
+/* "Got it" stays on one line. */
+.hintbar .btn {
+  flex: none;
+  white-space: nowrap;
+}
 </style>

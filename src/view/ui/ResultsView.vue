@@ -107,7 +107,6 @@ const RECORD_LABEL: Record<string, string> = { time: "Longest survival", kills: 
 }
 .box.clear {
   border-color: var(--gold);
-  box-shadow: 0 0 60px rgba(255, 201, 77, 0.25);
 }
 h1 {
   margin: 0;
@@ -125,11 +124,12 @@ h1 {
   gap: 6px;
   margin: 10px 0;
 }
+/* A new record is a gold-ruled tag: the wins are listed, not shouted. */
 .rec {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--gold);
-  color: #2a1a00;
+  padding: 2px 8px;
+  border: 1px solid rgba(232, 193, 90, 0.6);
+  border-radius: 2px;
+  color: #e8c15a;
   font-weight: 700;
   font-size: 0.85rem;
   animation: pop calc(0.4s * var(--anim)) cubic-bezier(0.2, 1.5, 0.4, 1) both;
