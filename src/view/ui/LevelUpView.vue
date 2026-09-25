@@ -278,14 +278,17 @@ h2 {
   font-size: 1rem;
 }
 .kind {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
+  letter-spacing: 0.16em;
+  color: var(--head);
 }
 .name {
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 .tag {
   align-self: flex-start;

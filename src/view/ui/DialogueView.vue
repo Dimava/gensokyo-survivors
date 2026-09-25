@@ -127,14 +127,16 @@ const speakers = computed(() => {
   height: 320px;
   border-radius: 110px 110px 20px 20px;
   background: radial-gradient(circle at 50% 22%, #ffe2cc 0 16%, transparent 17%), linear-gradient(180deg, transparent 0 30%, var(--c) 30%);
-  box-shadow: 0 0 60px color-mix(in srgb, var(--c) 50%, transparent);
   border: 3px solid rgba(255, 255, 255, 0.5);
 }
 .pname {
   text-align: center;
-  font-weight: 800;
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #d6c48c;
   margin-top: 6px;
-  text-shadow: 0 2px 4px #000;
+  text-shadow: 0 2px 0 #000;
 }
 .box {
   position: absolute;
@@ -145,16 +147,19 @@ const speakers = computed(() => {
   padding: 16px 22px 12px;
 }
 .who {
-  font-weight: 800;
-  font-size: 1.15rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.25rem;
 }
 .title {
   font-weight: 500;
   font-size: 0.85rem;
   margin-left: 8px;
 }
+/* Spoken words in the display serif, as a VN sets them. */
 .text {
-  font-size: 1.2rem;
+  font-family: var(--display);
+  font-size: 1.25rem;
   line-height: 1.5;
   min-height: 3.2em;
   margin: 8px 0;

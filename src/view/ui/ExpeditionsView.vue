@@ -196,8 +196,8 @@ h3 {
   text-align: center;
 }
 .comp.sel {
-  border-color: var(--gold);
-  box-shadow: 0 0 14px rgba(255, 201, 77, 0.5);
+  border-color: #e8c15a;
+  box-shadow: inset 0 0 0 1px #e8c15a;
 }
 .comp.away {
   opacity: 0.45;
@@ -248,11 +248,11 @@ h3 {
 }
 .fill {
   height: 100%;
-  background: linear-gradient(90deg, #4da3ff, #6fd3ff);
+  background: #3f8fe0;
   transition: width calc(0.25s * var(--anim));
 }
 .trip.back .fill {
-  background: linear-gradient(90deg, #ffc94d, #ffe39a);
+  background: #e8c15a;
 }
 .confirm {
   display: flex;

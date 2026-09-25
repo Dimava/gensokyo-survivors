@@ -368,8 +368,7 @@ onBeforeUnmount(() => {
   align-self: center;
 }
 .chord.cur {
-  border-color: #ffd166;
-  box-shadow: 0 0 12px rgba(255, 209, 102, 0.25);
+  border-color: #e8c15a;
 }
 .roll-box {
   position: relative;

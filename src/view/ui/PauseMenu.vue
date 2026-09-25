@@ -31,20 +31,26 @@ function quit(): void {
     <div v-if="state.pausePage === 'main'" v-keynav="{ id: 'pause' }" class="panel box">
       <h2>Paused</h2>
       <div class="cols">
-        <div class="menu">
-          <button class="btn primary back" @click="resume">Resume</button>
-          <button class="btn" @click="page('settings')">Settings</button>
-          <button class="btn" @click="page('help')">How to Play</button>
-          <button class="btn" @click="page('quit')">Quit run…</button>
+        <div class="side">
+          <div class="menu">
+            <button class="btn primary back" @click="resume">Resume</button>
+            <button class="btn" @click="page('settings')">Settings</button>
+            <button class="btn" @click="page('help')">How to Play</button>
+            <button class="btn" @click="page('quit')">Quit run…</button>
+          </div>
+          <div v-if="h" class="stats">
+            <div class="row"><span class="muted">Time</span><b>{{ fmtTime(h.seconds) }}</b></div>
+            <div class="row"><span class="muted">Level</span><b>{{ h.level }}</b></div>
+            <div class="row"><span class="muted">Kills</span><b>{{ h.kills }}</b></div>
+            <div class="row"><span class="muted">{{ CURRENCY.name }} so far</span><b>{{ CURRENCY.icon }} {{ h.coins }}</b></div>
+          </div>
         </div>
-        <div v-if="h" class="stats">
-          <div class="row"><span class="muted">Time</span><b>{{ fmtTime(h.seconds) }}</b></div>
-          <div class="row"><span class="muted">Level</span><b>{{ h.level }}</b></div>
-          <div class="row"><span class="muted">Kills</span><b>{{ h.kills }}</b></div>
-          <div class="row"><span class="muted">{{ CURRENCY.name }} so far</span><b>{{ CURRENCY.icon }} {{ h.coins }}</b></div>
+        <div v-if="h" class="stats yours">
           <h4>Your stats</h4>
-          <div v-for="k in STAT_KEYS" :key="k" class="row" :title="STAT_DEFS[k].help">
-            <span class="muted">{{ STAT_DEFS[k].label }}</span><b>{{ formatStat(k, h.stats[k]) }}</b>
+          <div class="grid" :style="{ gridTemplateRows: `repeat(${Math.ceil(STAT_KEYS.length / 2)}, auto)` }">
+            <div v-for="k in STAT_KEYS" :key="k" class="row" :title="STAT_DEFS[k].help">
+              <span class="muted">{{ STAT_DEFS[k].label }}</span><b>{{ formatStat(k, h.stats[k]) }}</b>
+            </div>
           </div>
         </div>
       </div>
@@ -95,10 +101,21 @@ function quit(): void {
 h2 {
   margin: 0 0 14px;
 }
+/* Resume and the run so far on the left; her stats in two columns on the right, so the panel stays short. */
 .cols {
   display: flex;
-  gap: 28px;
-  flex-wrap: wrap;
+  gap: 34px;
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 210px;
+}
+.side .stats {
+  min-width: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 .menu {
   display: flex;
@@ -114,12 +131,20 @@ h2 {
   font-size: 0.9rem;
 }
 .stats h4 {
-  margin: 12px 0 6px;
+  margin: 0 0 8px;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--head);
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+.yours .grid {
+  display: grid;
+  grid-auto-flow: column;
+  column-gap: 30px;
+}
+.yours .grid .row {
+  width: 190px;
 }
 .row {
   display: flex;

@@ -566,11 +566,12 @@ function pause(): void {
   align-items: center;
   gap: 8px;
   padding: 4px 16px 4px 6px;
-  border-radius: 3px;
-  border: 2px solid var(--kc);
-  background: rgba(14, 14, 24, 0.92);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--kc) 60%, transparent);
-  color: #fff;
+  border: 1px solid rgba(232, 193, 90, 0.55);
+  border-left: 4px solid var(--kc);
+  background: rgba(23, 17, 14, 0.94);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+  color: #f6f0e1;
+  font-family: var(--display);
   font-size: 0.95rem;
   font-weight: 700;
   pointer-events: none;
@@ -581,7 +582,7 @@ function pause(): void {
   padding: 4px;
   border-radius: 50%;
   background: var(--kc);
-  color: #0b0f22;
+  color: #17110e;
 }
 .cast-enter-active {
   transition: all calc(0.25s * var(--anim)) ease-out;
