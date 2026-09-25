@@ -16,6 +16,7 @@ import { keyLabels } from "../keys.ts";
 import Keys from "./Keys.vue";
 import WeaponPreview from "./WeaponPreview.vue";
 import ItemPreview from "./ItemPreview.vue";
+import Hanko from "./Hanko.vue";
 
 const offer = computed(() => {
   void state.frame;
@@ -38,7 +39,8 @@ const choices = computed(() =>
         kind: "Weapon",
         name: def.name,
         color: hex(def.color),
-        tag: c.level === 1 ? "NEW" : `Lv ${c.level - 1} → ${c.level}${c.level === def.levels.length ? " (MAX)" : ""}`,
+        isNew: c.level === 1,
+        lv: c.level === 1 ? null : { from: c.level - 1, to: c.level, max: c.level === def.levels.length },
         lines: weaponLevelDelta(def, c.level - 1),
         from: `from ${def.from}`,
         weapon: { id: c.id, level: c.level },
@@ -51,15 +53,16 @@ const choices = computed(() =>
         kind: "Item",
         name: def.name,
         color: hex(def.color),
-        tag: c.level === 1 ? "NEW" : `Lv ${c.level - 1} → ${c.level}${c.level === def.max ? " (MAX)" : ""}`,
+        isNew: c.level === 1,
+        lv: c.level === 1 ? null : { from: c.level - 1, to: c.level, max: c.level === def.max },
         lines: [formatBonus(def.stat, def.per), `Total after: ${formatBonus(def.stat, def.per * c.level)}`],
         from: def.desc,
         weapon: undefined,
         item: { id: c.id, level: c.level, max: def.max },
       };
     }
-    if (c.kind === "heal") return { kind: "Recovery", name: "Onigiri", color: "#ff7aa2", tag: "", lines: [`Restore ${HEAL_FRACTION * 100}% of your max HP`], from: "Everything is maxed out", weapon: undefined, item: { id: "onigiri", level: undefined, max: undefined } };
-    return { kind: "Donation", name: "Offering", color: "#ffc94d", tag: "", lines: [`+${COIN_OFFER} ${CURRENCY.name}`], from: "Everything is maxed out", weapon: undefined, item: { id: "offering", level: undefined, max: undefined } };
+    if (c.kind === "heal") return { kind: "Recovery", name: "Onigiri", color: "#ff7aa2", isNew: false, lv: null, lines: [`Restore ${HEAL_FRACTION * 100}% of your max HP`], from: "Everything is maxed out", weapon: undefined, item: { id: "onigiri", level: undefined, max: undefined } };
+    return { kind: "Donation", name: "Offering", color: "#ffc94d", isNew: false, lv: null, lines: [`+${COIN_OFFER} ${CURRENCY.name}`], from: "Everything is maxed out", weapon: undefined, item: { id: "offering", level: undefined, max: undefined } };
   }),
 );
 
@@ -163,7 +166,10 @@ function hover(): void {
         <ItemPreview v-else-if="c.item" :id="c.item.id" :color="c.item.id === 'onigiri' ? '#fbf6ec' : c.color" :level="c.item.level" :max="c.item.max" :active="L.mode === 'live'" />
         <span class="kind">{{ c.kind }}</span>
         <span class="name">{{ c.name }}</span>
-        <span v-if="c.tag" class="tag" :class="{ new: c.tag === 'NEW' }">{{ c.tag }}</span>
+        <span v-if="c.isNew" class="tag new"><Hanko ch="新" />New</span>
+        <span v-else-if="c.lv" class="tag lv"
+          >Lv {{ c.lv.from }} → {{ c.lv.to }}<span v-if="c.lv.max" class="max"><Hanko ch="極" />Max</span></span
+        >
         <ul>
           <li v-for="l in c.lines" :key="l">{{ l }}</li>
         </ul>
@@ -250,6 +256,7 @@ h2 {
 }
 .choice {
   position: relative;
+  --sel-inset: -8px;
   width: 230px;
   min-height: 250px;
   padding: 18px 16px 14px;
@@ -268,7 +275,9 @@ h2 {
   animation: deal calc(0.35s * var(--anim)) cubic-bezier(0.2, 1.3, 0.4, 1) both;
   transition: transform calc(0.12s * var(--anim));
 }
-.choice:hover {
+/* The chosen tablet rises: the keyboard's selection, or the one under the pointer while the keys hold none. */
+.choice[data-nav-sel],
+.choices:not(:has(> [data-nav-sel])) > .choice:hover {
   transform: translateY(-6px) scale(1.03);
 }
 .num {
@@ -290,18 +299,30 @@ h2 {
   font-weight: 700;
   line-height: 1.25;
 }
+/* The offer's news in straw caps: a 新 seal for something new, the level step, and a 極 seal
+   when the step reaches the top (the same seals the results stamp on a record). */
 .tag {
   align-self: flex-start;
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 20px;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 1px 8px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #d6c48c;
+  font-variant-numeric: tabular-nums;
 }
-/* NEW is a gold-ruled tag, as the results' records: listed, not shouted. */
-.tag.new {
-  background: none;
-  border: 1px solid rgba(232, 193, 90, 0.6);
+.tag :deep(.hanko) {
+  width: 19px;
+  height: 19px;
+}
+.tag .max {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
   color: #e8c15a;
 }
 ul {

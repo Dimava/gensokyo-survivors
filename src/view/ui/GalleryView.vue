@@ -284,6 +284,7 @@ h3 {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr));
 }
 .item {
+  --sel-inset: 4px;
   min-width: 0;
   overflow: hidden;
   background: rgba(10, 8, 7, 0.45);

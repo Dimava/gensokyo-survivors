@@ -222,10 +222,52 @@ button {
 .btn.ghost[data-nav-sel]:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
 }
-/* Cards, tree nodes, choices: brighter in their own palette, with a brighter edge. */
+/* Other controls (tree nodes, music tracks): brighter in their own palette, with a gold edge. */
 [data-nav-sel]:not(.btn):not(input):not(select) {
-  filter: brightness(1.2);
-  border-color: rgba(255, 255, 255, 0.75) !important;
+  filter: brightness(1.15);
+}
+[data-nav-sel]:not(.btn, input, select, .slot, .item, .comp, .choice) {
+  border-color: #e8c15a !important;
+}
+/*
+ * A selected tile (a card in the collection, a gallery entry, a companion, a level-up
+ * offer) is held in four gold corner brackets, the panels' own fittings, which close in
+ * from a little way out as the selection arrives. Its own colours stay as they are.
+ */
+:where(.slot, .item, .comp, .choice) {
+  position: relative;
+}
+:where(.slot, .item, .comp, .choice)::after {
+  --b: #e8c15a;
+  --l: 16px;
+  --w: 2px;
+  content: "";
+  position: absolute;
+  inset: var(--sel-inset, 0);
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--b), var(--b)) left top / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--b), var(--b)) left top / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) right top / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--b), var(--b)) right top / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) left bottom / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--b), var(--b)) left bottom / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) right bottom / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--b), var(--b)) right bottom / var(--w) var(--l) no-repeat;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6));
+  opacity: 0;
+  scale: 1.08;
+  transition:
+    opacity calc(0.14s * var(--anim)) ease-out,
+    scale calc(0.2s * var(--anim)) cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+/* The mouse selects what it enters (keynav), so the two agree; but a tile that appeared under a resting
+   pointer is only hovered, and while the keys hold a selection beside it, only the selection is bracketed. */
+:where(.slot, .item, .comp, .choice)[data-nav-sel]:not(:disabled)::after,
+:where(:not(:has(> [data-nav-sel]))) > :where(.slot, .item, .comp, .choice):hover:not(:disabled)::after {
+  opacity: 1;
+  scale: 1;
 }
 :where(.slot, .node, .choice, .comp, .item, label) {
   transition:

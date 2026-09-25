@@ -8,6 +8,7 @@ import { stageDef } from "../../content/stages.ts";
 import { REWARD } from "../../sim/tuning.ts";
 import { affordableNodes, fmtTime, lastRun, wallet } from "./useGame.ts";
 import NavHints from "./NavHints.vue";
+import Hanko from "./Hanko.vue";
 
 const r = computed(() => lastRun.value?.summary ?? null);
 const title = computed(() => (r.value?.outcome === "clear" ? "Stage Clear!" : r.value?.outcome === "quit" ? "Run Abandoned" : "Defeated"));
@@ -44,21 +45,27 @@ onMounted(() => {
 });
 onBeforeUnmount(() => clearInterval(timer));
 
-const RECORD_LABEL: Record<string, string> = { time: "Longest survival", kills: "Most kills", level: "Highest level", "first clear": "First stage clear" };
+/** A record is stamped on the number it beat (a 新 seal), a first clear beside the stage's name (初). */
+const rec = (k: string): boolean => !!lastRun.value?.records.includes(k);
 </script>
 
 <template>
   <div v-keynav class="screen results">
     <div v-if="r" class="panel box" :class="r.outcome">
       <h1>{{ title }}</h1>
-      <p class="muted">{{ stageDef(r.stage).name }}</p>
-      <div v-if="lastRun && lastRun.records.length" class="records">
-        <span v-for="rec in lastRun.records" :key="rec" class="rec">New record: {{ RECORD_LABEL[rec] ?? rec }}</span>
-      </div>
+      <p class="stage">
+        {{ stageDef(r.stage).name }}<span v-if="rec('first clear')" class="first"><Hanko ch="初" />first clear</span>
+      </p>
       <div class="grid">
-        <div class="stat"><span class="muted">Survived</span><b>{{ fmtTime(r.seconds) }}</b></div>
-        <div class="stat"><span class="muted">Level</span><b>{{ r.level }}</b></div>
-        <div class="stat"><span class="muted">Kills</span><b>{{ r.kills }}</b></div>
+        <div class="stat">
+          <span class="muted">Survived</span><b>{{ fmtTime(r.seconds) }}<span v-if="rec('time')" class="new"><Hanko ch="新" />record</span></b>
+        </div>
+        <div class="stat">
+          <span class="muted">Level</span><b>{{ r.level }}<span v-if="rec('level')" class="new"><Hanko ch="新" />record</span></b>
+        </div>
+        <div class="stat">
+          <span class="muted">Kills</span><b>{{ r.kills }}<span v-if="rec('kills')" class="new"><Hanko ch="新" />record</span></b>
+        </div>
         <div class="stat"><span class="muted">Grazes</span><b>{{ r.grazes }}</b></div>
         <div class="stat"><span class="muted">Cards played</span><b>{{ r.cardsPlayed }}</b></div>
         <div class="stat"><span class="muted">Spells captured</span><b>{{ r.spellsCaptured }} / {{ r.spellsTotal }}</b></div>
@@ -117,21 +124,50 @@ h1 {
 .dead h1 {
   color: #e8604a;
 }
-.records {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0;
+/* The stage, as the HUD names it: straw italic in the display face. */
+.stage {
+  margin: 2px 0 0;
+  font-family: var(--display);
+  font-style: italic;
+  color: #d6c48c;
 }
-/* A new record is a gold-ruled tag: the wins are listed, not shouted. */
-.rec {
-  padding: 2px 8px;
-  border: 1px solid rgba(232, 193, 90, 0.6);
-  border-radius: 2px;
-  color: #e8c15a;
+/* A record is stamped on its number: a small 新 seal and the word, in straw caps.
+   The seals land one after another as the panel settles. */
+.new,
+.first {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-style: normal;
+  font-size: 0.68rem;
   font-weight: 700;
-  font-size: 0.85rem;
-  animation: pop calc(0.4s * var(--anim)) cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d6c48c;
+  vertical-align: 0.2em;
+}
+.new :deep(.hanko),
+.first :deep(.hanko) {
+  width: 20px;
+  height: 20px;
+  animation: stamp calc(0.32s * var(--anim)) cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.first {
+  margin-left: 12px;
+}
+.first :deep(.hanko) {
+  animation-delay: calc(0.35s * var(--anim));
+}
+.stat:nth-child(1) .new :deep(.hanko) {
+  animation-delay: calc(0.55s * var(--anim));
+}
+.stat:nth-child(2) .new :deep(.hanko) {
+  animation-delay: calc(0.7s * var(--anim));
+}
+.stat:nth-child(3) .new :deep(.hanko) {
+  animation-delay: calc(0.85s * var(--anim));
 }
 .grid {
   display: grid;
@@ -191,10 +227,14 @@ tr.total td {
     transform: translateY(30px);
   }
 }
-@keyframes pop {
+/* A stamp comes down from a little above, a touch too big, and settles. */
+@keyframes stamp {
   from {
-    transform: scale(0.4);
+    scale: 1.8;
     opacity: 0;
+  }
+  60% {
+    opacity: 1;
   }
 }
 </style>

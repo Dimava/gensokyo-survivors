@@ -183,6 +183,7 @@ h3 {
   gap: 8px;
 }
 .comp {
+  --sel-inset: -5px;
   display: flex;
   flex-direction: column;
   align-items: center;
