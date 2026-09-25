@@ -137,13 +137,13 @@ h1 {
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 16px 0;
+  gap: 8px;
+  margin: 12px 0;
 }
 .stat {
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  padding: 6px 10px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
 }
@@ -163,7 +163,7 @@ table {
   border-collapse: collapse;
 }
 td {
-  padding: 4px 0;
+  padding: 2px 0;
 }
 td:last-child {
   text-align: right;
@@ -179,7 +179,7 @@ tr.total td {
   color: var(--gold);
 }
 .balance {
-  margin: 12px 0;
+  margin: 8px 0 10px;
 }
 .buttons {
   display: flex;
