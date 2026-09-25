@@ -69,7 +69,8 @@ function analyse(r: RunLog): RunStats {
         s.xpRate[w]! += xp / WINDOW;
         break;
       }
-      case "level:up":
+      // One level:up can cover several levels (and the tree's head start several more); each is one pick.
+      case "levelup:picked":
         level++;
         break;
       case "boss:approach":
@@ -100,15 +101,15 @@ function analyse(r: RunLog): RunStats {
 }
 
 const runs = new Map<string, RunStats[]>();
-const walk = (p: string): void => {
-  if (statSync(p).isDirectory()) return readdirSync(p).forEach((n) => walk(join(p, n)));
+const walk = (p: string, root = p): void => {
+  if (statSync(p).isDirectory()) return readdirSync(p).forEach((n) => walk(join(p, n), root));
   if (!p.endsWith(".json") || basename(p).startsWith("report")) return;
   const r = JSON.parse(readFileSync(p, "utf8")) as RunLog;
-  const key = args.length > 1 ? `${r.strategy} [${basename(args.find((a) => p.startsWith(a)) ?? "")}]` : r.strategy;
+  const key = args.length > 1 ? `${r.strategy} [${basename(root)}]` : r.strategy;
   if (!runs.has(key)) runs.set(key, []);
   runs.get(key)!.push(analyse(r));
 };
-args.forEach(walk);
+args.forEach((a) => walk(a));
 
 const mean = (xs: number[]): number => {
   const v = xs.filter((x) => Number.isFinite(x));
