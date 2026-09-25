@@ -83,7 +83,8 @@ function quit(): void {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(4, 6, 16, 0.55);
+  /* The run dims to warm night, not navy. */
+  background: rgba(10, 7, 6, 0.6);
   animation: fadein calc(0.2s * var(--anim)) both;
 }
 .box {

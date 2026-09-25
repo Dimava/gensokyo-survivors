@@ -20,7 +20,7 @@ const h = computed(() => hud.value);
     <HudView v-if="h" />
     <EnemyMark v-if="h && h.overlay === 'none' && h.phase !== 'over' && !state.paused" />
     <!-- The ending's words replace the banners: "Stage clear!" is not said twice. -->
-    <div v-if="!(h && h.phase === 'over')" class="banners">
+    <div v-if="!(h && h.phase === 'over')" class="banners" :class="{ under: h && h.overlay !== 'none' }">
       <TransitionGroup name="banner">
         <div v-for="b in ui.banners" :key="b.id" class="banner" :class="b.tone">
           <div class="btext">{{ b.text }}</div>
@@ -62,6 +62,11 @@ const h = computed(() => hud.value);
   align-items: center;
   gap: 8px;
   pointer-events: none !important;
+  transition: opacity calc(0.2s * var(--anim));
+}
+/* Under a level-up or a dialogue the banners step aside rather than show through between the cards. */
+.banners.under {
+  opacity: 0;
 }
 /* A banner is a title strip: serif words on a flat ink band between two
    hairlines (straw; vermilion for a warning, gold for good news). */
