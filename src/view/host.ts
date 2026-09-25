@@ -5,7 +5,7 @@
 
 import { reactive, markRaw } from "vue";
 import type { DispatchResult } from "gamebones";
-import { activeRun, newGame, runView, type Game, type RunPath } from "../sim/game.ts";
+import { activeRun, runView, type Game, type RunPath } from "../sim/game.ts";
 import { botFlush, botPick, botSteer, botThink, SKILL, type BotInputs } from "../sim/bot.ts";
 import { navConfirm, navMove, navSelected, navTop } from "./keynav.ts";
 import { handSlots } from "../sim/cards.ts";
@@ -69,7 +69,6 @@ class Host {
   /** The ?bot=1 player's last sent move. */
   private bot: BotInputs = { move: { x: 0, y: 0 } };
   private sinceSave = 0;
-  private demo: { k: Game; presenter: Presenter; last: BotInputs } | null = null;
   private tickCost = 0;
   private frames: number[] = [];
   /**
@@ -257,10 +256,8 @@ class Host {
     }
     if (state.screen === "run") {
       this.field.draw(this.k, this.path(), dt, { dim: state.paused ? 0.45 : 0 });
-    } else if (state.screen === "title" || state.screen === "menu") {
-      this.stepDemo();
-      this.field.draw(this.demo?.k ?? null, this.demo ? activeRun(this.demo.k) : null, dt, { dim: 0.55 });
     } else {
+      // Outside a run the screens stand on the night sky (NightSky.vue); the field idles under it.
       this.field.draw(null, null, dt, { dim: 0.3 });
     }
     void dim;
@@ -372,30 +369,6 @@ class Host {
     state.resultsFor = Date.now();
     state.meta++;
     state.screen = "results";
-  }
-
-  /** The title screen's attract mode: a bot plays a throwaway kernel behind the menu. */
-  private stepDemo(): void {
-    if (!this.demo) {
-      const k = newGame(`attract-${Math.floor(Math.random() * 1e6)}`);
-      k.dispatch("/", "run:start", { stage: "lake" });
-      this.demo = { k: markRaw(k) as Game, presenter: new Presenter(this.field, true), last: { move: { x: 0, y: 0 } } };
-    }
-    const d = this.demo;
-    const path = activeRun(d.k);
-    if (!path) {
-      this.demo = null;
-      return;
-    }
-    const v = runView(d.k, path);
-    const overlay = v.derived("state").run.overlay;
-    if (overlay === "levelup") d.k.dispatch(`${path}/levelup` as "/run:1/levelup", "levelup:pick", { index: botPick(d.k, path) });
-    else if (overlay === "vn") d.k.dispatch(`${path}/vn` as "/run:1/vn", "vn:skip", {});
-    else botSteer(d.k, path, d.last);
-    const res = d.k.tick(path, "fixed");
-    d.presenter.consume(d.k, path, res);
-    // Keep the demo's memory flat: its log is never needed.
-    if (v.now("fixed") > 60 * 150) this.demo = null;
   }
 
   private music(): void {

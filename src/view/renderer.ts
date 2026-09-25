@@ -19,6 +19,7 @@ import {
 import { ENEMIES } from "../content/enemies.ts";
 import { BULLET_STYLES } from "../content/patterns.ts";
 import { stageDef } from "../content/stages.ts";
+import { groundTexture } from "./ground.ts";
 import { weaponDef } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
 import { bossPos } from "../sim/boss.ts";
@@ -232,14 +233,7 @@ export class Playfield {
     this.atlas = buildAtlas(this.app.renderer);
     await this.loadArt(prefs.artStyle);
     const a = this.atlas;
-    const tile = new Graphics();
-    tile.rect(0, 0, 96, 96).fill(0x1d2b3a);
-    tile.rect(0, 0, 96, 1).fill({ color: 0x2a3d52 });
-    tile.rect(0, 0, 1, 96).fill({ color: 0x2a3d52 });
-    tile.circle(48, 48, 1.5).fill({ color: 0x3b5673 });
-    tile.circle(20, 70, 1).fill({ color: 0x33485f });
-    const tileTex = this.app.renderer.generateTexture({ target: tile });
-    this.ground = new TilingSprite({ texture: tileTex, width: 100, height: 100 });
+    this.ground = new TilingSprite({ texture: this.groundFor("lake"), width: 100, height: 100 });
     this.spellBg = new Sprite(a.circle);
     this.spellBg.anchor.set(0.5);
     this.spellBg.visible = false;
@@ -280,6 +274,12 @@ export class Playfield {
     );
     this.app.stage.addChild(this.ground, this.world, this.playerTop, this.screenG);
     this.ready = true;
+  }
+
+  /** The ground tile of each stage (ground.ts), made when first shown. */
+  private groundTex: Record<string, Texture> = {};
+  private groundFor(stage: string): Texture {
+    return (this.groundTex[stage] ??= groundTexture(this.app.renderer, stage));
   }
 
   // ---------- effects API (the presenter calls these) ----------
@@ -489,7 +489,9 @@ export class Playfield {
     const t = v.now("action");
     const td = v.now("danmaku");
     const stage = stageDef(run.stage);
-    // Each stage tints the ground (the tile is drawn in the lake's colours).
+    // Each stage has its own meadow and tints it (the tile is drawn in the lake's colours).
+    const tex = this.groundFor(run.stage);
+    if (this.ground.texture !== tex) this.ground.texture = tex;
     this.ground.tint = stage.tint;
 
     // Camera, with shake.
@@ -515,10 +517,18 @@ export class Playfield {
     this.arena.clear();
     this.under.clear();
     if (run.arena) {
-      const pulse = 0.55 + 0.25 * Math.sin(this.time * 3);
-      this.arena.circle(run.ax, run.ay, BOSS.arena).fill({ color: 0x0e1a2c, alpha: 0.55 });
-      this.arena.circle(run.ax, run.ay, BOSS.arena).stroke({ width: 4, color: 0x6fd3ff, alpha: pulse });
-      this.arena.circle(run.ax, run.ay, BOSS.arena + 10).stroke({ width: 2, color: 0x6fd3ff, alpha: pulse * 0.4 });
+      // A Hakurei barrier: a torii-vermilion line, a straw hairline outside it and shimenawa
+      // ties across both every 15 degrees, steady (a border, not an alarm), on a darker floor.
+      const R = BOSS.arena;
+      this.arena.circle(run.ax, run.ay, R).fill({ color: 0x0c0a10, alpha: 0.45 });
+      this.arena.circle(run.ax, run.ay, R).stroke({ width: 4, color: 0xe5532d, alpha: 0.9 });
+      this.arena.circle(run.ax, run.ay, R + 8).stroke({ width: 1.5, color: 0xd6c48c, alpha: 0.55 });
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2;
+        const c = Math.cos(a);
+        const s = Math.sin(a);
+        this.arena.moveTo(run.ax + c * (R - 5), run.ay + s * (R - 5)).lineTo(run.ax + c * (R + 9), run.ay + s * (R + 9)).stroke({ width: 3, color: 0xd6c48c, alpha: 0.8 });
+      }
     }
     const boss = v.derived("boss");
     // Where Reimu looks (her focus, apart from where she walks): what her amulets aim at, the boss or the nearest enemy.

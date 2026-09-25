@@ -16,6 +16,7 @@ import SettingsView from "./SettingsView.vue";
 import HelpView from "./HelpView.vue";
 import GalleryView from "./GalleryView.vue";
 import CreditsView from "./CreditsView.vue";
+import NightSky from "./NightSky.vue";
 
 const field = ref<HTMLDivElement>();
 const failed = ref("");
@@ -54,6 +55,9 @@ watchEffect(() => {
 <template>
   <div class="root">
     <div ref="field" class="field"></div>
+    <Transition name="sky">
+      <NightSky v-if="state.screen !== 'run'" />
+    </Transition>
     <div class="ui" :style="{ zoom: uiScale }">
       <Transition name="fade" mode="out-in">
         <TitleScreen v-if="state.screen === 'title'" key="title" />
@@ -138,6 +142,15 @@ watchEffect(() => {
   inset: 0;
   pointer-events: none;
 }
+/* The night sky fades in over the field as a run ends, and out as one starts. */
+.sky-enter-active,
+.sky-leave-active {
+  transition: opacity calc(0.6s * var(--anim)) ease;
+}
+.sky-enter-from,
+.sky-leave-to {
+  opacity: 0;
+}
 :where(.ui) > * {
   pointer-events: auto;
 }
@@ -155,9 +168,9 @@ watchEffect(() => {
 }
 .toast {
   padding: 8px 16px;
-  border-radius: 10px;
-  background: rgba(20, 24, 48, 0.95);
-  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.94);
+  border: 1px solid rgba(232, 193, 90, 0.35);
   font-weight: 600;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
