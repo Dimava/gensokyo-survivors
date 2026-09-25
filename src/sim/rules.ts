@@ -18,7 +18,7 @@ import { blowAway, collectDead, contactDamage, enemyFire, migrateGemValue, migra
 import { applyVolley, bossFactor, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, cyclone, pullAll, stepDrops } from "./drops.ts";
-import { cardRules } from "./cards.ts";
+import { cardRules, handSize } from "./cards.ts";
 import { bossPos, bossVulnerable } from "./boss.ts";
 import { COIN_OFFER, HEAL_FRACTION, rollOffer } from "./offers.ts";
 import { BOSS, CARDS_TUNING, END_DELAY, HITSTOP, PLAYER, REWARD, XP, sec } from "./tuning.ts";
@@ -340,7 +340,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   }),
   r.on("graze").react((_, ctx) => {
     const p = ctx.derived("player");
-    const room = ctx.derived("stats").hand - ctx.related("inPile", ctx.derived("piles").hand).length;
+    const room = handSize(ctx) - ctx.related("inPile", ctx.derived("piles").hand).length;
     let meter = p.meter.graze;
     let draws = 0;
     while (meter >= CARDS_TUNING.meterPerCard && draws < room) {

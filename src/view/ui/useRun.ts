@@ -3,7 +3,7 @@
 import { computed } from "vue";
 import { host, state } from "../host.ts";
 import { runView } from "../../sim/game.ts";
-import { handSlots, spiritAt } from "../../sim/cards.ts";
+import { handSize, handSlots, spiritAt } from "../../sim/cards.ts";
 import { CARDS_TUNING, XP } from "../../sim/tuning.ts";
 import { cardDef, cardText } from "../../content/cards.ts";
 import { weaponDef } from "../../content/weapons.ts";
@@ -119,7 +119,7 @@ export const hud = computed(() => {
     }),
     hand,
     slots,
-    handMax: stats.hand,
+    handMax: handSize(v),
     deck: v.related("inPile", piles.deck).length,
     discard: v.related("inPile", piles.discard).length,
     spirit,

@@ -25,6 +25,16 @@ export function handCards(v: View<RS0>) {
 }
 
 /**
+ * The hand's size: the Hand Size stat, but never more slots than the run has
+ * cards (a smaller deck would leave slots that can never fill).
+ */
+export function handSize(v: View<RS0>): number {
+  const piles = v.derived("piles");
+  const cards = v.related("inPile", piles.deck).length + v.related("inPile", piles.hand).length + v.related("inPile", piles.discard).length;
+  return Math.min(v.derived("stats").hand, cards);
+}
+
+/**
  * The hand as fixed slots (one per hand size): a card's `at` in the hand is
  * its slot, so playing a card leaves a gap instead of sliding the others
  * over. Cards whose `at` is not a free slot (saves from before slots) take
@@ -32,7 +42,7 @@ export function handCards(v: View<RS0>) {
  */
 export function handSlots(v: View<RS0>): (ReturnType<typeof handCards>[number] | null)[] {
   const cards = handCards(v);
-  const slots: (typeof cards[number] | null)[] = Array.from({ length: Math.max(v.derived("stats").hand, cards.length) }, () => null);
+  const slots: (typeof cards[number] | null)[] = Array.from({ length: Math.max(handSize(v), cards.length) }, () => null);
   const loose: typeof cards = [];
   for (const c of cards) {
     if (c.in.at < slots.length && !slots[c.in.at]) slots[c.in.at] = c;
@@ -174,7 +184,7 @@ export function cardRules(r: RuleBuilder<RS>): RuleDef[] {
     // ----- drawing -----
     r.on("card:draw", (_, ctx) => {
       const piles = ctx.derived("piles");
-      if (handCards(ctx).length >= ctx.derived("stats").hand) return;
+      if (handCards(ctx).length >= handSize(ctx)) return;
       let top = ctx.related("inPile", piles.deck)[0];
       if (!top) {
         const ids = ctx.related("inPile", piles.discard).map((c) => c.id);

@@ -3,12 +3,15 @@ import { computed, onBeforeUnmount } from "vue";
 import { host } from "../host.ts";
 import { CARDS, RARITIES } from "../../content/cards.ts";
 import { DECK_MAX, DECK_MIN } from "../../content/gacha.ts";
-import { owned } from "./useGame.ts";
+import { STAT_DEFS } from "../../content/stats.ts";
+import { loadout, owned } from "./useGame.ts";
 import CardFace from "./CardFace.vue";
 import NavHints from "./NavHints.vue";
 
 const byId = computed(() => new Map(owned.value.map((o) => [o.card, o])));
 const deckSize = computed(() => owned.value.filter((o) => o.inDeck).length);
+/** Hand slots a run gives (base plus shrine upgrades); a smaller deck leaves some unused (the run's hand shrinks to the deck). */
+const handSlots = computed(() => STAT_DEFS.hand.base + (loadout.value.bonuses.hand ?? 0));
 const sorted = computed(() => [...CARDS].sort((a, b) => RARITIES.indexOf(a.rarity) - RARITIES.indexOf(b.rarity)));
 
 function toggle(card: string): void {
@@ -35,6 +38,10 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <p class="muted count">Collected {{ owned.length }} of {{ CARDS.length }} cards. A deck needs at least {{ DECK_MIN }} card.</p>
+    <p v-if="deckSize < handSlots" class="warn">
+      Your hand holds {{ handSlots }} cards, but your deck has only {{ deckSize }}: a run's hand will have {{ deckSize }} slot{{ deckSize === 1 ? "" : "s" }}. Add
+      {{ handSlots - deckSize }} more to use them all.
+    </p>
     <div class="grid">
       <button
         v-for="c in sorted"
@@ -74,6 +81,14 @@ onBeforeUnmount(() => {
 .count {
   width: min(1100px, 94vw);
   margin: 0 0 10px;
+}
+/* Not an alarm: a vermilion rule beside a plain line of text. */
+.warn {
+  width: min(1100px, 94vw);
+  margin: -4px 0 10px;
+  padding-left: 10px;
+  border-left: 2px solid #c8352a;
+  color: #e8d9c0;
 }
 .grid {
   width: min(1100px, 94vw);
