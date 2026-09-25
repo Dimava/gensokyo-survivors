@@ -5,8 +5,8 @@
 // the pale parting, drawn as the avatar draws them (src/view/ui/credits/dimava.png).
 //
 // Motion: the hat bobs and squishes like a blob, the ribbon loops lag and flop
-// on springs, and the pupils rattle loosely in their eyes (springs with little
-// damping, each eye its own), drifting different ways. Focus (0..1, driven by
+// on springs, and the pupils wobble loosely in their eyes (springs, each eye its own, a
+// wobble that settles), drifting different ways. Focus (0..1, driven by
 // the view: the pointer just moved) pulls both pupils in to look at it
 // together; let go, they wander back to their googly selves. The head stays still.
 
@@ -51,14 +51,14 @@ const PARAMS: ParamDef[] = [
   { id: "Focus", min: 0, max: 1, def: 0 },
 ];
 
-/** Springs: the loops trail the hat (a little out of step with each other); the pupils barely damped, so they rattle. */
+/** Springs: the loops trail the hat (a little out of step with each other); the pupils loose enough to wobble, damped enough to settle. */
 const PHYSICS: Pendulum[] = [
   { output: "LoopL", inputs: [{ param: "AngleX", weight: 1 / 30 }, { param: "Bob", weight: 0.8 }], stiffness: 26, damping: 3.4, gain: 2.2 },
   { output: "LoopR", inputs: [{ param: "AngleX", weight: 1 / 30 }, { param: "Bob", weight: 0.8 }], stiffness: 31, damping: 3.8, gain: 2.2 },
-  { output: "PupilLX", inputs: [{ param: "AngleX", weight: 1 / 30 }, { param: "EyeBallX", weight: 0.6 }], stiffness: 60, damping: 1.6, gain: 3 },
-  { output: "PupilLY", inputs: [{ param: "AngleY", weight: 1 / 30 }, { param: "Bob", weight: 0.9 }], stiffness: 55, damping: 1.4, gain: 3 },
-  { output: "PupilRX", inputs: [{ param: "AngleX", weight: 1 / 30 }, { param: "EyeBallY", weight: 0.6 }], stiffness: 48, damping: 1.2, gain: 3 },
-  { output: "PupilRY", inputs: [{ param: "AngleY", weight: 1 / 30 }, { param: "Bob", weight: 1 }], stiffness: 66, damping: 1.5, gain: 3 },
+  { output: "PupilLX", inputs: [{ param: "AngleX", weight: 1 / 30 }, { param: "EyeBallX", weight: 0.6 }], stiffness: 60, damping: 5, gain: 1.7 },
+  { output: "PupilLY", inputs: [{ param: "AngleY", weight: 1 / 30 }, { param: "Bob", weight: 0.9 }], stiffness: 55, damping: 4.6, gain: 1.7 },
+  { output: "PupilRX", inputs: [{ param: "AngleX", weight: 1 / 30 }, { param: "EyeBallY", weight: 0.6 }], stiffness: 48, damping: 4.2, gain: 1.7 },
+  { output: "PupilRY", inputs: [{ param: "AngleY", weight: 1 / 30 }, { param: "Bob", weight: 1 }], stiffness: 66, damping: 5.2, gain: 1.7 },
   { output: "HairSide", inputs: [{ param: "AngleX", weight: 1 / 30 }], stiffness: 18, damping: 5, gain: 0.8 },
 ];
 
