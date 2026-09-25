@@ -256,7 +256,9 @@ h2 {
   border-radius: 14px;
   border: 2px solid var(--c);
   background: linear-gradient(180deg, rgba(38, 46, 90, 0.98), rgba(16, 20, 42, 0.98));
-  box-shadow: 0 0 24px color-mix(in srgb, var(--c) 35%, transparent);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    0 14px 30px rgba(0, 0, 0, 0.45);
   text-align: left;
   display: flex;
   flex-direction: column;
