@@ -3,28 +3,28 @@
   "claude": {
     "sessions": 4,
     "agents": 32,
-    "apiCalls": 3622,
+    "apiCalls": 3639,
     "tokens": {
-      "input": 7478,
-      "output": 2560311,
-      "cacheWrite": 13521977,
-      "cacheRead": 651968041,
-      "total": 668057807
+      "input": 7512,
+      "output": 2565900,
+      "cacheWrite": 13571029,
+      "cacheRead": 655258320,
+      "total": 671402761
     },
     "outputByModel": {
-      "claude-opus-5-5": 2560311
+      "claude-opus-5-5": 2565900
     },
-    "costUsd": 257,
+    "costUsd": 258.1,
     "from": "2026-09-23T15:32:16.893Z",
-    "to": "2026-09-25T00:15:00.279Z",
-    "hours": 33,
-    "activeHours": 17
+    "to": "2026-09-25T00:20:34.531Z",
+    "spanSeconds": 118098,
+    "activeSeconds": 60642
   },
   "git": {
-    "commits": 91,
+    "commits": 92,
     "firstCommit": "2026-09-23T22:21:50+03:00",
-    "lastCommit": "2026-09-25T03:12:55+03:00",
+    "lastCommit": "2026-09-25T03:15:25+03:00",
     "files": 160,
-    "lines": 31377
+    "lines": 31218
   }
 }

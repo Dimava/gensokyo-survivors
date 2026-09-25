@@ -1,7 +1,8 @@
 // How much Claude went into this game: the token usage of every Claude Code
 // transcript that worked on it, plus a few git facts, written to
-// src/content/usage-stats.json for the credits. Aggregates only (no paths,
-// prompts or contents), so the file is safe to commit and publish.
+// src/content/usage-stats.json for the credits (git-ignored: it is generated;
+// the credits skip the block when it is missing). Aggregates only (no paths,
+// prompts or contents), so the file is safe to publish with the build.
 //
 //   bun scripts/usage-stats.ts   (also run by `bun run build`)
 //
@@ -70,15 +71,15 @@ interface Call {
   out: number;
 }
 
-/** Hours when someone was at it (the user or any agent): gaps between entries under 10 minutes count, longer ones are breaks. */
-function activeHours(ts: number[]): number {
+/** Seconds when someone was at it (the user or any agent): gaps between entries under 10 minutes count, longer ones are breaks. */
+function activeSeconds(ts: number[]): number {
   ts.sort((a, b) => a - b);
   let ms = 0;
   for (let i = 1; i < ts.length; i++) {
     const gap = ts[i]! - ts[i - 1]!;
     if (gap < 10 * 60e3) ms += gap;
   }
-  return Math.round(ms / 36e5);
+  return Math.round(ms / 1e3);
 }
 
 const calls = new Map<string, Call>();
@@ -131,7 +132,8 @@ for (const c of calls.values()) {
 const git = (cmd: string): string => execSync(`git ${cmd}`, { cwd: root, encoding: "utf8" }).trim();
 const tracked = git("ls-files src test scripts").split("\n").filter((f) => /\.(ts|vue|css|mjs)$/.test(f));
 let lines = 0;
-for (const f of tracked) if (existsSync(join(root, f))) lines += readFileSync(join(root, f), "utf8").split("\n").length;
+// Newlines, as `wc -l` counts them.
+for (const f of tracked) if (existsSync(join(root, f))) lines += readFileSync(join(root, f), "utf8").split("\n").length - 1;
 const dates = git("log --format=%aI").split("\n");
 
 const stats = {
@@ -142,11 +144,11 @@ const stats = {
     apiCalls: calls.size,
     tokens: { ...tokens, total: tokens.input + tokens.output + tokens.cacheWrite + tokens.cacheRead },
     outputByModel,
-    costUsd: Math.round(cost),
+    costUsd: Math.round(cost * 100) / 100,
     from: first,
     to: last,
-    hours: first && last ? Math.round((Date.parse(last) - Date.parse(first)) / 36e5) : 0,
-    activeHours: activeHours(times),
+    spanSeconds: first && last ? Math.round((Date.parse(last) - Date.parse(first)) / 1e3) : 0,
+    activeSeconds: activeSeconds(times),
   },
   git: {
     commits: dates.length,
