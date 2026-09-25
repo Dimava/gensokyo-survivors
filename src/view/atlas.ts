@@ -272,7 +272,8 @@ export function buildAtlas(renderer: Renderer): Atlas {
     h: 30,
     draw: (g, cx, cy) => {
       const r = 12;
-      g.circle(cx, cy, r + 2).fill({ color: 0xffffff, alpha: 0.35 });
+      // A thin ink rim, not a pale halo: the orb reads as an object on any ground.
+      g.circle(cx, cy, r + 1).fill({ color: 0x1b1512, alpha: 0.75 });
       g.circle(cx, cy, r).fill(0xffffff);
       g.moveTo(cx, cy).arc(cx, cy, r, -Math.PI / 2, Math.PI / 2).fill(0xe0314b);
       g.circle(cx, cy - r / 2, r / 2).fill(0xe0314b);

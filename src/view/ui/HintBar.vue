@@ -130,11 +130,11 @@ function dismiss(): void {
 }
 .tag {
   flex: none;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--gold);
-  color: #2a1a00;
-  font-weight: 800;
+  padding: 1px 8px;
+  border: 1px solid rgba(232, 193, 90, 0.6);
+  border-radius: 2px;
+  color: #e8c15a;
+  font-weight: 700;
   font-size: 0.8rem;
 }
 /* "Got it" stays on one line. */

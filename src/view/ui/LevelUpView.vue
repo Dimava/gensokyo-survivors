@@ -291,12 +291,14 @@ h2 {
   font-size: 0.8rem;
   font-weight: 700;
   padding: 1px 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
 }
+/* NEW is a gold-ruled tag, as the results' records: listed, not shouted. */
 .tag.new {
-  background: var(--gold);
-  color: #2a1a00;
+  background: none;
+  border: 1px solid rgba(232, 193, 90, 0.6);
+  color: #e8c15a;
 }
 ul {
   margin: 4px 0;

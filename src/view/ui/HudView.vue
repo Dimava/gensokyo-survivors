@@ -105,7 +105,7 @@ function pause(): void {
           :title="`${w.name} (level ${w.level} of ${w.max}): ${w.desc}`"
         >
           <svg class="ico" viewBox="0 0 24 24" fill="currentColor" :style="{ color: hex(w.color) }" v-html="itemIcon(w.id)"></svg
-          ><b>{{ w.level === w.max ? "MAX" : w.level }}</b>
+          ><b :class="{ max: w.level === w.max }">{{ w.level === w.max ? "MAX" : w.level }}</b>
         </div>
         <div
           v-for="n in emptyWeapons"
@@ -123,7 +123,7 @@ function pause(): void {
           :title="`${p.name} (level ${p.level} of ${p.max}): ${p.desc}`"
         >
           <svg class="ico" viewBox="0 0 24 24" fill="currentColor" :style="{ color: hex(p.color) }" v-html="itemIcon(p.id)"></svg
-          ><b>{{ p.level === p.max ? "MAX" : p.level }}</b>
+          ><b :class="{ max: p.level === p.max }">{{ p.level === p.max ? "MAX" : p.level }}</b>
         </div>
         <div
           v-for="n in emptyPassives"
@@ -369,7 +369,8 @@ function pause(): void {
 }
 .xpfill {
   height: 100%;
-  background: linear-gradient(90deg, #2e6fe0, #6fd3ff);
+  background: #3f8fe0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
   transition: width calc(0.2s * var(--anim));
 }
 .xplabel {
@@ -399,7 +400,8 @@ function pause(): void {
 }
 .hpfill {
   height: 100%;
-  background: linear-gradient(90deg, #b8213a, #ff5c7a);
+  background: #c8352a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transition: width calc(0.15s * var(--anim));
 }
 .hpfill.low {
@@ -442,6 +444,12 @@ function pause(): void {
   --hole: #0a0e1e;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
 }
+/* A maxed slot says so in small gold letters that leave the icon room. */
+.slot b.max {
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  color: #e8c15a;
+}
 .slot.empty {
   opacity: 0.35;
 }
@@ -479,9 +487,11 @@ function pause(): void {
   gap: 10px;
 }
 .bname {
-  font-weight: 800;
-  color: var(--cyan);
-  text-shadow: 0 1px 3px #000;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  color: #f6f0e1;
+  text-shadow: 0 1px 2px #000;
 }
 .pips {
   display: flex;
@@ -507,7 +517,7 @@ function pause(): void {
   border-color: #777;
 }
 .pips i.now {
-  box-shadow: 0 0 8px #fff;
+  background: rgba(255, 255, 255, 0.3);
 }
 .pips i.todo {
   opacity: 0.6;
@@ -530,7 +540,7 @@ function pause(): void {
 }
 .bfill {
   height: 100%;
-  background: linear-gradient(90deg, #ff5c8a, #ffb3c8);
+  background: #e6dcc4;
   transition: width calc(0.1s * var(--anim));
 }
 .tr {
@@ -564,7 +574,7 @@ function pause(): void {
 }
 .status {
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid;
   background: rgba(10, 14, 30, 0.85);
   font-size: 12px;
@@ -590,13 +600,9 @@ function pause(): void {
   align-items: center;
   gap: 8px;
   padding: 4px 16px 4px 6px;
-  border-radius: 999px;
+  border-radius: 3px;
   border: 2px solid var(--kc);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--kc) 45%, rgba(10, 14, 30, 0.9)),
-    rgba(10, 14, 30, 0.9) 60%
-  );
+  background: rgba(14, 14, 24, 0.92);
   box-shadow: 0 0 18px color-mix(in srgb, var(--kc) 60%, transparent);
   color: #fff;
   font-size: 0.95rem;
@@ -661,7 +667,6 @@ function pause(): void {
 }
 .orbfill.full {
   opacity: 1;
-  box-shadow: 0 0 10px #6fd3ff;
 }
 .meter {
   width: 150px;
@@ -674,7 +679,7 @@ function pause(): void {
 }
 .mfill {
   height: 100%;
-  background: linear-gradient(90deg, #c56bff, #ffb3f0);
+  background: #f4b7c6;
   transition: width calc(0.15s * var(--anim));
 }
 .piles {
@@ -701,19 +706,13 @@ function pause(): void {
   padding: 0 6px 7px;
   border-radius: 12px;
   border: 2px solid var(--kc);
-  background:
-    radial-gradient(
-      circle at 50% 42%,
-      color-mix(in srgb, var(--kc) 38%, transparent),
-      transparent 68%
-    ),
-    linear-gradient(180deg, rgba(34, 38, 70, 0.97), rgba(12, 15, 32, 0.97));
+  background: rgba(20, 22, 38, 0.96);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
   overflow: visible;
-  box-shadow: 0 0 16px color-mix(in srgb, var(--kc) 55%, transparent);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
   transition:
     transform calc(0.12s * var(--anim)),
     opacity calc(0.12s * var(--anim)),
@@ -784,8 +783,7 @@ function pause(): void {
 /* Not enough Spirit: the card greys out except the charged part of its badge. */
 .card.off {
   border-color: color-mix(in srgb, var(--kc) 35%, #555);
-  box-shadow: none;
-  background: linear-gradient(180deg, rgba(30, 32, 48, 0.95), rgba(12, 14, 26, 0.95));
+  background: rgba(22, 23, 34, 0.95);
 }
 .card.off .cbadge {
   --hole: #262a3c;
@@ -799,9 +797,10 @@ function pause(): void {
 .card.off .cname {
   color: #8a90a8;
 }
+/* An empty slot is a quiet frame, not a dashed drop zone. */
 .emptycard {
-  border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(200, 205, 220, 0.6);
   box-shadow: none;
   align-items: center;
   justify-content: safe center;
@@ -839,7 +838,6 @@ function pause(): void {
 }
 .ccost i.lit {
   background: #6fd3ff;
-  box-shadow: 0 0 5px #6fd3ff;
 }
 .off .ccost i:not(.lit) {
   border-color: #ff6b6b;
