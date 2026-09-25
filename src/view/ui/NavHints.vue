@@ -23,8 +23,8 @@ withDefaults(defineProps<{ confirm?: string; back?: string | false; extra?: [cod
   display: flex;
   gap: 16px;
   padding: 4px 12px;
-  border-radius: 8px;
-  background: rgba(8, 11, 24, 0.7);
+  border-radius: 2px;
+  background: rgba(14, 10, 9, 0.72);
   color: var(--muted);
   font-size: 0.85rem;
   white-space: nowrap;

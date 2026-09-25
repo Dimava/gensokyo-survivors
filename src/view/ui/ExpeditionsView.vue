@@ -189,8 +189,8 @@ h3 {
   gap: 3px;
   width: 132px;
   padding: 10px;
-  border-radius: 12px;
-  border: 2px solid var(--line);
+  border-radius: 2px;
+  border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.03);
   font-size: 0.85rem;
   text-align: center;

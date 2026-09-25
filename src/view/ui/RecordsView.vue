@@ -57,14 +57,15 @@ const last = computed(() => lastRun.value?.summary ?? null);
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
 }
+/* A record is a row on a gold baseline, its number in the display serif. */
 .stat {
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 4px 6px;
+  border-bottom: 1px solid rgba(232, 193, 90, 0.25);
 }
 .stat b {
+  font-family: var(--display);
   font-size: 1.4rem;
 }
 h3 {

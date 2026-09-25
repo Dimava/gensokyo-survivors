@@ -1,10 +1,12 @@
 :root {
   --bg: #0b1020;
-  --panel: rgba(16, 22, 44, 0.92);
-  --panel-2: rgba(28, 36, 68, 0.95);
-  --line: rgba(160, 180, 255, 0.18);
-  --text: #eef1ff;
-  --muted: #9aa6c8;
+  /* The shrine at night (refs/gui/NOTES.md): warm lacquer and gold, washi-white words. */
+  --panel: rgba(23, 17, 14, 0.95);
+  --panel-2: #1d1612;
+  --lit: #2e231c;
+  --line: rgba(232, 193, 90, 0.24);
+  --text: #f3eee4;
+  --muted: #b3a992;
   --red: #e0314b;
   --red-2: #ff5c7a;
   --gold: #ffc94d;
@@ -77,12 +79,15 @@ button {
   justify-content: center;
   gap: 0.5em;
   padding: 0.6em 1.2em;
-  border-radius: 10px;
-  border: 1px solid var(--line);
+  /* A plaque: square, its corners cut (NOTES.md, Button). */
+  border-radius: 0;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  border: 1px solid rgba(232, 193, 90, 0.45);
   background: var(--panel-2);
   color: var(--text);
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
   transition:
     transform calc(0.1s * var(--anim)) ease,
     background-color var(--glide),
@@ -94,8 +99,8 @@ button {
 }
 .btn:hover:not(:disabled),
 .btn:focus-visible {
-  background: #2e3a72;
-  border-color: rgba(255, 255, 255, 0.45);
+  background: var(--lit);
+  border-color: #e8c15a;
   outline: none;
 }
 /* Only the mouse lifts a button; the keyboard selection never moves it. */
@@ -136,6 +141,7 @@ button {
 }
 .btn.ghost {
   background: transparent;
+  border-color: rgba(214, 196, 140, 0.4);
 }
 .btn.small {
   padding: 0.35em 0.8em;
@@ -149,13 +155,13 @@ button {
  */
 .btn.back {
   --tip: 0.85em;
-  --edge: var(--line);
+  --edge: rgba(232, 193, 90, 0.5);
   --fill: var(--panel-2);
   position: relative;
   isolation: isolate;
   padding-left: calc(0.9em + var(--tip));
   border: none;
-  border-radius: 0 10px 10px 0;
+  border-radius: 0;
   background: var(--edge);
   clip-path: polygon(var(--tip) 0, 100% 0, 100% 100%, var(--tip) 100%, 0 50%);
 }
@@ -164,7 +170,7 @@ button {
   position: absolute;
   inset: 1px;
   z-index: -1;
-  border-radius: 0 9px 9px 0;
+  border-radius: 0;
   background: var(--fill);
   clip-path: polygon(calc(var(--tip) - 0.5px) 0, 100% 0, 100% 100%, calc(var(--tip) - 0.5px) 100%, 0 50%);
   transition: background-color var(--glide);
@@ -172,8 +178,8 @@ button {
 .btn.back:hover:not(:disabled),
 .btn.back:focus-visible,
 .btn.back[data-nav-sel]:not(:disabled) {
-  --edge: rgba(255, 255, 255, 0.45);
-  --fill: #2e3a72;
+  --edge: #e8c15a;
+  --fill: var(--lit);
   background: var(--edge);
 }
 /* The red back: going back into the game (Resume). */
@@ -196,8 +202,8 @@ button {
  * colours, the same as hovering: no ring, no lift, no layout change.
  */
 .btn[data-nav-sel]:not(:disabled) {
-  background: #2e3a72;
-  border-color: rgba(255, 255, 255, 0.45);
+  background: var(--lit);
+  border-color: #e8c15a;
 }
 .btn.primary[data-nav-sel]:not(:disabled) {
   --g1: #cc3528;
@@ -228,19 +234,45 @@ button {
 }
 /* Sliders, toggles and selects: their row lights up. */
 label:has(> [data-nav-sel]) {
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  background: rgba(232, 193, 90, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(232, 193, 90, 0.5);
 }
 :where(button, a, input, select, [tabindex]):focus {
   outline: none;
 }
 
+/*
+ * A panel is black lacquer with gold fittings (NOTES.md, Panel): an outer gold
+ * rule, a 3px gap and an inner rule at 30%, gold L-brackets in the corners
+ * (::before), square corners, a wide warm shadow.
+ */
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  --gl: rgba(214, 178, 92, 0.85);
+  background-color: var(--panel);
+  border: 1px solid rgba(232, 193, 90, 0.65);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 3px rgba(23, 17, 14, 0.95),
+    inset 0 0 0 4px rgba(232, 193, 90, 0.28),
+    0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--gl), var(--gl)) 0 0 / 20px 2px,
+    linear-gradient(var(--gl), var(--gl)) 0 0 / 2px 20px,
+    linear-gradient(var(--gl), var(--gl)) 100% 0 / 20px 2px,
+    linear-gradient(var(--gl), var(--gl)) 100% 0 / 2px 20px,
+    linear-gradient(var(--gl), var(--gl)) 0 100% / 20px 2px,
+    linear-gradient(var(--gl), var(--gl)) 0 100% / 2px 20px,
+    linear-gradient(var(--gl), var(--gl)) 100% 100% / 20px 2px,
+    linear-gradient(var(--gl), var(--gl)) 100% 100% / 2px 20px;
+  background-repeat: no-repeat;
 }
 
 .screen {
@@ -275,10 +307,10 @@ label:has(> [data-nav-sel]) {
   align-items: center;
   gap: 0.4em;
   padding: 0.35em 0.9em;
-  border-radius: 999px;
-  background: rgba(255, 201, 77, 0.12);
-  border: 1px solid rgba(255, 201, 77, 0.45);
-  color: var(--gold);
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.85);
+  border: 1px solid rgba(232, 193, 90, 0.55);
+  color: #e8c15a;
   font-weight: 700;
 }
 .coins .label {
@@ -290,13 +322,16 @@ label:has(> [data-nav-sel]) {
 .muted {
   color: var(--muted);
 }
+/* A key cap is a scrap of washi with an ink letter and a shade at its foot (NOTES.md, Key cap). */
 .key {
   display: inline-block;
   min-width: 1.5em;
   padding: 0 0.35em;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1px;
+  border: 1px solid #1b1512;
+  background: #f0e8d4;
+  box-shadow: 0 2px 0 #9e8f6e;
+  color: #1b1512;
   font-size: 0.8em;
   font-weight: 700;
   text-align: center;
@@ -369,8 +404,8 @@ input[type="range"] {
   width: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 5px;
+  background: rgba(232, 193, 90, 0.25);
+  border-radius: 0;
 }
 
 /*
@@ -612,4 +647,8 @@ input[type="range"] {
 .btn.back.primary {
   --fab-o: 0.12;
   --fab-hi: 0.3;
+}
+/* A panel that scrolls its own content has no corner brackets: they would scroll away with it. */
+.panel:is(.fabric-scroll, .no-fabric)::before {
+  content: none;
 }

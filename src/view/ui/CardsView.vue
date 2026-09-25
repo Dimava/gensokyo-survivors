@@ -70,7 +70,7 @@ onBeforeUnmount(() => {
 .deck {
   white-space: nowrap;
   padding: 0.4em 0.9em;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   font-weight: 700;
 }
@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
   background: none;
   border: none;
   padding: 6px;
-  border-radius: 14px;
+  border-radius: 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -115,9 +115,10 @@ onBeforeUnmount(() => {
 .slot:hover:not(:disabled) {
   transform: translateY(-4px);
 }
+/* In the deck: the card stands on a lacquer tray with a gold rule. */
 .slot.in {
-  background: rgba(123, 216, 143, 0.12);
-  outline: 2px solid rgba(123, 216, 143, 0.7);
+  background: rgba(23, 17, 14, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(232, 193, 90, 0.55);
 }
 .slot:not(.in):not(.missing) :deep(.face) {
   opacity: 0.6;
@@ -129,11 +130,12 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 0;
   right: 0;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--gold);
-  color: #2a1a00;
-  font-weight: 800;
+  padding: 1px 7px;
+  border: 1px solid rgba(232, 193, 90, 0.7);
+  border-radius: 2px;
+  background: rgba(23, 17, 14, 0.9);
+  color: #e8c15a;
+  font-weight: 700;
   font-size: 0.75rem;
 }
 .state {
@@ -141,7 +143,7 @@ onBeforeUnmount(() => {
   font-size: 0.85rem;
 }
 .slot.in .state {
-  color: #b6ffc8;
+  color: #e8c15a;
 }
 .copies {
   font-size: 0.75rem;

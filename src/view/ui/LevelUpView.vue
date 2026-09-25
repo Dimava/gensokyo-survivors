@@ -180,7 +180,7 @@ function hover(): void {
 .lvlbg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(10, 16, 40, 0.75), rgba(4, 6, 16, 0.9));
+  background: rgba(8, 6, 10, 0.72);
 }
 .lvlbg-enter-active {
   transition: opacity calc(0.25s * var(--anim)) ease;
@@ -253,9 +253,11 @@ h2 {
   width: 230px;
   min-height: 250px;
   padding: 18px 16px 14px;
-  border-radius: 14px;
-  border: 2px solid var(--c);
-  background: linear-gradient(180deg, rgba(38, 46, 90, 0.98), rgba(16, 20, 42, 0.98));
+  /* A lacquer tablet: gold hairline, the offer's colour as a band across its head. */
+  border-radius: 2px;
+  border: 1px solid rgba(232, 193, 90, 0.55);
+  border-top: 4px solid var(--c);
+  background: #17110e;
   box-shadow:
     0 3px 0 rgba(0, 0, 0, 0.5),
     0 14px 30px rgba(0, 0, 0, 0.45);
@@ -273,7 +275,6 @@ h2 {
   position: absolute;
   top: -12px;
   left: -10px;
-  background: #111;
   font-size: 1rem;
 }
 .kind {

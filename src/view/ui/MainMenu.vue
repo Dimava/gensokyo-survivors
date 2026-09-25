@@ -51,24 +51,25 @@ function hover(): void {
     <div class="wrap">
       <div class="left">
         <h1 class="logo">{{ GAME_TITLE }}</h1>
-        <div class="buttons">
-          <button v-if="active" class="btn primary big" @mouseenter="hover" @click="resume">Continue Run</button>
-          <button v-else class="btn primary big" :disabled="deckSize < DECK_MIN" @mouseenter="hover" @click="picking = true">Start Run</button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('tree')">
-            Shrine Upgrades <span v-if="affordableNodes" class="badge">{{ affordableNodes }} affordable</span>
+        <!-- Touhou's title menu: words, no boxes; the selected one sits in 「 」 on a vermilion brush stroke. -->
+        <nav class="entries">
+          <button v-if="active" class="entry" @mouseenter="hover" @click="resume"><span>Continue Run</span></button>
+          <button v-else class="entry" :disabled="deckSize < DECK_MIN" @mouseenter="hover" @click="picking = true"><span>Start Run</span></button>
+          <button class="entry" @mouseenter="hover" @click="host.go('tree')">
+            <span>Shrine Upgrades</span><small v-if="affordableNodes" class="badge">{{ affordableNodes }} affordable</small>
           </button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('cards')">
-            Skill Cards &amp; Deck <span v-if="freshCards" class="badge">{{ freshCards }} new</span>
+          <button class="entry" @mouseenter="hover" @click="host.go('cards')">
+            <span>Skill Cards &amp; Deck</span><small v-if="freshCards" class="badge">{{ freshCards }} new</small>
           </button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('packs')">Card Packs</button>
-          <button v-if="EXPEDITIONS_ENABLED" class="btn big" @mouseenter="hover" @click="host.go('expeditions')">
-            Expeditions <span v-if="tripsBack" class="badge">{{ tripsBack }} back</span>
+          <button class="entry" @mouseenter="hover" @click="host.go('packs')"><span>Card Packs</span></button>
+          <button v-if="EXPEDITIONS_ENABLED" class="entry" @mouseenter="hover" @click="host.go('expeditions')">
+            <span>Expeditions</span><small v-if="tripsBack" class="badge">{{ tripsBack }} back</small>
           </button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('records')">Records</button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('gallery')">Gallery</button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('settings')">Settings</button>
-          <button class="btn big" @mouseenter="hover" @click="host.go('help')">How to Play</button>
-        </div>
+          <button class="entry" @mouseenter="hover" @click="host.go('records')"><span>Records</span></button>
+          <button class="entry" @mouseenter="hover" @click="host.go('gallery')"><span>Gallery</span></button>
+          <button class="entry" @mouseenter="hover" @click="host.go('settings')"><span>Settings</span></button>
+          <button class="entry" @mouseenter="hover" @click="host.go('help')"><span>How to Play</span></button>
+        </nav>
       </div>
       <div class="right panel">
         <div class="who">
@@ -91,9 +92,6 @@ function hover(): void {
           <dt>Deck</dt>
           <dd>{{ deckSize }} cards</dd>
         </dl>
-        <p v-if="active" class="note">A run is in progress. Continue it, or quit it from its pause menu.</p>
-        <p v-else-if="profile.runs === 0" class="note">First time? Start a run: the game teaches you as you play.</p>
-        <p v-else-if="affordableNodes" class="note">You can afford {{ affordableNodes }} shrine upgrade{{ affordableNodes > 1 ? "s" : "" }}.</p>
       </div>
     </div>
 
@@ -142,24 +140,81 @@ function hover(): void {
   font-size: 2.6rem;
   margin: 0 0 20px;
 }
-.buttons {
+.entries {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-width: 380px;
+  align-items: flex-start;
 }
-.big {
-  justify-content: flex-start;
-  font-size: 1.1rem;
-  padding: 0.75em 1.2em;
+.entry {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 0.1em 0.9em 0.16em;
+  border: none;
+  background: none;
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(243, 238, 228, 0.5);
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.7),
+    0 0 6px rgba(6, 9, 24, 0.9);
+  transition: color var(--glide);
+}
+.entry > span {
+  position: relative;
+}
+/* The brush stroke and the brackets show on the selected entry only; the stroke is swept in. */
+.entry::before {
+  content: "";
+  position: absolute;
+  inset: 2% -7% -6% -9%;
+  z-index: -1;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpath d='M4 30C30 17 110 10 220 11S372 14 397 21L392 27C396 31 384 36 370 38C300 46 220 50 140 49S34 49 8 45C14 41 2 38 4 30Z' fill='%23b3261e'/%3E%3Cpath d='M30 20C120 14 260 12 380 18' stroke='%23d9443a' stroke-width='2' fill='none' opacity='.6'/%3E%3Cpath d='M20 44C120 48 260 46 360 40' stroke='%238a1a14' stroke-width='3' fill='none' opacity='.6'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path calc(0.22s * var(--anim)) ease-out;
+}
+.entry > span::before,
+.entry > span::after {
+  position: absolute;
+  top: 0;
+  opacity: 0;
+  transition: opacity var(--glide);
+}
+.entry > span::before {
+  content: "「";
+  right: calc(100% + 0.1em);
+}
+.entry > span::after {
+  content: "」";
+  left: calc(100% + 0.1em);
+}
+.entry:is(:hover, [data-nav-sel]):not(:disabled) {
+  color: #fff8ea;
+}
+.entry:is(:hover, [data-nav-sel]):not(:disabled)::before {
+  clip-path: inset(0 0 0 0);
+}
+.entry:is(:hover, [data-nav-sel]):not(:disabled) > span::before,
+.entry:is(:hover, [data-nav-sel]):not(:disabled) > span::after {
+  opacity: 1;
+}
+.entry:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 .badge {
-  margin-left: auto;
-  font-size: 0.75em;
-  padding: 0.15em 0.6em;
-  border-radius: 999px;
-  background: var(--gold);
-  color: #2a1a00;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0 6px;
+  border: 1px solid rgba(232, 193, 90, 0.6);
+  border-radius: 2px;
+  color: #e8c15a;
+  text-shadow: none;
 }
 .right {
   flex: 0 1 340px;
@@ -191,14 +246,6 @@ dd {
   font-weight: 700;
   text-align: right;
 }
-.note {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(255, 201, 77, 0.1);
-  border: 1px solid rgba(255, 201, 77, 0.3);
-  font-size: 0.95rem;
-}
 .modal-wrap {
   position: absolute;
   inset: 0;
@@ -222,8 +269,8 @@ dd {
   align-items: center;
   justify-content: space-between;
   padding: 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(214, 196, 140, 0.35);
 }
 .stage.locked {

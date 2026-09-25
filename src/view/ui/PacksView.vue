@@ -206,7 +206,7 @@ td {
 }
 .pity {
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 2px;
   background: rgba(255, 201, 77, 0.08);
   border: 1px solid rgba(255, 201, 77, 0.3);
   font-size: 0.9rem;

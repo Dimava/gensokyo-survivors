@@ -25,7 +25,6 @@ const build = [`v${__BUILD__.version}`, __BUILD__.commit, __BUILD__.date].filter
       <h1>{{ GAME_TITLE }}</h1>
       <p class="sub">{{ GAME_SUBTITLE }}</p>
     </div>
-    <p class="press">Press any key or click to begin</p>
     <p class="foot muted">A Touhou Project fan game · every picture drawn and every sound synthesized in code</p>
     <p class="ver muted">{{ build }}</p>
   </div>
@@ -60,12 +59,6 @@ h1 {
   font-size: 1.1rem;
   letter-spacing: 0.1em;
 }
-.press {
-  margin-top: 48px;
-  font-size: 1.2rem;
-  font-weight: 600;
-  animation: blink calc(1.6s * var(--anim)) ease-in-out infinite;
-}
 .foot {
   position: absolute;
   bottom: 14px;
@@ -82,11 +75,6 @@ h1 {
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-@keyframes blink {
-  50% {
-    opacity: 0.35;
   }
 }
 @keyframes rise {

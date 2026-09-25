@@ -143,11 +143,11 @@ h1 {
 .stat {
   display: flex;
   flex-direction: column;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 4px 5px;
+  border-bottom: 1px solid rgba(232, 193, 90, 0.25);
 }
 .stat b {
+  font-family: var(--display);
   font-size: 1.3rem;
 }
 h3 {

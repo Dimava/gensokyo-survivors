@@ -286,9 +286,9 @@ h3 {
 .item {
   min-width: 0;
   overflow: hidden;
-  background: rgba(20, 26, 46, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: rgba(10, 8, 7, 0.45);
+  border: 1px solid rgba(232, 193, 90, 0.16);
+  border-radius: 2px;
   padding: 12px;
   display: flex;
   flex-direction: column;

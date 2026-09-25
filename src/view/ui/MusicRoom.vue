@@ -337,7 +337,7 @@ onBeforeUnmount(() => {
 }
 .tag {
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.08);
   font-size: 0.85em;
 }
@@ -355,7 +355,7 @@ onBeforeUnmount(() => {
 .chord {
   min-width: 96px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 2px;
   text-align: center;
   font-size: 1.3em;
   font-weight: 700;
