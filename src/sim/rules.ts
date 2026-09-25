@@ -14,7 +14,7 @@ import type { Ctx } from "gamebones";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
-import { collectDead, contactDamage, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
+import { collectDead, contactDamage, DAMAGE_TALLY, enemyFire, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
 import { applyVolley, bossFactor, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, pullAll, stepDrops } from "./drops.ts";
@@ -435,6 +435,12 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   }),
   r.on("boss:dialogue", (_, ctx) => {
     const run = ctx.derived("state");
+    // A level-up opened this same tick (the field's experience flies in at the warning): wait for it.
+    // The action clock is paused under an overlay, so the next action tick comes once it closes.
+    if (run.run.overlay !== "none") {
+      ctx.after("action", 1, "boss:dialogue", {});
+      return;
+    }
     const { body } = ctx.derived("player");
     // The fog swallows the swarm; the arena forms around the player.
     ctx.packed("enemies").clear();
@@ -515,6 +521,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("boss:hit", (ev, ctx) => {
     const boss = ctx.derived("boss");
     if (!boss || ev.dmg <= 0) return;
+    DAMAGE_TALLY.boss += Math.min(ev.dmg, boss.boss.hp);
     ctx.mut(boss, "boss").hp = Math.max(0, boss.boss.hp - ev.dmg);
   }),
   r.on("boss:hit").react((_, ctx) => {
