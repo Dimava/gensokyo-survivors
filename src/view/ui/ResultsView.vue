@@ -18,7 +18,6 @@ const rows = computed(() => {
     { label: "Coins picked up", value: c.drops },
     { label: `Surviving the swarm (1 per ${REWARD.perSeconds}s)`, value: c.survival },
     { label: `Kills (1 per ${REWARD.perKills})`, value: c.kills },
-    { label: `Boss fight (${REWARD.bossPerSecond} per second)`, value: c.boss },
     { label: "Spell card bonuses", value: c.spells },
   ];
 });

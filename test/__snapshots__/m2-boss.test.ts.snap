@@ -271,9 +271,9 @@ lake over(clear) t=3:56 fixed=14285 | hp 205/205 lv 38 xp 1109/1439 kills 4085 |
 weapons: amulet8 border5 needle8 orbs8 | passives: magnet1 power2 grimoire5 clock1
 enemies 0 [] | drops 0 | shots 59 | bullets 0
 cards: spirit 2.46/3 meter 42 grazes 618 | hand: barrier, healing
--- meta: coins 397 (lifetime 397) | runs 1 clears 1 [lake] best 236s/4085 kills | active -
+-- meta: coins 466 (lifetime 466) | runs 1 clears 1 [lake] best 236s/4085 kills | active -
 tree: core:3 might1:4 cooldown1:3 area1:3 hp1:4 armor1:3 regen1:3 magnet1:3 growth1:3 spark:1 amount1:1 might2:3
 cards: fantasy-seal barrier healing | pity 0
-last run: lake clear at 236s, lv 38, 4085 kills, +397 coins (new: time, kills, level, first clear)
+last run: lake clear at 236s, lv 38, 4085 kills, +466 coins (new: time, kills, level, first clear)
 "
 `;

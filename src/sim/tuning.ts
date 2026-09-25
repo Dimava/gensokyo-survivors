@@ -175,16 +175,16 @@ export const HITSTOP = { hurt: 6, spellBreak: 14 } as const;
 export const END_DELAY = 100;
 
 /**
- * Run donations: the swarm pays about 1 coin a second (time, kills and coin drops
- * together), a second of the boss fight 2, and each spell card its bonus (twice when captured).
+ * Run donations: the swarm pays about 1 coin a second on average (time, kills and
+ * coin drops together); the boss fight pays by its spell cards, each its bonus when
+ * broken in time (twice when captured), about 2 a second over a typical fight, so a
+ * quicker fight pays no less.
  */
 export const REWARD = {
   /** Swarm seconds per coin. */
   perSeconds: 2,
   /** Kills per coin. */
   perKills: 60,
-  /** Coins per second of the boss fight. */
-  bossPerSecond: 2,
 } as const;
 
 /** Bullets further than this from the player (or the arena) are culled when checked. */

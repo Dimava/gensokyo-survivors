@@ -30,8 +30,8 @@ export const RunSummary = z.object({
   spellsCaptured: int,
   spellsTotal: int,
   bossDefeated: z.boolean(),
-  /** `boss`: coins for the boss fight's seconds (older saves had a stage clear bonus in its place; parsing drops it). */
-  coins: z.object({ drops: int, survival: int, kills: int, boss: int.default(0), spells: int, greed: num, total: int }),
+  /** Older saves also had a stage clear bonus (`clear`); parsing drops it. */
+  coins: z.object({ drops: int, survival: int, kills: int, spells: int, greed: num, total: int }),
 });
 export type RunSummary = z.output<typeof RunSummary>;
 

@@ -84,17 +84,16 @@ function closeOverlay(ctx: C): void {
   if (run.run.phase !== "over") ctx.setScale("game", 1, 1);
 }
 
-/** A run's donations so far, before greed, at action tick `t`: the swarm's time, kills and drops, the boss fight's time, and spell bonuses. */
+/** A run's donations so far, before greed, at action tick `t`: the swarm's time (up to the boss), kills, coin drops, and spell bonuses. */
 export function runCoins(pr: { kills: number; coinDrops: number; coinSpells: number; bossFrom: number }, t: number) {
   const swarm = pr.bossFrom ? pr.bossFrom : t;
   const coins = {
     drops: Math.floor(pr.coinDrops),
     survival: Math.floor(swarm / 60 / REWARD.perSeconds),
     kills: Math.floor(pr.kills / REWARD.perKills),
-    boss: pr.bossFrom ? Math.floor(((t - pr.bossFrom) / 60) * REWARD.bossPerSecond) : 0,
     spells: Math.floor(pr.coinSpells),
   };
-  return { ...coins, sum: coins.drops + coins.survival + coins.kills + coins.boss + coins.spells };
+  return { ...coins, sum: coins.drops + coins.survival + coins.kills + coins.spells };
 }
 
 function summary(ctx: C): RunSummary {
