@@ -7,6 +7,7 @@ import { CHARACTERS, CURRENCY, type CharacterId } from "../../content/names.ts";
 import { DESTINATIONS, MAX_EXPEDITIONS, destination } from "../../content/expeditions.ts";
 import { hex, wallet } from "./useGame.ts";
 import NavHints from "./NavHints.vue";
+import Face from "./Face.vue";
 
 const picked = ref<string>("");
 const confirmRecall = ref("");
@@ -26,7 +27,7 @@ const companions = computed(() => {
   const trips = v.derived("trips");
   return v.derived("companions").map((id) => {
     const c = charOf(id);
-    return { id, short: c.short, title: c.title, color: hex(c.color), away: trips.some((t) => t.expedition.who === id) };
+    return { id: id as CharacterId, short: c.short, title: c.title, away: trips.some((t) => t.expedition.who === id) };
   });
 });
 
@@ -96,7 +97,7 @@ function recall(trip: string): void {
         <h3>1. Choose a companion</h3>
         <div class="comps">
           <button v-for="c in companions" :key="c.id" class="comp" :class="{ sel: picked === c.id, away: c.away }" :disabled="c.away" @click="pick(c.id)">
-            <i :style="{ background: c.color }"></i>
+            <Face :who="c.id" :size="40" />
             <b>{{ c.short }}</b>
             <span class="muted">{{ c.away ? "Away" : c.title }}</span>
           </button>
@@ -193,12 +194,6 @@ h3 {
   background: rgba(255, 255, 255, 0.03);
   font-size: 0.85rem;
   text-align: center;
-}
-.comp i {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid #fff;
 }
 .comp.sel {
   border-color: var(--gold);

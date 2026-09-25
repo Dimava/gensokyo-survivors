@@ -10,6 +10,7 @@ import { affordableNodes, fmtTime, owned, profile, stages, wallet } from "./useG
 import { stageDef, type StageDef } from "../../content/stages.ts";
 import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
 import NavHints from "./NavHints.vue";
+import Face from "./Face.vue";
 
 const midbossName = (s: StageDef): string => {
   const mid = s.script.find((b) => b.form === "midboss");
@@ -69,7 +70,7 @@ function hover(): void {
       </div>
       <div class="right panel">
         <div class="who">
-          <div class="dot" :style="{ background: '#e0314b' }"></div>
+          <Face :who="PLAYER_CHARACTER" />
           <div>
             <div class="name">{{ CHARACTERS[PLAYER_CHARACTER].name }}</div>
             <div class="muted">{{ CHARACTERS[PLAYER_CHARACTER].title }}</div>
@@ -169,12 +170,6 @@ function hover(): void {
   display: flex;
   gap: 12px;
   align-items: center;
-}
-.dot {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 3px solid #fff;
 }
 .name {
   font-weight: 700;
