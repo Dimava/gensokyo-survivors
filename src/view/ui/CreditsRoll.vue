@@ -245,8 +245,11 @@ const numbers = (() => {
   const commits = num(g.commits);
   const loc = num(g.lines);
   const hours = num(c.hours);
+  const active = num(c.activeHours);
   const work = [commits !== null && `${exact(commits)} commits`, loc !== null && `${exact(loc)} lines`].filter(Boolean).join(", ");
-  if (work) lines.push(work + (hours !== null ? `, in ${hours} hours` : ""));
+  if (work) lines.push(work);
+  if (active !== null) lines.push(`${active} hours of active work${hours !== null ? `, over ${hours} hours` : ""}`);
+  else if (hours !== null) lines.push(`in ${hours} hours`);
   return { lines, asOf: typeof u.generatedAt === "string" ? u.generatedAt : "" };
 })();
 

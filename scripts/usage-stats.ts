@@ -70,13 +70,28 @@ interface Call {
   out: number;
 }
 
+/** Hours when someone was at it (the user or any agent): gaps between entries under 10 minutes count, longer ones are breaks. */
+function activeHours(ts: number[]): number {
+  ts.sort((a, b) => a - b);
+  let ms = 0;
+  for (let i = 1; i < ts.length; i++) {
+    const gap = ts[i]! - ts[i - 1]!;
+    if (gap < 10 * 60e3) ms += gap;
+  }
+  return Math.round(ms / 36e5);
+}
+
 const calls = new Map<string, Call>();
 const agents = new Set<string>();
 let first = "";
 let last = "";
+/** Every entry's time (messages, tool results, agents' steps), for the active time. */
+const times: number[] = [];
 for (const f of files) {
   if (basename(f).startsWith("agent-")) agents.add(basename(f));
   for (const line of readFileSync(f, "utf8").split("\n")) {
+    const t = /"timestamp":"([^"]+)"/.exec(line)?.[1];
+    if (t) times.push(Date.parse(t));
     if (!line.includes('"usage"')) continue;
     let e: { message?: { id?: string; model?: string; usage?: Usage }; requestId?: string; timestamp?: string };
     try {
@@ -131,6 +146,7 @@ const stats = {
     from: first,
     to: last,
     hours: first && last ? Math.round((Date.parse(last) - Date.parse(first)) / 36e5) : 0,
+    activeHours: activeHours(times),
   },
   git: {
     commits: dates.length,
