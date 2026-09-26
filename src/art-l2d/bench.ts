@@ -10,15 +10,22 @@
 // it (gpu: a one-pixel read after the draw, so this also holds the GPU's
 // time). WebGL calls are counted per frame: draw calls, buffer uploads (and
 // their bytes), state changes of the stencil.
+//
+// Modes: "reference" (the evaluator before 20d8b45), "current" (RigView: a
+// mesh per part, stencil clips) and "atlas" (the one-draw prototype,
+// pixi-atlas.ts). atlasDiff renders poses both ways to compare the pixels.
 
-import { autoDetectRenderer, Container, Sprite, Texture, type Renderer, type WebGLRenderer } from "pixi.js";
+import { autoDetectRenderer, Container, Rectangle, Sprite, Texture, type Renderer, type WebGLRenderer } from "pixi.js";
 import { ART_L2D } from "./index.ts";
 import { Animator } from "./animator.ts";
-import { partImages, RigView } from "./pixi-model.ts";
+import { partImages, RigView, sharedRenderer } from "./pixi-model.ts";
+import { RigAtlasView } from "./pixi-atlas.ts";
+import { pose } from "./animator.ts";
+import type { Look } from "../art/drawing.ts";
 import { Rig, type Model } from "./rig.ts";
 import { referenceEvaluate } from "./reference.ts";
 
-export type BenchMode = "reference" | "current";
+export type BenchMode = "reference" | "current" | "atlas";
 
 export interface BenchOptions {
   /** "reimu" (portrait), "reimu.sprite", "fairy" (sprite when no portrait). */
@@ -106,7 +113,7 @@ function countGl(gl: WebGL2RenderingContext) {
 
 interface Item {
   rig: Rig;
-  view: RigView;
+  view: RigView | RigAtlasView;
   anim: Animator;
   root: Container;
   ctx?: CanvasRenderingContext2D;
@@ -142,7 +149,7 @@ export async function runBench(o: BenchOptions): Promise<BenchResult> {
   const items: Item[] = [];
   for (let k = 0; k < o.n; k++) {
     const rig = new Rig(model);
-    const view = new RigView(rig, imgs);
+    const view = o.mode === "atlas" ? new RigAtlasView(rig, imgs) : new RigView(rig, imgs);
     view.scale.set(scale);
     const root = new Container();
     root.addChild(view);
@@ -236,4 +243,71 @@ export async function runBench(o: BenchOptions): Promise<BenchResult> {
     stencil: per(c.stencil),
     gpuName,
   };
+}
+
+export interface AtlasDiff {
+  label: string;
+  /** PNG data URLs: RigView, the atlas prototype, and their difference (x4, over black). */
+  current: string;
+  atlas: string;
+  diff: string;
+  /** Mean absolute difference per channel (0..255) and the share of pixels differing by more than 16 in any channel. */
+  mean: number;
+  over16: number;
+}
+
+/**
+ * The same poses drawn by RigView and by the atlas prototype on the shared
+ * renderer, and how far their pixels differ (antialiasing and mipmap
+ * filtering differ slightly; a wrong clip or order would show as a patch).
+ */
+export async function atlasDiff(id: string, looks: { look: Look; params?: Record<string, number>; label: string }[], scale = 1): Promise<AtlasDiff[]> {
+  const model = modelOf(id);
+  const imgs = await partImages(model);
+  const r = await sharedRenderer();
+  const w = Math.ceil(model.w * scale);
+  const h = Math.ceil(model.h * scale);
+  const frame = new Rectangle(0, 0, w, h);
+  const out: AtlasDiff[] = [];
+  for (const l of looks) {
+    const shots: { url: string; px: Uint8ClampedArray }[] = [];
+    for (const Kind of [RigView, RigAtlasView]) {
+      const rig = new Rig(model);
+      const view = new Kind(rig, imgs);
+      view.scale.set(scale);
+      const root = new Container();
+      root.addChild(view);
+      for (const d of model.params) rig.params[d.id] = d.def;
+      pose(rig, l.look);
+      for (const [k, v] of Object.entries(model.rest ?? {})) rig.set(k, (rig.params[k] ?? 0) + v);
+      for (const [k, v] of Object.entries(l.params ?? {})) rig.set(k, v);
+      view.update();
+      const url = await r.extract.base64({ target: root, frame, resolution: 1 });
+      const px = r.extract.pixels({ target: root, frame, resolution: 1 }).pixels;
+      shots.push({ url, px });
+      root.destroy({ children: true });
+    }
+    const [a, b] = [shots[0]!.px, shots[1]!.px];
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext("2d")!;
+    const img = ctx.createImageData(w, h);
+    let sum = 0;
+    let over = 0;
+    for (let i = 0; i < a.length; i += 4) {
+      let m = 0;
+      for (let j = 0; j < 4; j++) {
+        const d = Math.abs(a[i + j]! - b[i + j]!);
+        sum += d;
+        m = Math.max(m, d);
+        if (j < 3) img.data[i + j] = Math.min(255, d * 4);
+      }
+      img.data[i + 3] = 255;
+      if (m > 16) over++;
+    }
+    ctx.putImageData(img, 0, 0);
+    out.push({ label: l.label, current: shots[0]!.url, atlas: shots[1]!.url, diff: c.toDataURL(), mean: sum / a.length, over16: over / (a.length / 4) });
+  }
+  return out;
 }
