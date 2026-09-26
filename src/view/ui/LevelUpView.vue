@@ -8,7 +8,7 @@ import { LevelUp } from "../../sim/levelup.ts";
 import { runView } from "../../sim/game.ts";
 import { COIN_OFFER, HEAL_FRACTION } from "../../sim/offers.ts";
 import { weaponDef, weaponLevelDelta } from "../../content/weapons.ts";
-import { passiveDef } from "../../content/passives.ts";
+import { passiveBonus, passiveDef, passiveGains } from "../../content/passives.ts";
 import { formatBonus } from "../../content/stats.ts";
 import { CURRENCY } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
@@ -55,7 +55,7 @@ const choices = computed(() =>
         color: hex(def.color),
         isNew: c.level === 1,
         lv: c.level === 1 ? null : { from: c.level - 1, to: c.level, max: c.level === def.max },
-        lines: [formatBonus(def.stat, def.per), `Total after: ${formatBonus(def.stat, def.per * c.level)}`],
+        lines: [...passiveGains(def, c.level), `Total after: ${formatBonus(def.stat, passiveBonus(def, c.level)[0]![1])}`],
         from: def.desc,
         weapon: undefined,
         item: { id: c.id, level: c.level, max: def.max },

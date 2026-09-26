@@ -25,6 +25,8 @@ export const STAT_KEYS = [
   "weaponLevel",
   "fullHand",
   "skip",
+  "ward",
+  "invuln",
 ] as const;
 
 export type StatKey = (typeof STAT_KEYS)[number];
@@ -32,8 +34,8 @@ export type Stats = Record<StatKey, number>;
 
 export interface StatDef {
   label: string;
-  /** How a bonus reads: "+10%" (pct), "+1" (flat), "+0.5/s" (rate). */
-  format: "pct" | "flat" | "rate" | "hp";
+  /** How a bonus reads: "+10%" (pct), "+1" (flat), "+0.5/s" (rate), "+0.4 s" (sec), "every 20 s" (every: a period, shown as the total). */
+  format: "pct" | "flat" | "rate" | "hp" | "sec" | "every";
   base: number;
   help: string;
   /** Used once as a run begins (shrine head starts), not a stat of the run itself. */
@@ -64,6 +66,8 @@ export const STAT_DEFS: Record<StatKey, StatDef> = {
   weaponLevel: { label: "Weapon Level", format: "flat", base: 0, start: true, help: "Your first weapon starts this many levels up." },
   fullHand: { label: "Prepared Hand", format: "flat", base: 0, start: true, help: "A run begins with your hand full of cards." },
   skip: { label: "Early Start", format: "flat", base: 0, start: true, help: "Seconds of the stage's opening skipped, with the experience you would have gathered in them." },
+  ward: { label: "Ward", format: "every", base: 0, help: "A charm takes one hit for you, then recharges for this many seconds (0: none)." },
+  invuln: { label: "Recovery Time", format: "sec", base: 0, help: "Extra seconds you can't be hurt after a hit." },
 };
 
 /** The stats a run has (the pause menu lists them): all but the ones used only as it begins. */
@@ -85,6 +89,10 @@ export function formatBonus(key: StatKey, amount: number): string {
       return `${sign}${Math.round(a * 100)}% ${d.label}`;
     case "rate":
       return `${sign}${round2(a)}/s ${d.label}`;
+    case "sec":
+      return `${sign}${round2(a)} s ${d.label}`;
+    case "every":
+      return `${d.label} every ${round2(a)} s`;
     default:
       return `${sign}${round2(a)} ${d.label}`;
   }
@@ -95,6 +103,7 @@ export function formatStat(key: StatKey, value: number): string {
   const d = STAT_DEFS[key];
   if (d.format === "pct") return `${Math.round(value * 100)}%`;
   if (d.format === "rate") return `${round2(value)}/s`;
+  if (d.format === "sec" || d.format === "every") return value ? `${round2(value)} s` : "-";
   return String(round2(value));
 }
 
