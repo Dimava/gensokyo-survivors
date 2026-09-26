@@ -408,7 +408,8 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   // ---------- level-up overlay ----------
   r.on("level:up", (_, ctx) => {
     const run = ctx.derived("state").run;
-    if (run.overlay !== "none" || run.phase === "over") return;
+    // While the boss's winds blow (the warning), level-ups wait (pending keeps count) and open before her dialogue.
+    if (run.overlay !== "none" || run.phase === "over" || run.phase === "warning") return;
     openLevelUp(ctx);
   }),
   r.on("levelup:picked", (ev, ctx) => {
@@ -466,9 +467,11 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   }),
   r.on("boss:dialogue", (_, ctx) => {
     const run = ctx.derived("state");
-    // A level-up opened this same tick (the field's experience flies in at the warning): wait for it.
-    // The action clock is paused under an overlay, so the next action tick comes once it closes.
-    if (run.run.overlay !== "none") {
+    // The level-ups held through the winds (the field's experience spiralled in) come first, then the dialogue.
+    // The action clock is paused under an overlay, so the next action tick comes once they close.
+    const held = run.run.overlay === "none" && ctx.derived("player").progress.pending > 0;
+    if (held) openLevelUp(ctx);
+    if (held || run.run.overlay !== "none") {
       ctx.after("action", 1, "boss:dialogue", {});
       return;
     }

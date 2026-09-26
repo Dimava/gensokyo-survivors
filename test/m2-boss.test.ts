@@ -7,6 +7,7 @@ import { harness, type TraceNode } from "gamebones";
 import { activeRun, runView, type RunPath } from "../src/sim/game.ts";
 import { botCard, botSteer, botPick, SKILL, type BotInputs } from "../src/sim/bot.ts";
 import { fixtureGame, msPerTick, render, stress } from "./helpers.ts";
+import { BOSS } from "../src/sim/tuning.ts";
 import { renderBoss, renderDialogue, renderField } from "../src/view/text-renderer.ts";
 
 function has(n: TraceNode, event: string): boolean {
@@ -60,10 +61,16 @@ describe("M2 boss", () => {
     h.tick(path, "fixed", 1);
     expect(v.derived("state").run.phase).toBe("warning");
     h.note(`the swarm at the warning:\n${renderField(k, path)}`);
+    // The winds blow uninterrupted: level-ups the spiralling gems bring wait until the warning is over.
+    const warnedAt = v.now("action");
+    let held = false;
     while (v.derived("state").run.phase === "warning") {
+      if (v.derived("state").run.overlay === "levelup") expect(v.now("action") - warnedAt).toBeGreaterThanOrEqual(BOSS.warning - 1);
+      else if (v.derived("player").progress.pending > 0) held = true;
       step();
       k.tick(path, "fixed");
     }
+    expect(held).toBe(true);
     expect(v.derived("state").run.overlay).toBe("vn");
     // The dialogue: game clock paused, one input per line.
     const vnPath = `${path}/vn` as "/run:1/vn";
