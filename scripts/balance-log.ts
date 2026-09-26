@@ -8,7 +8,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fixtureGame } from "../test/helpers.ts";
-import { activeRun } from "../src/sim/game.ts";
+import { activeRun, runView } from "../src/sim/game.ts";
 import { SKILL, type BotOptions } from "../src/sim/bot.ts";
 import { recordRun } from "./lib/runlog.ts";
 import { ENEMIES } from "../src/content/enemies.ts";
@@ -26,6 +26,7 @@ const bot = (process.env.BOT ?? "player") as keyof typeof SKILL;
 const skill: BotOptions = { ...SKILL[bot] };
 for (const [env, key] of [["CAUTION", "caution"], ["LATENCY", "latency"], ["SETTLE", "settle"]] as const) if (process.env[env]) skill[key] = Number(process.env[env]);
 if (process.env.CARDS) skill.cards = process.env.CARDS !== "0";
+if (process.env.RECKLESS) skill.reckless = process.env.RECKLESS !== "0";
 if (process.env.AUTOHEAL) skill.autoHeal = process.env.AUTOHEAL !== "0";
 const deck = process.env.DECK?.split(",").filter(Boolean);
 const seeds = process.env.SEEDS?.split(",") ?? Array.from({ length: Number(nSeeds) }, (_, i) => `c${i + 1}`);
@@ -46,9 +47,11 @@ for (const [si, st] of STRATEGIES.entries()) {
     const k = fixtureGame(seed, { tree: { ...tree, reroll: 30 }, ...(deck ? { cards: deck, onlyDeck: true } : {}) });
     k.dispatch("/", "run:start", { stage });
     if (!activeRun(k)) throw new Error("no run");
+    // card:played names the card's entity: which card each one is.
+    const cards = Object.fromEntries(runView(k, activeRun(k)!).q("card").map((c) => [c.id, c.card.id]));
     const t0 = performance.now();
     const { log, ticks } = recordRun(k, { ...skill, pick: st.make(seed)() });
-    writeFileSync(join(dir, `${seed}.json`), JSON.stringify({ strategy: st.name, seed, stage, tree: treeName, bot, skill, hard, deck: deck ?? "starter", ticks, log }));
+    writeFileSync(join(dir, `${seed}.json`), JSON.stringify({ strategy: st.name, seed, stage, tree: treeName, bot, skill, hard, deck: deck ?? "starter", cards, ticks, log }));
     console.log(`${st.name} ${seed}: ${log.length} entries, ${ticks} ticks, ${((performance.now() - t0) / 1000).toFixed(1)} s`);
   }
 }
