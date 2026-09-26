@@ -286,7 +286,8 @@ describe("chibi arms", () => {
     for (let i = 1; i + 1 < hand.length; i++) if ((hand[i]! - hand[i - 1]!) * (hand[i + 1]! - hand[i]!) < 0 && Math.abs(hand[i]!) > 0.02) turns++;
     expect(turns).toBeLessThanOrEqual(6);
     for (const id of ["ArmL", "ArmR", "ArmLBend", "ArmRBend"]) expect(Math.abs(rig.params[id]!)).toBeLessThan(0.02);
-    // Twenty seconds standing (idle, as the field runs it): both arms move, and not in step.
+    // Twenty seconds standing (idle, as the field runs it): both arms move, and not in step (nor in mirror step),
+    // over the whole and within any two seconds on average.
     const idle = make(sprite);
     const l: number[] = [];
     const r: number[] = [];
@@ -297,7 +298,10 @@ describe("chibi arms", () => {
     }
     expect(Math.max(...l) - Math.min(...l)).toBeGreaterThan(0.1);
     expect(Math.max(...r) - Math.min(...r)).toBeGreaterThan(0.1);
-    expect(corr(l, r)).toBeLessThan(0.9);
+    expect(Math.abs(corr(l, r))).toBeLessThan(0.35);
+    let windows = 0;
+    for (let k = 0; k < 10; k++) windows += Math.abs(corr(l.slice(k * 120, k * 120 + 120), r.slice(k * 120, k * 120 + 120))) / 10;
+    expect(windows).toBeLessThan(0.42);
   });
 
   test.each([1, -1])(

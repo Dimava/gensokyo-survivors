@@ -206,7 +206,7 @@ const CHIBI_PHYSICS: Pendulum[] = [
   ...(["L", "R"] as const).map((s) => ({
     output: `Arm${s}`,
     inputs: [
-      { param: "Bob", weight: -0.15 },
+      { param: "Bob", weight: -0.07 },
       { param: "BodyAngleX", weight: (s === "L" ? -1 : 1) / 20 },
       { param: "MoveX", weight: (s === "L" ? -1 : 1) * 0.25 },
     ],

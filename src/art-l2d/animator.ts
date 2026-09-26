@@ -20,6 +20,8 @@ const ARM = {
   swing: 0.42,
   slowSwing: 0.2,
   swingLag: 0.35,
+  /** Each step's bounce jolts both a little (per unit of the bob), the forearms whipping with it. */
+  stepBounce: 0.3,
   /** Moving, the hands trail a little behind, per unit of speed. */
   drag: 0.12,
   slowDrag: 0.05,
@@ -46,9 +48,19 @@ const ARM = {
   fallC: 4.8,
   groundBend: 0.15,
   overBend: -0.4,
-  /** Standing, the breath lifts them (the right a beat after the left) and each drifts on a slow sway of its own. */
+  /** Standing, the breath lifts them, the right a quarter breath after the left, and each drifts on a slow sway of its own. */
   breath: [0.06, 0.05],
-  breathLag: 0.9,
+  breathLag: 1.5,
+  /**
+   * Each sways on a slow swing of its own (amplitude, period in seconds,
+   * phase): the right a quarter swing behind the left, so
+   * one is rising while the other turns, and they never move together with
+   * the float.
+   */
+  sway: [
+    [0.1, 2.2, 0.4],
+    [0.085, 2.2, 0.4 - Math.PI / 2],
+  ],
   drift: 0.05,
   bendDrift: 0.07,
   /** The forearm spring (about 2.6 swings a second, damped to one clear overshoot) and how much of its lag shows as bend. */
@@ -385,6 +397,7 @@ export class Animator {
     const idle = this.idle ? stand * (1 - this.down) : 0;
     const stride = (walk * ARM.swing + slow * ARM.slowSwing) * Math.sin(a - ARM.swingLag);
     const drag = this.vel.x * (walk * ARM.drag + slow * ARM.slowDrag);
+    const bounce = -(walk + slow * 0.5) * ARM.stepBounce * (r.params.Bob ?? 0);
     // The flinch of a hit overrides the careful tuck of focus.
     const tuck = slow * (1 - this.recoil);
     const both = tuck * ARM.tuck;
@@ -392,8 +405,12 @@ export class Animator {
     const fling = (k: number) => this.recoil * ARM.fling * (1 + (k ? -g : g) * ARM.flingSkew);
     const [fl, fr] = this.fidget(idle);
     const breath = (k: number) => ARM.breath[k]! * Math.sin(t * RATE.breath - k * ARM.breathLag);
-    const left = both + fling(0) + stride + drag + idle * (breath(0) + ARM.drift * Math.sin(t * 0.83 + 0.5) + fl);
-    const right = both + fling(1) - stride - drag + idle * (breath(1) + ARM.drift * Math.sin(t * 0.61 + 2.1) + fr);
+    const sway = (k: number) => {
+      const [amp, period, phase] = ARM.sway[k]!;
+      return amp! * Math.sin((t * 2 * Math.PI) / period! + phase!);
+    };
+    const left = both + fling(0) + stride + drag + bounce + idle * (breath(0) + sway(0) + ARM.drift * Math.sin(t * 0.83 + 0.5) + fl);
+    const right = both + fling(1) - stride - drag + bounce + idle * (breath(1) + sway(1) + ARM.drift * Math.sin(t * 0.61 + 2.1) + fr);
     r.set("ArmL", soft((r.params.ArmL ?? 0) + left));
     r.set("ArmR", soft((r.params.ArmR ?? 0) + right));
     const h = Math.max(0, Math.min(dt, 0.05)) / 2;
