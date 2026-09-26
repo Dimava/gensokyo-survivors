@@ -167,9 +167,10 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
       const c = ev.deck[i]!;
       ctx.spawn({ card: { id: c.id, level: c.level, effect: cardDef(c.id).effect }, in: { of: deck, at } }, "card");
     });
-    // ... the stage's opening skipped (the director starts that far into its script), ...
+    // ... the stage's opening skipped (the director starts that far into its script, past the opening's formations), ...
     const skip = ev.bonuses.skip ?? 0;
-    ctx.start("director", skip ? { held: -sec(skip) } : undefined);
+    const skipped = stage.script.filter((b) => b.at < skip).length;
+    ctx.start("director", skip ? { held: -sec(skip), beat: skipped, warned: skipped } : undefined);
     // ... a full hand, ...
     const draws = ev.bonuses.fullHand ? STAT_DEFS.hand.base + (ev.bonuses.hand ?? 0) : 1;
     for (let i = 0; i < draws; i++) ctx.emit("card:draw", {});

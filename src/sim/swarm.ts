@@ -446,6 +446,7 @@ function stepJob(ctx: C, e: EnemyCols, i: number, def: EnemyDef, t: number, px: 
     }
     case "hover":
       if (t >= until[i]!) {
+        if (def.midboss && phase[i] !== PHASE.leaving) ctx.emit("midboss:left", { kind: e.col("kind")[i]!, defeated: false });
         leave(e, i, px, py);
         e.col("vx")[i] = 0;
         e.col("vy")[i] = -1;
@@ -498,9 +499,12 @@ export function collectDead(ctx: C): number {
   // Descending, so swap-remove only moves rows already visited.
   for (let i = e.count - 1; i >= 0; i--) {
     if (hp[i]! > 0) continue;
+    const kind = e.col("kind")[i]!;
+    const phase = e.col("phase")[i]!;
+    if (ENEMIES[kind]!.midboss && phase !== PHASE.leaving && phase !== PHASE.blown) ctx.emit("midboss:left", { kind, defeated: true });
     xs.push(round1(e.col("x")[i]!));
     ys.push(round1(e.col("y")[i]!));
-    kinds.push(e.col("kind")[i]!);
+    kinds.push(kind);
     xp.push(e.col("xp")[i]!);
     e.remove(i);
   }

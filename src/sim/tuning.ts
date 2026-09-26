@@ -107,6 +107,8 @@ export const FORMATION = {
   firstShot: 20,
   /** Everyone else's first volley comes this many ticks after spawning: about when a formation enters the view. The whole formation fires together. */
   enterShot: 30,
+  /** Each formation is announced (formation:incoming) this many ticks before it enters, for the view. */
+  warn: 60,
   /** A sniper stops this many ticks before a salvo and stands still until its last volley. */
   windup: 20,
   /** In lines, streams and circles every this many enemies shoots; in a V, every this many ranks. */

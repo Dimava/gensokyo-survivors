@@ -7,9 +7,9 @@
 
 import { done, wait, type Ctx, type ProcessDef } from "gamebones";
 import { ENEMIES, enemyIndex } from "../content/enemies.ts";
-import { stageDef, type WaveDef } from "../content/stages.ts";
+import { stageDef, type Beat, type WaveDef } from "../content/stages.ts";
 import type { RS0 } from "./run.ts";
-import { sec } from "./tuning.ts";
+import { FORMATION, sec } from "./tuning.ts";
 import { PHASE, spawnAround, spawnFormation } from "./swarm.ts";
 
 type ProcessHelper = <L extends Record<string, unknown>>(def: ProcessDef<RS0, L>) => ProcessDef<RS0, L>;
@@ -29,6 +29,12 @@ function countWhere(ctx: Ctx<RS0>, test: (kind: number, phase: number) => boolea
 const isChaser = (kind: number): boolean => ENEMIES[kind]!.move.kind === "chase";
 /** A midboss still holding the stage (one who is retreating no longer does). */
 const isMidboss = (kind: number, phase: number): boolean => ENEMIES[kind]!.midboss === true && phase !== PHASE.leaving;
+
+/** The next beat to announce, unless a midboss comes first (the script stops for her, so what follows can't be timed yet). */
+function toAnnounce(script: readonly Beat[], beat: number, warned: number): Beat | undefined {
+  for (let j = beat; j < warned; j++) if (script[j]!.form === "midboss") return undefined;
+  return script[warned];
+}
 
 function spawnWave(ctx: Ctx<RS0>, wave: WaveDef): void {
   const alive = countWhere(ctx, isChaser);
@@ -55,7 +61,7 @@ export function directorProcess(process: ProcessHelper) {
   return process({
     clock: "action",
     start: "script",
-    locals: { beat: 0, held: 0, heldFrom: 0, waveAt: 0 },
+    locals: { beat: 0, warned: 0, held: 0, heldFrom: 0, waveAt: 0 },
     states: {
       script: (p, ctx) => {
         const run = ctx.derived("state").run;
@@ -67,12 +73,18 @@ export function directorProcess(process: ProcessHelper) {
           ctx.emit("boss:approach", {});
           return done();
         }
+        // Announce each beat a moment before it enters (the view telegraphs it; play is unaffected).
+        for (let beat = toAnnounce(stage.script, p.locals.beat, p.locals.warned); beat && sec(beat.at) - FORMATION.warn <= st; beat = toAnnounce(stage.script, p.locals.beat, p.locals.warned)) {
+          p.locals.warned += 1;
+          ctx.emit("formation:incoming", { enemy: beat.enemy, form: beat.form, side: "side" in beat ? beat.side : "", n: "n" in beat ? beat.n : 1, in: Math.max(0, sec(beat.at) - st) });
+        }
         while (p.locals.beat < stage.script.length && sec(stage.script[p.locals.beat]!.at) <= st) {
           const beat = stage.script[p.locals.beat]!;
           p.locals.beat += 1;
           spawnFormation(ctx, beat, enemyIndex(beat.enemy));
           if (beat.banner) ctx.emit("banner", { text: beat.banner, tone: beat.form === "midboss" || beat.enemy === "bigfairy" ? "warn" : "info" });
           if (beat.form === "midboss") {
+            ctx.emit("midboss:entered", { kind: enemyIndex(beat.enemy) });
             p.locals.heldFrom = t;
             return wait(MIDBOSS_POLL, "midboss");
           }
@@ -86,6 +98,8 @@ export function directorProcess(process: ProcessHelper) {
         let next = sec(stage.bossAt) - st;
         const beat = stage.script[p.locals.beat];
         if (beat) next = Math.min(next, sec(beat.at) - st);
+        const warn = toAnnounce(stage.script, p.locals.beat, p.locals.warned);
+        if (warn) next = Math.min(next, sec(warn.at) - FORMATION.warn - st);
         if (wave) next = Math.min(next, p.locals.waveAt - t);
         else {
           // Between background waves: wake when the next one starts.

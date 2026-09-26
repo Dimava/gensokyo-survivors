@@ -147,6 +147,11 @@ const RunDecl = defineScope("run", {
 
     // Stage and boss.
     banner: event({ text: z.string(), tone: z.enum(["info", "warn", "boss", "good"]) }),
+    /** A formation of the stage's script is `in` action ticks away (FORMATION.warn ahead, less on a skipped opening): for the view's telegraph. `side` is "" for circles, rings and the midboss. */
+    "formation:incoming": event({ enemy: z.string(), form: z.string(), side: z.string(), n: int, in: int }),
+    "midboss:entered": event({ kind: int }),
+    /** The midboss stops holding the stage: defeated, or retreating when her time is up. */
+    "midboss:left": event({ kind: int, defeated: z.boolean() }),
     "boss:approach": event(),
     "boss:dialogue": event(),
     "vn:closed": event(),

@@ -337,7 +337,7 @@ lake swarm t=0:10 fixed=600 | hp 125/125 lv 1 xp 2/5 kills 10 | pos 1008,1008
 weapons: amulet2 | passives: -
 enemies 61 [kedama 40, fairy 21] | drops 2 | shots 2 | bullets 42
 cards: spirit 3.00/3 meter 0 grazes 0 | hand: pocket-watch
--- save size mid-run: 24993 bytes
+-- save size mid-run: 25004 bytes
 == play / run:abandon
 run:abandon
   run:forfeit @/run:1

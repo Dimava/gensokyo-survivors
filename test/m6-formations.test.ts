@@ -4,7 +4,7 @@
 // defeated or retreats, and the boss's arrival turns the field into points.
 
 import { describe, expect, test } from "bun:test";
-import { harness } from "gamebones";
+import { harness, type TraceNode } from "gamebones";
 import { ENEMIES, enemyIndex } from "../src/content/enemies.ts";
 import { stageDef } from "../src/content/stages.ts";
 import { activeRun, loadGame, runView, type Game, type RunPath } from "../src/sim/game.ts";
@@ -17,8 +17,16 @@ import { fixtureGame, render } from "./helpers.ts";
 /** A shrine tree a few runs in: enough to live through the stage while the bot steers. */
 const TREE = { core: 3, dmg1: 2, hp1: 3, spirit1: 2, greed1: 2, regen1: 2, armor1: 2, speed1: 2, reroll: 2 };
 
-/** Plays uncaptured ticks with the expert bot steering (inputs still go to the log) until `stop` or `max` ticks. */
-function advance(k: Game, path: RunPath, max: number, stop: () => boolean = () => false): void {
+/** Events worth watching, with the action tick they came at. */
+type Seen = { ev: string; p: Record<string, unknown>; t: number }[];
+const WATCH = new Set(["formation:incoming", "midboss:entered", "midboss:left"]);
+function watch(node: TraceNode, t: number, out: Seen): void {
+  if (WATCH.has(node.event)) out.push({ ev: node.event, p: node.payload as Record<string, unknown>, t });
+  for (const c of node.children) watch(c, t, out);
+}
+
+/** Plays uncaptured ticks with the expert bot steering (inputs still go to the log) until `stop` or `max` ticks; `seen` collects the watched events. */
+function advance(k: Game, path: RunPath, max: number, stop: () => boolean = () => false, seen?: Seen): void {
   const p = path as "/run:1";
   const last: BotInputs = { move: { x: 0, y: 0 } };
   for (let i = 0; i < max && !stop(); i++) {
@@ -38,7 +46,8 @@ function advance(k: Game, path: RunPath, max: number, stop: () => boolean = () =
       const c = botCard(k, path);
       if (c) k.queue(p, "card:play", { card: c });
     }
-    k.tick(p, "fixed");
+    const res = k.tick(p, "fixed");
+    if (seen) watch(res.trace, runView(k, path).now("action"), seen);
   }
 }
 
@@ -63,9 +72,10 @@ describe("M6 stage formations", () => {
     const v = runView(k, path);
     const t = (): number => v.now("action");
     const stage = stageDef("lake");
+    const seen: Seen = [];
 
     // 3 s in: the first beat, a stream of lake fairies from the left, flying right in single file.
-    advance(k, path, 180);
+    advance(k, path, 180, undefined, seen);
     const stream = rows(k, path, "fairy");
     expect(stream.length).toBe(7);
     expect(stream.every((f) => f.vx === 1 && f.vy === 0 && Math.abs(f.y - stream[0]!.y) < 2)).toBe(true);
@@ -74,14 +84,14 @@ describe("M6 stage formations", () => {
       const { body } = v.derived("player");
       return rows(k, path, "fairy").filter((f) => Math.abs(f.x - body.x) < 600 && Math.abs(f.y - body.y) < 360).length;
     };
-    advance(k, path, 15 * 60 - t(), () => inView() >= 6);
+    advance(k, path, 15 * 60 - t(), () => inView() >= 6, seen);
     expect(inView()).toBeGreaterThanOrEqual(6);
     h.tick(path, "fixed");
     h.note(`${(t() / 60).toFixed(1)} s: the first formation of fairies (f) in view:
 ${renderField(k, path)}`);
 
     // Fairies that are not shot down leave the field: spawned = killed + alive + gone.
-    advance(k, path, 20 * 60 - t());
+    advance(k, path, 20 * 60 - t(), undefined, seen);
     const spawned = v.derived("state").run.nextUid - 1;
     const alive = v.packed("enemies").count;
     const killed = v.derived("player").progress.kills;
@@ -90,12 +100,12 @@ ${renderField(k, path)}`);
 
     // 24 s: sunflower fairies fly to posts above the player, hold them, and fire fans from there.
     // They trail a moving player, so arrival time depends on the bot's path: wait for it (at most 5 s).
-    advance(k, path, 24 * 60 + 150 - t());
+    advance(k, path, 24 * 60 + 150 - t(), undefined, seen);
     const holding = (): boolean => {
       const s = rows(k, path, "sunflower");
       return s.length > 0 && s.every((r) => r.phase === PHASE.holding);
     };
-    advance(k, path, 300, holding);
+    advance(k, path, 300, holding, seen);
     const posts = rows(k, path, "sunflower");
     expect(posts.length).toBeGreaterThan(0);
     const { body } = v.derived("player");
@@ -116,11 +126,11 @@ ${renderField(k, path)}`);
       for (let i = 0; i < e.count; i++) if (e.col("kind")[i] === midboss && e.col("phase")[i] !== PHASE.leaving) return true;
       return false;
     };
-    advance(k, path, 101 * 60 - t(), midbossUp);
+    advance(k, path, 101 * 60 - t(), midbossUp, seen);
     expect(midbossUp()).toBe(true);
     const arrivedAt = t();
     const uid = v.derived("state").run.nextUid;
-    advance(k, path, 60 * 60, () => !midbossUp());
+    advance(k, path, 60 * 60, () => !midbossUp(), seen);
     expect(midbossUp()).toBe(false);
     const heldFor = t() - arrivedAt;
     const move = ENEMIES[midboss]!.move;
@@ -128,14 +138,27 @@ ${renderField(k, path)}`);
     expect(v.derived("state").run.nextUid).toBe(uid);
     const defeated = rows(k, path, "daiyousei").length === 0;
     if (defeated) expect(v.packed("bullets").count).toBe(0);
+    // The view hears of both ends of her stay (the music cues off them).
+    const entered = seen.filter((s) => s.ev === "midboss:entered");
+    const left = seen.filter((s) => s.ev === "midboss:left");
+    expect(entered.map((s) => s.p.kind)).toEqual([midboss]);
+    expect(left.map((s) => s.p)).toEqual([{ kind: midboss, defeated }]);
+    expect(entered[0]!.t).toBe(arrivedAt);
+    expect(left[0]!.t).toBe(t());
     h.tick(path, "fixed");
     h.note(`Daiyousei held the stage for ${(heldFor / 60).toFixed(1)} s and was ${defeated ? "defeated (every bullet turned into points)" : "left to retreat"}:
 ${renderField(k, path)}`);
 
     // The script resumes where it stopped, so the boss comes that much later.
-    advance(k, path, 200 * 60, () => v.derived("state").run.phase !== "swarm");
+    advance(k, path, 200 * 60, () => v.derived("state").run.phase !== "swarm", seen);
     expect(v.derived("state").run.phase).toBe("warning");
     expect(t()).toBeGreaterThanOrEqual(stage.bossAt * 60 + heldFor);
+    // Every formation was announced FORMATION.warn ticks before it entered (those right after the midboss, as soon as she left).
+    const announced = seen.filter((s) => s.ev === "formation:incoming");
+    expect(announced.length).toBe(stage.script.filter((b) => b.at < stage.bossAt).length);
+    expect(announced.every((s) => (s.p.in as number) <= FORMATION.warn)).toBe(true);
+    expect(announced.filter((s) => s.t < arrivedAt).every((s) => s.p.in === FORMATION.warn)).toBe(true);
+    expect(announced.map((s) => s.p.enemy)).toEqual(stage.script.filter((b) => b.at < stage.bossAt).map((b) => b.enemy));
     // The winds blow the swarm away (worth nothing) and the bullets with it; nearby drops spiral in.
     const e = v.packed("enemies");
     expect([...e.col("phase").subarray(0, e.count)].every((ph) => ph === PHASE.blown)).toBe(true);
@@ -152,6 +175,20 @@ ${renderField(k, path)}`);
     expect(h.transcript()).toMatchSnapshot();
     h.verifyReplay();
   }, 120_000);
+
+  test("Early Start: the director starts past the opening, without its formations", () => {
+    const k = fixtureGame("m6-skip", { tree: { ...TREE, skip: 1 } });
+    k.dispatch("/", "run:start", { stage: "lake" });
+    const path = activeRun(k)! as RunPath;
+    const seen: Seen = [];
+    advance(k, path, 2 * 60, undefined, seen);
+    const first = stageDef("lake").script.find((b) => b.at >= 30)!;
+    // Nothing of the skipped 30 s spawned; the first beat announced is the first one after it.
+    expect(rows(k, path, "fairy").length).toBe(0);
+    const announced = seen.filter((s) => s.ev === "formation:incoming");
+    expect(announced.length).toBeGreaterThan(0);
+    expect(announced[0]!.p).toMatchObject({ enemy: first.enemy, form: first.form });
+  });
 
   test("a mid-run save from before formations loads: old fairies fly off and the script resumes", () => {
     const k = fixtureGame("m6-save", { tree: TREE });
