@@ -85,7 +85,7 @@ const ARM = {
  * trailing per unit of speed across), hair and hem stream back a touch further than
  * walking (`trail`), and the hem flutters in the air of the move.
  */
-const FLY = { rate: 1.2, bob: 0.8, bank: 9, turn: 6, lean: 6, arms: 0.3, drag: 0.22, trail: 0.8, flutter: 0.14, flutterHz: 2.1 };
+const FLY = { rate: 1.2, bob: 0.8, bank: 9, turn: 6, lean: 6, arms: 0.3, drag: 0.22, trail: 0.62, flutter: 0.14, flutterHz: 2.1 };
 
 /** The span of `down` over which a chibi's wince gives way to swirls (she lands at 0.55). */
 const DIZZY = [0.56, 0.64] as const;
@@ -104,7 +104,7 @@ const TRAIL: [string, { w: number; k: number; c: number }][] = [
   ["HairFront", { w: 0.4, k: 45, c: 5.4 }],
   ["HairSide", { w: 1, k: 22, c: 3.8 }],
   ["HairBack", { w: 0.9, k: 16, c: 3.2 }],
-  ["Ribbon", { w: 1.1, k: 30, c: 4.4 }],
+  ["Ribbon", { w: 1, k: 30, c: 4.4 }],
   ["Sleeve", { w: 0.9, k: 40, c: 5.1 }],
   ["Hem", { w: 0.7, k: 26, c: 3 }],
 ];
