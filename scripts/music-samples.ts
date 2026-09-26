@@ -1,7 +1,9 @@
 // Builds the sampled instruments the music plays (src/view/instruments/):
 // a grand piano, a trumpet and a cymbal kit cut from the University of Iowa
 // Musical Instrument Samples (theremin.music.uiowa.edu, "freely available
-// ... may be downloaded and used for any projects, without restrictions").
+// ... may be downloaded and used for any projects, without restrictions"),
+// and a string section from the Versilian Community Sample Library (VSCO 2
+// CE, github.com/sgossner/VSCO-2-CE, CC0: public domain).
 // The recordings are downloaded into refs/music (git-ignored) when missing,
 // decoded with ffmpeg, cut into single notes (onsets by level, pitch by YIN,
 // tuning corrected per note), trimmed, given crossfaded sustain loops where
@@ -19,15 +21,18 @@ const REFS = join(ROOT, "refs", "music");
 const OUT = join(ROOT, "src", "view", "instruments");
 const SR = 44100;
 const MIS = "https://theremin.music.uiowa.edu/sound%20files/MIS/";
+const VSCO = "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/master/";
 
 // ---------- decoding and analysis ----------
 
-async function source(path: string): Promise<Float32Array> {
-  const file = join(REFS, path.split("/").at(-1)!);
+/** A recording, mono at SR: from the University of Iowa's collection, or VSCO 2 CE (kept in refs/music/vsco). */
+async function source(path: string, from: "mis" | "vsco" = "mis"): Promise<Float32Array> {
+  const dir = from === "vsco" ? join(REFS, "vsco") : REFS;
+  const file = join(dir, path.split("/").at(-1)!);
   if (!existsSync(file)) {
-    mkdirSync(REFS, { recursive: true });
+    mkdirSync(dir, { recursive: true });
     console.log(`downloading ${path}`);
-    const res = await fetch(MIS + path.split("/").map(encodeURIComponent).join("/"));
+    const res = await fetch((from === "vsco" ? VSCO : MIS) + path.split("/").map(encodeURIComponent).join("/"));
     if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
     await Bun.write(file, await res.arrayBuffer());
   }
@@ -178,9 +183,17 @@ interface CutOpts {
   skip?: number;
   /** Crossfaded sustain loop between these seconds after the onset. */
   loop?: [number, number];
-  /** Level the note's first `measure` seconds to this RMS. */
+  /** The loop's crossfade (seconds, default 0.12). */
+  xfade?: number;
+  /**
+   * Moves the loop's end (up to 0.1 s either way) to where the stretch before it best matches the
+   * stretch before the loop's start, and weighs the crossfade by how alike they are: for a section of
+   * players, whose sound is never exactly periodic.
+   */
+  match?: boolean;
+  /** Level the note's first `measure` seconds (or `measure` = [from, to] seconds) to this RMS. */
   level?: number;
-  measure?: number;
+  measure?: number | [number, number];
 }
 
 function cut(x: Float32Array, start: number, name: string, midi: number, cents: number, o: CutOpts): Cut {
@@ -194,12 +207,16 @@ function cut(x: Float32Array, start: number, name: string, midi: number, cents: 
     const period = SR / (440 * 2 ** ((midi + cents / 100 - 69) / 12));
     const la = Math.floor(o.loop[0] * SR);
     const periods = Math.max(1, Math.round(((o.loop[1] - o.loop[0]) * SR) / period));
-    const lb = Math.min(la + Math.round(periods * period), n - 1);
-    const X = Math.min(Math.floor(0.12 * SR), la);
+    let lb = Math.min(la + Math.round(periods * period), n - 1);
+    const X = Math.min(Math.floor((o.xfade ?? 0.12) * SR), la);
     const orig = data.slice();
+    let r = 1;
+    if (o.match) [lb, r] = bestEnd(orig, la, lb, X, Math.min(Math.floor(0.1 * SR), n - 1 - Math.floor(0.05 * SR) - lb));
     for (let i = 0; i < X; i++) {
       const w = i / X;
-      data[lb - X + i] = orig[lb - X + i]! * (1 - w) + orig[la - X + i]! * w;
+      // Two stretches alike by r sum to (1-w)^2 + w^2 + 2w(1-w)r of their power: keep it at 1.
+      const k = 1 / Math.sqrt((1 - w) ** 2 + w ** 2 + 2 * w * (1 - w) * r);
+      data[lb - X + i] = (orig[lb - X + i]! * (1 - w) + orig[la - X + i]! * w) * k;
     }
     // Past the loop's end the note goes on as it does from the loop's start, for 40 ms: a loop end
     // read a sample or two late (rounding, resampling, a decoder's delay) still joins seamlessly.
@@ -218,7 +235,8 @@ function cut(x: Float32Array, start: number, name: string, midi: number, cents: 
   let pk = 0;
   for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(data[i]!));
   for (let i = 0; i < n; i++) data[i] = (data[i]! * 0.85) / pk;
-  const gain = (o.level ?? 0.1) / Math.max(rms(data, 0, Math.min(n, Math.floor((o.measure ?? 0.25) * SR))), 1e-9);
+  const [m0, m1] = Array.isArray(o.measure) ? o.measure : [0, o.measure ?? 0.25];
+  const gain = (o.level ?? 0.1) / Math.max(rms(data, Math.floor(m0 * SR), Math.min(n, Math.floor(m1 * SR))), 1e-9);
   let peakAt: number | undefined;
   if (o.skip !== undefined) {
     const e = envelope(data, 441);
@@ -229,6 +247,37 @@ function cut(x: Float32Array, start: number, name: string, midi: number, cents: 
     peakAt = m * 441;
   }
   return { name, midi, cents, data, loop, peak: peakAt, gain };
+}
+
+/**
+ * The loop end within `span` samples of `lb` whose preceding `X` samples best match the `X` before
+ * `la` (normalised correlation, coarse then fine), and that correlation (0..1).
+ */
+function bestEnd(x: Float32Array, la: number, lb: number, X: number, span: number): [number, number] {
+  const ref = x.subarray(la - X, la);
+  let rr = 0;
+  for (let i = 0; i < X; i++) rr += ref[i]! * ref[i]!;
+  const corr = (end: number): number => {
+    let xy = 0;
+    let yy = 0;
+    for (let i = 0; i < X; i++) {
+      const v = x[end - X + i]!;
+      xy += ref[i]! * v;
+      yy += v * v;
+    }
+    return xy / Math.sqrt(rr * yy + 1e-12);
+  };
+  let best = lb;
+  let bestR = -2;
+  for (let d = -span; d <= span; d += 4) {
+    const c = corr(lb + d);
+    if (c > bestR) [bestR, best] = [c, lb + d];
+  }
+  for (let d = -4; d <= 4; d++) {
+    const c = corr(best + d);
+    if (c > bestR) [bestR, best] = [c, best + d];
+  }
+  return [best, Math.max(0, bestR)];
 }
 
 /** Every note of a chromatic run file: [MIDI, cents, start sample]. */
@@ -276,6 +325,39 @@ async function trumpet(): Promise<Cut[]> {
     }
   }
   return out.sort((p, q) => p.midi - q.midi);
+}
+
+/**
+ * A string section, sustained with vibrato and played loud (VSCO 2 CE): the violins from G3 to D6
+ * and the violas below them. The files name their notes an octave low (C3 is middle C there).
+ * Levelled by the sustain, past the bow's attack; looped through a second and a half of it.
+ */
+async function strings(): Promise<Cut[]> {
+  const notes: [string, string][] = [
+    ["Viola Section/susvib/ViolaEns_susvib_C2_v2_1.wav", "C3"],
+    ["Viola Section/susvib/ViolaEns_susvib_E2_v2_1.wav", "E3"],
+    ["Violin Section/susVib/VlnEns_susVib_G2_v2.wav", "G3"],
+    ["Violin Section/susVib/VlnEns_susVib_B2_v2.wav", "B3"],
+    ["Violin Section/susVib/VlnEns_susVib_D3_v2.wav", "D4"],
+    ["Violin Section/susVib/VlnEns_susVib_F#3_v2.wav", "F#4"],
+    ["Violin Section/susVib/VlnEns_susVib_A3_v2.wav", "A4"],
+    ["Violin Section/susVib/VlnEns_susVib_C4_v2.wav", "C5"],
+    ["Violin Section/susVib/VlnEns_susVib_E4_v2.wav", "E5"],
+    ["Violin Section/susVib/VlnEns_susVib_G4_v2.wav", "G5"],
+    ["Violin Section/susVib/VlnEns_susVib_B4_v2.wav", "B5"],
+    ["Violin Section/susVib/VlnEns_susVib_D5_v2.wav", "D6"],
+  ];
+  const out: Cut[] = [];
+  for (const [path, n] of notes) {
+    const x = await source(`Strings/${path}`, "vsco");
+    const [a] = segments(x, -30)[0]!;
+    const midi = 12 * (Number(n.at(-1)) + 1) + ({ C: 0, D: 2, E: 4, "F#": 6, G: 7, A: 9, B: 11 } as Record<string, number>)[n.slice(0, -1)]!;
+    const hz = 440 * 2 ** ((midi - 69) / 12);
+    const w = x.subarray(a + Math.floor(1.2 * SR), a + Math.floor(1.2 * SR) + 16384);
+    const cents = Math.round(1200 * Math.log2(peakHz(w, hz) / hz));
+    out.push(cut(x, a, `strings ${n}`, midi, cents, { len: 2.7, loop: [1.0, 2.5], xfade: 0.3, match: true, level: 0.2, measure: [0.7, 2.4] }));
+  }
+  return out;
 }
 
 /** Cymbals and hats: [kit letter, file, options]. Unpitched (MIDI 0). */
@@ -396,10 +478,12 @@ const families: Record<string, Placed[]> = {
   piano: pack("piano", await piano()),
   trumpet: pack("trumpet", await trumpet()),
   kit: pack("kit", await kit()),
+  strings: pack("strings", await strings()),
 };
 const lines = [
   "// Generated by scripts/music-samples.ts: where each sampled note sits in its family's MP3.",
-  "// Sources: University of Iowa Musical Instrument Samples (theremin.music.uiowa.edu), free for any use.",
+  "// Sources: University of Iowa Musical Instrument Samples (theremin.music.uiowa.edu), free for any use;",
+  "// the strings: VSCO 2 Community Edition (github.com/sgossner/VSCO-2-CE), CC0.",
   "// at, len: seconds from the file's timing marker (MARK seconds in); loop, peak: seconds from the note's start.",
   "",
   "export interface SampleNote {",
