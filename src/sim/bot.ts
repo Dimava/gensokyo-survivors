@@ -9,7 +9,7 @@ import { cardDef, cardParams } from "../content/cards.ts";
 import { weaponDef } from "../content/weapons.ts";
 import type { DispatchResult } from "gamebones";
 import { activeRun, runView, type Game, type RunPath } from "./game.ts";
-import { spiritAt, handCards } from "./cards.ts";
+import { AUTO_HEAL_WAIT, autoHealCard, spiritAt, handCards } from "./cards.ts";
 import { bossPos } from "./boss.ts";
 import { PHASE, enemyVelocity } from "./swarm.ts";
 import { BOSS, PLAYER, sec } from "./tuning.ts";
@@ -19,6 +19,12 @@ export interface BotOptions {
   dodge?: number;
   /** Play cards when affordable. */
   cards?: boolean;
+  /**
+   * The game's heal autocast (host.ts, prefs.autoHeal): below a third of her HP a
+   * Healing Charm in hand plays itself as soon as Spirit allows, with no latency.
+   * With `cards: false` it is a player who never presses a card key but keeps the autocast on.
+   */
+  autoHeal?: boolean;
   /** Ticks between steering decisions (a human's reaction time; 1 = every tick). */
   reaction?: number;
   /** Hold focus when it helps (botFocus); default true. */
@@ -331,6 +337,8 @@ export interface BotInputs {
   dive?: Dive | null;
   /** Until when (action time) a queued shield card keeps her untouchable. */
   shieldUntil?: number;
+  /** Action tick before which the heal autocast waits (BotOptions.autoHeal). */
+  autoHealAt?: number;
 }
 
 /**
@@ -765,6 +773,14 @@ export function playRun(
       const res = k.dispatch(`${p}/vn` as "/run:1/vn", "vn:next", {});
       opts.onResult?.(res, i);
     } else {
+      if (opts.autoHeal) {
+        const t = v.now("action");
+        const c = t >= (last.autoHealAt ?? 0) ? autoHealCard(v) : null;
+        if (c) {
+          k.queue(p, "card:play", { card: c });
+          last.autoHealAt = t + AUTO_HEAL_WAIT;
+        }
+      }
       if (opts.latency) {
         botFlush(k, path, last);
         if (i % (opts.reaction ?? 1) === 0) botThink(k, path, last, opts, opts.cards !== false);

@@ -8,8 +8,7 @@ import type { DispatchResult } from "gamebones";
 import { activeRun, runView, type Game, type RunPath } from "../sim/game.ts";
 import { botFlush, botPick, botSteer, botThink, SKILL, type BotInputs } from "../sim/bot.ts";
 import { navConfirm, navMove, navSelected, navTop } from "./keynav.ts";
-import { handSlots, spiritAt } from "../sim/cards.ts";
-import { cardDef } from "../content/cards.ts";
+import { AUTO_HEAL_WAIT, autoHealCard, handSlots } from "../sim/cards.ts";
 import { audio, type Track } from "./audio.ts";
 import { musicMood, musicPart } from "./music-mood.ts";
 import { input, type Action } from "./input.ts";
@@ -59,9 +58,6 @@ addStamp(() => ({ screen: state.screen }));
 
 const params = new URLSearchParams(location.search);
 const CLOCK_KEY = "gensokyo-survivors/clock";
-
-/** Heal autocast casts below this share of max HP. */
-const AUTO_HEAL_BELOW = 1 / 3;
 
 class Host {
   k: Game;
@@ -488,14 +484,11 @@ class Host {
   private autoHeal(path: RunPath): void {
     const v = runView(this.k, path);
     const t = v.now("action");
-    if (t < this.autoHealAt || v.derived("state").run.phase !== "swarm" && v.derived("state").run.phase !== "boss") return;
-    const hp = v.derived("player").life.hp;
-    if (hp <= 0 || hp > v.derived("stats").maxHp * AUTO_HEAL_BELOW) return;
-    const have = spiritAt(v, t);
-    const card = handSlots(v).find((c) => c?.card && cardDef(c.card.id).effect === "heal" && cardDef(c.card.id).cost <= have + 1e-9);
+    if (t < this.autoHealAt) return;
+    const card = autoHealCard(v);
     if (!card) return;
-    this.k.queue(path, "card:play", { card: card.id });
-    this.autoHealAt = t + 30;
+    this.k.queue(path, "card:play", { card });
+    this.autoHealAt = t + AUTO_HEAL_WAIT;
   }
 
   /** Plays the hand card in slot i (queued: it resolves at the next tick). */
