@@ -20,7 +20,7 @@ const args = process.argv.slice(2);
 const spanAt = args.indexOf("--span");
 const span = spanAt >= 0 ? Number(args.splice(spanAt, 2)[1]) : 2;
 const ids = args[0]?.split(",") ?? Object.keys(ART_L2D).filter((id) => ART_L2D[id]!.sprite?.model.parts.some((p) => p.id === "armL"));
-const P = ["ArmL", "ArmR", "ArmLBend", "ArmRBend", "ArmLFall", "ArmRFall", "Sleeve", "HairSide", "HairBack", "Ribbon"];
+const P = ["ArmL", "ArmR", "ArmLBend", "ArmRBend", "ArmLFall", "ArmRFall", "Sleeve", "HairSide", "HairBack", "Ribbon", "Hem", "HemLift"];
 
 function corr(a: number[], b: number[]): number {
   const n = a.length;

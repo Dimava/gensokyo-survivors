@@ -109,6 +109,8 @@ export interface Model {
   deformers: Deformer[];
   parts: Part[];
   physics: Pendulum[];
+  /** A flier (fairies, Cirno, Rumia): moving, the animator floats her along instead of walking her. */
+  fly?: boolean;
 }
 
 // ---------------------------------------------------------------- building

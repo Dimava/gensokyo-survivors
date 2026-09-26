@@ -34,6 +34,12 @@ export const CHIBI_PARAMS: ParamDef[] = [
   /** Walking: the feet lift in turn (+1 left up, -1 right up); the sleeves trail (+1 = toward +x). */
   { id: "Step", min: -1, max: 1, def: 0 },
   { id: "Sleeve", min: -1, max: 1, def: 0 },
+  /**
+   * The skirt's hem: trailing sideways (+1 toward +x) and flaring up and out
+   * (HemLift +1; -1 drawn down and in). The feet hang under it.
+   */
+  { id: "Hem", min: -1, max: 1, def: 0 },
+  { id: "HemLift", min: -1, max: 1, def: 0 },
   /** Each arm about its shoulder: +1 swung out and up, away from the body; -1 in, across it. */
   { id: "ArmL", min: -1, max: 1, def: 0 },
   { id: "ArmR", min: -1, max: 1, def: 0 },
@@ -175,7 +181,15 @@ export function chibiDeformers(opts: ChibiRig = {}): Deformer[] {
     }),
     ...armDeformers("L"),
     ...armDeformers("R"),
-    warp("feet", "body", { x: 70, y: 170, w: 60, h: 30 }, 2, 1, [["Step", SWAY]], (x, y, [f = 0]) => [x, y - 6 * Math.max(0, (x < 100 ? 1 : x > 100 ? -1 : 0) * f)]),
+    // The skirt from the waist down: the hem trails and flares, more toward its edge; the feet hang under it.
+    warp("hem", "body", { x: 30, y: 104, w: 140, h: 96 }, 4, 4, [
+      ["Hem", SWAY],
+      ["HemLift", SWAY],
+    ], (x, y, [f = 0, l = 0]) => {
+      const k = clamp01((y - 136) / 56) ** 1.4;
+      return [x + f * 9 * k + (x - 100) * 0.1 * l * k, y - Math.abs(f) * 2 * k - l * 5 * k];
+    }),
+    warp("feet", "hem", { x: 70, y: 170, w: 60, h: 30 }, 2, 1, [["Step", SWAY]], (x, y, [f = 0]) => [x, y - 6 * Math.max(0, (x < 100 ? 1 : x > 100 ? -1 : 0) * f)]),
     wingWarp("L", wing.root, wing.amp),
     wingWarp("R", wing.root, wing.amp),
   ];
@@ -203,6 +217,9 @@ const CHIBI_PHYSICS: Pendulum[] = [
     ...p,
     inputs: [...p.inputs.map((i) => ({ ...i, weight: i.weight * (CHIBI_INPUT[p.output]?.[i.param] ?? 1) })), { param: "Bob", weight: 0.15 }],
   })),
+  // The hem lags the bob (flaring as she sinks, drawn down as she rises) and swings on past when she stops.
+  { output: "HemLift", inputs: [{ param: "Bob", weight: 1 }], stiffness: 34, damping: 4.4, gain: 0.45 },
+  { output: "Hem", inputs: [{ param: "MoveX", weight: 1 }], stiffness: 24, damping: 3.8, gain: 1.1 },
   ...(["L", "R"] as const).map((s) => ({
     output: `Arm${s}`,
     inputs: [

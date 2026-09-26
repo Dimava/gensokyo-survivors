@@ -40,6 +40,8 @@ export interface FairyOpts {
   bigBow?: { base: string; shade: string; line: string; frill?: boolean };
   /** A soft glow behind her (Rumia's darkness). */
   aura?: string;
+  /** Flies rather than walks (default: when she has wings). */
+  fly?: boolean;
   /** Front hair strand tips in portrait coordinates (kit.ts), default a fairy fringe. */
   tips?: [number, number][];
   extra?: Part[];
@@ -188,7 +190,7 @@ export function fairyParts(o: FairyOpts): Part[] {
   parts.push(
     { id: "backHair", parent: "back", order: 1, rect: { x: 36, y: 14, w: 128, h: b - 6 }, mesh: grid(4, 5), svg: backHairArt(o.hair, b) },
     { id: "feet", parent: "feet", order: 9, rect: { x: 78, y: 178, w: 44, h: 18 }, mesh: grid(2, 1), svg: feet },
-    { id: "dress", parent: "body", order: 12, rect: { x: 48, y: 108, w: 104, h: 86 }, mesh: grid(4, 4), svg: dressArt(o.dress, o.trim) },
+    { id: "dress", parent: "hem", order: 12, rect: { x: 48, y: 108, w: 104, h: 86 }, mesh: grid(4, 4), svg: dressArt(o.dress, o.trim) },
     ...pair(
       o.sleeves === "detached"
         ? { id: "armL", parent: "armBendL", order: 13, rect: { x: 38, y: 112, w: 60, h: 74 }, mesh: grid(3, 5), svg: detachedL(o.sleeve ?? o.dress, o.trim) }
@@ -224,6 +226,6 @@ export function fairyParts(o: FairyOpts): Part[] {
 }
 
 export function fairy(id: string, o: FairyOpts): Model {
-  return chibiModel(id, fairyParts(o));
+  return { ...chibiModel(id, fairyParts(o)), fly: o.fly ?? o.wings !== "none" };
 }
 

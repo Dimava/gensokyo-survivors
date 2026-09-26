@@ -76,6 +76,17 @@ const ARM = {
   fidgetWait: [4, 9],
 };
 
+/**
+ * The flying gait (fliers: Model.fly). No legs drive it: the float goes on
+ * (its cycle `rate` times the idle rate, the bob `bob`), she banks into the
+ * move (`bank` degrees of tilt, `turn` of body turn per unit of speed) and
+ * leans with it (`lean` degrees of nod: forward going down the screen, back
+ * going up), the arms are held out a little for balance (`arms`, +`drag`
+ * trailing per unit of speed across), hair and hem stream back a touch further than
+ * walking (`trail`), and the hem flutters in the air of the move.
+ */
+const FLY = { rate: 1.2, bob: 0.8, bank: 9, turn: 6, lean: 6, arms: 0.3, drag: 0.22, trail: 0.8, flutter: 0.14, flutterHz: 2.1 };
+
 /** The span of `down` over which a chibi's wince gives way to swirls (she lands at 0.55). */
 const DIZZY = [0.56, 0.64] as const;
 
@@ -95,6 +106,7 @@ const TRAIL: [string, { w: number; k: number; c: number }][] = [
   ["HairBack", { w: 0.9, k: 16, c: 3.2 }],
   ["Ribbon", { w: 1.1, k: 30, c: 4.4 }],
   ["Sleeve", { w: 0.9, k: 40, c: 5.1 }],
+  ["Hem", { w: 0.7, k: 26, c: 3 }],
 ];
 
 export class Animator {
@@ -113,6 +125,8 @@ export class Animator {
    */
   move: Look = { x: 0, y: 0 };
   slow = false;
+  /** Flies rather than walks (from the model: fairies, Cirno, Rumia): moving, she floats along (FLY) instead of stepping. */
+  fly: boolean;
   /** A held facing (a unit vector; focus strafing): the body turns and leans this way while moving, not along the move. */
   face: Look | null = null;
   /**
@@ -170,6 +184,7 @@ export class Animator {
     private readonly random: () => number = Math.random,
   ) {
     this.swung = new Set(rig.model.physics.map((p) => p.output));
+    this.fly = rig.model.fly ?? false;
   }
 
   /** Jump straight to the target (no easing, no physics swing). */
@@ -204,8 +219,9 @@ export class Animator {
     this.vel.x += ((moving ? this.move.x / mlen : 0) - this.vel.x) * ease;
     this.vel.y += ((moving ? this.move.y / mlen : 0) - this.vel.y) * ease;
     const stand = Math.max(0, 1 - this.walkW - this.slowW);
-    // Strides per second: brisk walking, a deliberate slow walk, or the idle cycle.
-    this.phase += dt * (stand * this.rate + this.walkW * RATE.walk + this.slowW * RATE.slowWalk);
+    // Strides per second: brisk walking, a deliberate slow walk, or the idle cycle (flying, the float goes on, a little quicker).
+    const going = this.walkW + this.slowW;
+    this.phase += dt * (this.fly ? (stand + going * FLY.rate) * this.rate : stand * this.rate + this.walkW * RATE.walk + this.slowW * RATE.slowWalk);
     const hurt = Math.max(this.down, this.recoil);
     const talk = this.talking ? 0.5 + 0.5 * Math.sin(this.t * RATE.talkA) * Math.sin(this.t * RATE.talkB) : 0;
     this.mouth += (Math.max(0, talk, this.recoil * 0.9, this.down * 0.25) - this.mouth) * (1 - Math.exp(-dt * (hurt > 0 ? 30 : 20)));
@@ -249,22 +265,26 @@ export class Animator {
       r.set("Dizzy", dizzy);
       r.set("DizzySpin", (this.t * 0.6) % 1);
     }
-    const walk = this.walkW;
-    const slow = this.slowW;
-    const stand = Math.max(0, 1 - walk - slow);
+    // Flying, the move is a glide (`fly`), not a walk: no strides.
+    const fly = this.fly ? this.walkW + this.slowW : 0;
+    const walk = this.fly ? 0 : this.walkW;
+    const slow = this.fly ? 0 : this.slowW;
+    const stand = Math.max(0, 1 - walk - slow - fly);
     const a = this.phase * Math.PI * 2;
-    if (this.idle && (this.rate > 0 || walk + slow > 0.01)) {
+    if (this.idle && (this.rate > 0 || walk + slow + fly > 0.01)) {
       cycle(r, this.phase, false);
-      // Walking bobs twice a stride (once per step); standing floats gently.
-      r.set("Bob", stand * 0.9 * Math.sin(a - 0.4) + walk * 0.9 * Math.sin(2 * a) + slow * 0.35 * Math.sin(2 * a));
+      // Walking bobs twice a stride (once per step); standing floats gently, and flying floats on.
+      r.set("Bob", (stand * 0.9 + fly * FLY.bob) * Math.sin(a - 0.4) + walk * 0.9 * Math.sin(2 * a) + slow * 0.35 * Math.sin(2 * a));
       r.set("Step", (walk + slow * 0.7) * Math.sin(a));
     }
     // Lean into the move: the body turns and tilts toward it, more at full speed; standing, the weight shifts now and then.
     const lean = this.dir.x;
     const w = this.weight(dt, stand);
-    r.set("AngleZ", (r.params.AngleZ ?? 0) - lean * (12 * walk + 5 * slow) + w * SHIFT.tilt);
+    r.set("AngleZ", (r.params.AngleZ ?? 0) - lean * (12 * walk + 5 * slow + FLY.bank * fly) + w * SHIFT.tilt);
+    // Flying down the screen she dips her head into it; up, she leans back.
+    if (fly > 0) r.set("AngleY", (r.params.AngleY ?? 0) - this.dir.y * FLY.lean * fly);
     // (Looking far to one side while walking that way would turn the body past its range: it eases into it.)
-    r.set("BodyAngleX", 10 * soft((lx * BODY + lean * (7 * walk + 3 * slow) + w * SHIFT.turn) / 10));
+    r.set("BodyAngleX", 10 * soft((lx * BODY + lean * (7 * walk + 3 * slow + FLY.turn * fly) + w * SHIFT.turn) / 10));
     const down = this.down;
     const recoil = this.recoil;
     // The ground is the side she was knocked to (+x for knock +1, the side the field tips her onto).
@@ -279,7 +299,7 @@ export class Animator {
       r.set("Breath", (r.params.Breath ?? 0) * (1 - down * 0.8));
     }
     // The move across, eased: the physics' input for all that trails (chibis).
-    if ("MoveX" in r.params) r.set("MoveX", this.vel.x * (walk + slow * 0.5));
+    if ("MoveX" in r.params) r.set("MoveX", this.vel.x * (walk + slow * 0.5 + fly));
     // The springs. A frame with no time passing (a hit-stop) holds them where
     // they are, lagging the pose that jumped, so the additions below land on
     // the same base however many times it is drawn.
@@ -287,7 +307,7 @@ export class Animator {
     // Hair, ribbons and sleeves trail opposite the motion (not the held facing),
     // each on a spring of its own, and swing with the stride.
     const p = r.params;
-    const trail = -this.vel.x * (0.75 * walk + 0.3 * slow);
+    const trail = -this.vel.x * (0.75 * walk + 0.3 * slow + FLY.trail * fly);
     const h = Math.max(0, Math.min(dt, 0.05)) / 2;
     const lag = this.trails;
     for (let i = 0; i < TRAIL.length; i++) {
@@ -311,6 +331,10 @@ export class Animator {
     let back = base("HairBack") + lag[2]!.pos + swing(0.15, 1.5);
     let ribbon = base("Ribbon") + lag[3]!.pos + swing(0.25, 1.1);
     let sleeve = base("Sleeve") + lag[4]!.pos + swing(0.35, 0.9);
+    // The hem swings with the stride, or flutters in the air of a flight (two waves, so it never ticks like a metronome).
+    const air = fly * Math.min(1, Math.hypot(this.vel.x, this.vel.y));
+    const flutter = FLY.flutter * air * (Math.sin(this.t * FLY.flutterHz * 2 * Math.PI) * 0.7 + Math.sin(this.t * FLY.flutterHz * 3.3 + 1.3) * 0.3);
+    let hem = base("Hem") + lag[5]!.pos + swing(0.18, 0.7) + flutter;
     // The hit flings her sleeves, ribbon and hair back from where she is knocked.
     if (recoil > 0 && this.knock) {
       const k = -this.knock * recoil;
@@ -319,6 +343,7 @@ export class Animator {
       side += k * 0.6;
       back += k * 0.5;
       front += k * 0.3;
+      hem += k * 0.6;
     }
     // Down: sleeves, ribbon and hair hang slack toward the ground she fell to.
     if (down > 0) {
@@ -326,6 +351,7 @@ export class Animator {
       ribbon += g * down * 0.5;
       side += g * down * 0.45;
       back += g * down * 0.3;
+      hem += g * down * 0.4;
     }
     // All of it eases into its limits rather than pinning there.
     r.set("HairSide", soft(side));
@@ -333,7 +359,8 @@ export class Animator {
     r.set("HairFront", soft(front));
     r.set("Ribbon", soft(ribbon));
     r.set("Sleeve", soft(sleeve));
-    if ("ArmL" in p) this.arms(dt, stand, walk, slow, a, g);
+    if ("Hem" in p) r.set("Hem", soft(hem));
+    if ("ArmL" in p) this.arms(dt, stand, walk, slow, fly, a, g);
     this.settle = false;
   }
 
@@ -391,16 +418,17 @@ export class Animator {
    * that keep an arm from moving as one stiff piece. Everything eases into
    * its limits instead of pinning there.
    */
-  private arms(dt: number, stand: number, walk: number, slow: number, a: number, g: number): void {
+  private arms(dt: number, stand: number, walk: number, slow: number, fly: number, a: number, g: number): void {
     const r = this.rig;
     const t = this.t;
-    const idle = this.idle ? stand * (1 - this.down) : 0;
+    // Flying, the idle sways go on, a little calmer, over the held-out arms.
+    const idle = this.idle ? (stand + fly * 0.6) * (1 - this.down) : 0;
     const stride = (walk * ARM.swing + slow * ARM.slowSwing) * Math.sin(a - ARM.swingLag);
-    const drag = this.vel.x * (walk * ARM.drag + slow * ARM.slowDrag);
+    const drag = this.vel.x * (walk * ARM.drag + slow * ARM.slowDrag + fly * FLY.drag);
     const bounce = -(walk + slow * 0.5) * ARM.stepBounce * (r.params.Bob ?? 0);
     // The flinch of a hit overrides the careful tuck of focus.
     const tuck = slow * (1 - this.recoil);
-    const both = tuck * ARM.tuck;
+    const both = tuck * ARM.tuck + fly * (1 - this.recoil) * FLY.arms;
     // Flung by a hit toward +x (g = 1) the body goes out from under the left arm, which flies out the more.
     const fling = (k: number) => this.recoil * ARM.fling * (1 + (k ? -g : g) * ARM.flingSkew);
     const [fl, fr] = this.fidget(idle);

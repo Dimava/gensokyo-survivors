@@ -63,4 +63,5 @@ export const rumiaChibi: Model = fairy("rumia", {
   bow: "#e0314b",
   ribbon: "#e0314b",
   aura: "#0a0612",
+  fly: true,
 });

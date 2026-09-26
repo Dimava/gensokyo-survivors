@@ -161,8 +161,10 @@ describe("Reimu's chibi", () => {
 
 describe("chibi arms", () => {
   const armed = Object.entries(ART_L2D).flatMap(([id, set]) => (set.sprite?.model.parts.some((p) => p.id === "armL") ? [[id, set.sprite] as [string, SpriteRig]] : []));
+  const walkers = armed.filter(([, sr]) => !sr.model.fly);
+  const fliers = armed.filter(([, sr]) => sr.model.fly);
   const LIMBS = ["ArmL", "ArmR", "ArmLBend", "ArmRBend", "ArmLFall", "ArmRFall"];
-  const LOOSE = ["Sleeve", "HairSide", "HairBack", "HairFront", "Ribbon"];
+  const LOOSE = ["Sleeve", "HairSide", "HairBack", "HairFront", "Ribbon", "Hem", "HemLift"];
 
   /** A rig of `sprite` and its animator as the field runs it (idle, at the rig's rate), snapped to rest. */
   const make = (sprite: SpriteRig, idle = true) => {
@@ -212,7 +214,45 @@ describe("chibi arms", () => {
     return far;
   };
 
-  test.each(armed)("%s: walking, the hands swing in turn, each forearm a few frames behind its arm", (_id, sprite) => {
+  test("Reimu walks; Cirno, Rumia and the winged fairies fly", () => {
+    expect(walkers.map(([id]) => id)).toEqual(["reimu"]);
+    expect(fliers.map(([id]) => id)).toContain("cirno");
+    expect(fliers.map(([id]) => id)).toContain("rumia");
+  });
+
+  test.each(fliers)("%s: flying, she floats along: no steps, the arms held out (the trailing one further), the hem streaming back and fluttering, and swinging past as she stops", (_id, sprite) => {
+    const { rig, anim } = make(sprite);
+    anim.move = { x: 1, y: 0 };
+    for (let i = 0; i < 120; i++) anim.step(1 / 60);
+    const v: Record<string, number[]> = { Step: [], ArmL: [], ArmR: [], Hem: [], Bob: [] };
+    for (let i = 0; i < 120; i++) {
+      anim.step(1 / 60);
+      for (const p in v) v[p]!.push(rig.params[p]!);
+    }
+    const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const range = (xs: number[]) => Math.max(...xs) - Math.min(...xs);
+    expect(Math.max(...v.Step!.map(Math.abs))).toBeLessThan(0.01);
+    // The float goes on.
+    expect(range(v.Bob!)).toBeGreaterThan(0.8);
+    // Held out for balance, the left (trailing, going +x) the further; no stride swings them in turn.
+    expect(mean(v.ArmL!)).toBeGreaterThan(0.3);
+    expect(mean(v.ArmR!)).toBeGreaterThan(0);
+    expect(mean(v.ArmL!)).toBeGreaterThan(mean(v.ArmR!) + 0.2);
+    expect(range(v.ArmL!.map((l, i) => l - v.ArmR![i]!))).toBeLessThan(0.3);
+    // The hem trails and flutters.
+    expect(mean(v.Hem!)).toBeLessThan(-0.3);
+    expect(range(v.Hem!)).toBeGreaterThan(0.05);
+    anim.move = { x: 0, y: 0 };
+    let past = 0;
+    for (let i = 0; i < 180; i++) {
+      anim.step(1 / 60);
+      past = Math.max(past, rig.params.Hem!);
+    }
+    expect(past).toBeGreaterThan(0.1);
+    expect(Math.abs(rig.params.Hem!)).toBeLessThan(0.05);
+  });
+
+  test.each(walkers)("%s: walking, the hands swing in turn, each forearm a few frames behind its arm", (_id, sprite) => {
     const { rig, anim } = make(sprite);
     anim.move = { x: 0, y: 1 };
     for (let i = 0; i < 120; i++) anim.step(1 / 60);
