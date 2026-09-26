@@ -260,6 +260,7 @@ export class Presenter {
         break;
       case "boss:approach":
         this.sfx("warning");
+        if (!this.quiet) audio.gust();
         break;
       case "boss:dialogue":
         // The dialogue takes the stage: clear the banners behind it.
@@ -287,6 +288,7 @@ export class Presenter {
           else banner("Spell Card Broken", "info", "Too late for the bonus");
         }
         this.sfx("spellBreak");
+        if (!this.quiet && res) audio.flourish(res);
         f.flash(0xffffff, 0.5);
         f.shake(12);
         break;

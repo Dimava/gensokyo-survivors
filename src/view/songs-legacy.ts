@@ -618,6 +618,309 @@ const dawnSong: Song = {
   loop: 1,
 };
 
+// ---------- v2: the rebuilt engine's first Misty Lake and Cirno themes (replaced by songs.ts's current pair) ----------
+//
+// Kept as they were written, with the synthesized trumpet and FM piano they
+// were written for: the "before" for the rewrite that gave the pair sampled
+// instruments, a motif each, harmony that climbs, and adaptive parts.
+
+/** Transposes a part's absolute notes by n semitones (chord-tone digits are left alone). */
+function v2shift(part: string, n: number): string {
+  const names = ["c", "c#", "d", "eb", "e", "f", "f#", "g", "ab", "a", "bb", "b"];
+  const pc: Record<string, number> = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+  return part.replace(/\b([a-g])([#b]?)(\d)/g, (_, l: string, acc: string, o: string) => {
+    const m = 12 * Number(o) + pc[l]! + (acc === "#" ? 1 : acc === "b" ? -1 : 0) + n;
+    return `${names[((m % 12) + 12) % 12]}${Math.floor(m / 12)}`;
+  });
+}
+
+const V2_ARP16 = "0 1 2 3 4 3 2 1 0 1 2 3 4 3 2 1";
+
+/** The ZUN-style trumpet: bright stacked saws that scoop up into the note, with a late vibrato. */
+const v2Trumpet: Inst = {
+  osc: [
+    ["sawtooth", 0, 0, 0.45],
+    ["sawtooth", 0, 9, 0.3],
+    ["square", 0, -6, 0.25],
+  ],
+  a: 0.02,
+  d: 0.3,
+  s: 0.72,
+  r: 0.12,
+  cut: 650,
+  kt: 1.3,
+  env: 3200,
+  fd: 0.12,
+  q: 1.1,
+  scoop: 45,
+  vib: { depth: 18, delay: 0.18 },
+  gate: 0.95,
+};
+/** A bright FM piano: a hammered attack that mellows. */
+const v2Piano: Inst = {
+  osc: [
+    ["sine", 0, 0, 0.5],
+    ["triangle", 0, 3, 0.3],
+    ["square", 0, 0, 0.2],
+  ],
+  fm: { ratio: 1, index: 1.3, decay: 0.2 },
+  a: 0.003,
+  d: 0.55,
+  s: 0.22,
+  r: 0.25,
+  cut: 1400,
+  kt: 1.2,
+  env: 4200,
+  fd: 0.18,
+  vib: { depth: 6, delay: 0.35 },
+};
+/** A tine e-piano (FM ratio 1): bell on the attack, round underneath. */
+const v2Epiano: Inst = {
+  osc: [
+    ["sine", 0, 0, 0.7],
+    ["sine", 12, 4, 0.12],
+    ["triangle", 0, -4, 0.18],
+  ],
+  fm: { ratio: 1, index: 2.2, decay: 0.1 },
+  a: 0.003,
+  d: 0.9,
+  s: 0.25,
+  r: 0.35,
+};
+/** Strings: two detuned saws, spread left and right. */
+const v2Strings: Inst = {
+  osc: [
+    ["sawtooth", 0, -10, 0.5, -0.6],
+    ["sawtooth", 0, 10, 0.5, 0.6],
+  ],
+  a: 0.45,
+  d: 1.5,
+  s: 0.85,
+  r: 0.7,
+  cut: 1300,
+  kt: 0.5,
+  q: 0.5,
+  vib: { depth: 6, delay: 0.4 },
+};
+const v2QuickStrings: Inst = { ...v2Strings, a: 0.08, r: 0.3 };
+/** FM bell, inharmonic: ice. */
+const v2Bell: Inst = { osc: [["sine", 0, 0, 1]], fm: { ratio: 3.5, index: 1.6, decay: 0.35 }, a: 0.002, d: 0.6, s: 0, r: 0.5 };
+/** FM glass pluck, harmonic: sparkling arpeggios. */
+const v2Glass: Inst = { osc: [["sine", 0, 0, 1]], fm: { ratio: 2, index: 1.2, decay: 0.08 }, a: 0.002, d: 0.16, s: 0, r: 0.12 };
+/** Picked bass: a snappy filter over saw, square and a sine sub. */
+const v2Bass: Inst = {
+  osc: [
+    ["sawtooth", 0, 0, 0.5],
+    ["square", 0, -8, 0.2],
+    ["sine", -12, 0, 0.3],
+  ],
+  a: 0.003,
+  d: 0.2,
+  s: 0.5,
+  r: 0.06,
+  cut: 220,
+  kt: 1,
+  env: 1600,
+  fd: 0.06,
+  q: 3,
+};
+
+// ---------- Misty Lake: "Fairies Dancing in the Morning Mist" (A minor, a C major hook that lifts to D) ----------
+
+const V2_LAKE_A = `a4 _ c5 e5 a5 _ g5 e5 | g5 _ a5 _ e5 _ c5 _ | f5 _ e5 f5 a5 _ c6 _ | b5 _ _ _ g#5 _ e5 _ |
+  a5 _ b5 c6 e6 _ d6 c6 | b5 _ c6 _ g5 _ e5 _ | f5 _ a5 _ c6 _ d6 c6 | b5 _ _ _ g#5 _ [a5 b5] _`;
+const V2_LAKE_B = `d6 _ _ c6 a5 _ f5 _ | g5 _ a5 _ b5 _ d6 _ | e6 _ _ d6 c6 _ g5 _ | a5 _ c6 _ f6 _ e6 _ |
+  d6 _ _ c6 b5 _ f5 _ | g#5 _ b5 _ e6 _ d6 _ | c6 _ b5 a5 e5 _ a5 _ | b5 _ _ _ e6 _ g#5 _`;
+const V2_LAKE_C = `c6 _ a5 c6 f6 _ e6 c6 | d6 _ b5 d6 g6 _ f6 d6 | e6 _ _ d6 b5 _ g5 b5 | c6 _ _ _ a5 _ e5 _ |
+  f5 _ a5 _ d6 _ f6 _ | g6 _ f6 _ e6 _ d6 _ | e6 _ _ _ g#6 _ b6 _ | a6 _ _ _ _ _ . .`;
+const V2_LAKE_CH_A = "Am | Am/G | Fmaj7 | E7 | Am | Am/G | Dm7 | E7";
+const V2_LAKE_CH_B = "Dm7 | G | Cmaj7 | Fmaj7 | Bm7b5 | E7 | Am | E7";
+const V2_LAKE_CH_C = "Fmaj7 | G | Em7 | Am | Dm7 | G | E7 | Am";
+const V2_LAKE_BASS = "0 0 0^ 0 0 0 0^ 2";
+const V2_LAKE_BEAT = "kh . h . sh . h kh . h kh . sh . h .";
+const V2_LAKE_PERC = ". h? h h? x h? h h? . h? h h? x h? h h?";
+const V2_LAKE_FILL = "kh . h . sh . h . s s t t m m l l";
+
+const v2LakeSong: Song = {
+  bpm: 152,
+  voiceLead: true,
+  inst: { lead: v2Piano, counter: v2Bell, keys: v2Epiano, arp: v2Glass, bass: v2Bass, pad: v2Strings },
+  sections: {
+    intro: {
+      chords: "Am | F | G | E7",
+      arp: V2_ARP16,
+      bass: "0 . . 0 . . 0 .",
+      drums: "k . . . h . . . k . . . h . . .",
+      fill: "k . s . k . s . s s s s s! s s! s!",
+      crash: false,
+    },
+    A: { chords: V2_LAKE_CH_A, lead: V2_LAKE_A, arp: V2_ARP16, keys: ". . * . . * . .", bass: V2_LAKE_BASS, drums: V2_LAKE_BEAT, perc: V2_LAKE_PERC },
+    B: {
+      chords: V2_LAKE_CH_B,
+      lead: V2_LAKE_B,
+      counter: "3 _ _ _ 2 _ _ _",
+      arp: V2_ARP16,
+      keys: ". * . * . * . *",
+      bass: "0 0 0^ 0 0 0^ 0 0^",
+      drums: V2_LAKE_BEAT,
+      perc: V2_LAKE_PERC,
+      fill: V2_LAKE_FILL,
+      inst: { lead: v2Trumpet, counter: v2QuickStrings },
+    },
+    C: {
+      chords: V2_LAKE_CH_C,
+      lead: V2_LAKE_C,
+      counter: "2^ _ _ _ 1^ _ 2^ _",
+      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
+      keys: "* . . * . . * .",
+      bass: "0 0^ 0 0^ 0 0^ 0 0^",
+      drums: "kh . h h sh . h . kh . kh h sh . h o",
+      perc: V2_LAKE_PERC,
+      fill: V2_LAKE_FILL,
+      inst: { lead: v2Trumpet },
+    },
+    A2: {
+      chords: V2_LAKE_CH_A,
+      lead: V2_LAKE_A,
+      counter: "2^ _ _ _ 1^ _ _ _",
+      arp: V2_ARP16,
+      keys: ". . * . . * . .",
+      bass: V2_LAKE_BASS,
+      drums: V2_LAKE_BEAT,
+      perc: V2_LAKE_PERC,
+    },
+    C2: {
+      chords: V2_LAKE_CH_C,
+      lead: V2_LAKE_C,
+      counter: v2shift(V2_LAKE_C, -12),
+      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
+      keys: "* . . * . . * .",
+      bass: "0 0^ 0 0^ 0 0^ 0 0^",
+      drums: "kh . h h sh . h . kh . kh h sh . h o",
+      perc: V2_LAKE_PERC,
+      fill: V2_LAKE_FILL,
+      tr: 2,
+      inst: { lead: v2Trumpet, counter: v2QuickStrings },
+    },
+    turn: {
+      chords: "F | E7",
+      lead: "a5 _ c6 _ f6 _ e6 _ | g#5 _ _ _ b5 _ e6 _",
+      arp: V2_ARP16,
+      bass: "0 0 0^ 0 0 0 0^ 0",
+      drums: "kh . h . sh . h . kh . h . sh . h . | s . s s s s s s t t m m l l s! s!",
+      crash: false,
+      inst: { lead: v2Trumpet },
+    },
+  },
+  form: ["intro", "A", "B", "C", "A2", "B", "C", "C2", "turn"],
+  loop: 1,
+};
+
+// ---------- Cirno: "The Strongest Frozen Tomboy" (D minor, icy and fast; the last hook in E minor) ----------
+
+const V2_CIRNO_A = `a5 _ d6 _ [c6 a5] [f5 a5] d6 _ | e6 _ f6 _ [e6 d6] [c6 d6] a5 _ | bb5 _ d6 _ f6 _ [e6 f6] g6 | e6 _ _ _ c6 _ g5 _ |
+  a5 _ d6 _ [c6 a5] [f5 a5] d6 _ | e6 _ f6 _ a6 _ [g6 f6] e6 | d6 _ [bb5 d6] g6 _ f6 e6 d6 | c#6 _ e6 _ a6 _ g6 e6`;
+const V2_CIRNO_B = `f6 _ _ e6 d6 _ bb5 _ | c6 _ d6 _ e6 _ g6 _ | e6 _ _ d6 c6 _ a5 _ | d6 _ _ _ f6 _ a6 _ |
+  g6 _ _ f6 d6 _ bb5 _ | c6 _ e6 _ g6 _ bb6 _ | a6 _ _ _ f6 _ c6 _ | e6 _ c#6 _ a5 _ [c#6 e6] [g6 bb6]`;
+const V2_CIRNO_C = `d6 _ f6 _ [e6 d6] c6 d6 _ | e6 _ g6 _ [f6 e6] d6 e6 _ | c6 _ e6 _ a6 _ g6 e6 | f6 _ _ _ d6 _ a5 _ |
+  d6 _ f6 _ [e6 d6] c6 d6 _ | e6 _ g6 _ c7 _ bb6 g6 | a6 _ _ _ c#6 _ e6 _ | d6 _ _ _ _ _ . .`;
+const V2_CIRNO_CH_A = "Dm | Dm | Bb | C | Dm | Dm | Gm | A7";
+const V2_CIRNO_CH_B = "Bb | C | Am | Dm | Gm | C | F | A7";
+const V2_CIRNO_CH_C = "Bb | C | Am | Dm | Bb | C | A7 | Dm";
+const V2_CIRNO_BASS = "0 0^ 0 0^ 0 0^ 0 0^";
+const V2_CIRNO_BEAT = "kh . h h sh . h . kh . kh h sh . h o";
+const V2_CIRNO_PERC = ". h h? h x h h? h . h h? h x h h? t";
+const V2_CIRNO_FILL = "kh . h h sh . h . s s t t [s s] [m m] l! l!";
+const V2_CIRNO_KEYS = "* . . * . . * .";
+
+const v2CirnoSong: Song = {
+  bpm: 172,
+  voiceLead: true,
+  inst: { lead: v2Piano, counter: v2Bell, keys: v2Epiano, arp: v2Glass, bass: v2Bass, pad: v2Strings },
+  mix: { lead: 0.22, counter: 0.09 },
+  layers: { perc: 0.4, counter: 0 },
+  fadeIn: 0.1,
+  sections: {
+    intro: {
+      chords: "Dm | Bb | C | A7",
+      arp: "0 1 2 3 1 2 3 4 2 3 4 5 3 4 5 6",
+      counter: "3^ . . . . . . . | . . . . . . . .",
+      bass: "0 . . 0 . . 0 .",
+      drums: "k . . . s . . . k . k . s . . .",
+      fill: V2_CIRNO_FILL,
+      crash: false,
+    },
+    A: { chords: V2_CIRNO_CH_A, lead: V2_CIRNO_A, arp: V2_ARP16, keys: V2_CIRNO_KEYS, bass: V2_CIRNO_BASS, drums: V2_CIRNO_BEAT, perc: V2_CIRNO_PERC },
+    B: {
+      chords: V2_CIRNO_CH_B,
+      lead: V2_CIRNO_B,
+      counter: "2 _ _ _ 1 _ _ _",
+      arp: V2_ARP16,
+      keys: ". * . * . * . *",
+      bass: "0 0 0^ 0 0 0 0^ 2",
+      drums: V2_CIRNO_BEAT,
+      perc: V2_CIRNO_PERC,
+      fill: V2_CIRNO_FILL,
+      inst: { lead: v2Trumpet, counter: v2QuickStrings },
+    },
+    C: {
+      chords: V2_CIRNO_CH_C,
+      lead: V2_CIRNO_C,
+      counter: "3^ _ 2^ _ 1^ _ 2^ _",
+      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
+      keys: V2_CIRNO_KEYS,
+      bass: V2_CIRNO_BASS,
+      drums: V2_CIRNO_BEAT,
+      perc: V2_CIRNO_PERC,
+      fill: V2_CIRNO_FILL,
+      inst: { lead: v2Trumpet },
+    },
+    A2: {
+      chords: V2_CIRNO_CH_A,
+      lead: V2_CIRNO_A,
+      counter: v2shift(V2_CIRNO_A, -12),
+      arp: V2_ARP16,
+      keys: V2_CIRNO_KEYS,
+      bass: V2_CIRNO_BASS,
+      drums: V2_CIRNO_BEAT,
+      perc: V2_CIRNO_PERC,
+    },
+    break: {
+      chords: "Gm | A7 | Bb | A7",
+      counter: "d6 _ _ _ bb5 _ _ _ | c#6 _ _ _ e6 _ _ _ | f6 _ _ _ d6 _ _ _ | e6 _ _ _ a6 _ _ _",
+      arp: "0 1 2 3 1 2 3 4 2 3 4 5 3 4 5 6",
+      bass: "0 _ _ _ 0 _ _ _",
+      drums: "k . . . . . . . k . . . . . . .",
+      fill: "s . s . s s s s s s s s s! s! s! s!",
+      crash: false,
+    },
+    C2: {
+      chords: V2_CIRNO_CH_C,
+      lead: V2_CIRNO_C,
+      counter: v2shift(V2_CIRNO_C, -12),
+      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
+      keys: V2_CIRNO_KEYS,
+      bass: V2_CIRNO_BASS,
+      drums: V2_CIRNO_BEAT,
+      perc: V2_CIRNO_PERC,
+      fill: V2_CIRNO_FILL,
+      tr: 2,
+      inst: { lead: v2Trumpet, counter: v2QuickStrings },
+    },
+    turn: {
+      chords: "C | A7",
+      lead: "e6 _ g6 _ c7 _ bb6 _ | a6 _ _ _ c#6 _ e6 _",
+      arp: V2_ARP16,
+      bass: V2_CIRNO_BASS,
+      drums: "kh . h h sh . h . kh . kh h sh . h o | s s s s s s s s t t m m l l s! s!",
+      crash: false,
+      inst: { lead: v2Trumpet },
+    },
+  },
+  form: ["intro", "A", "B", "C", "A2", "B", "break", "C", "C2", "turn"],
+  loop: 1,
+};
+
 // ---------- the music room's earlier versions ----------
 
 const V1 = "The first soundtrack, from before the synth and the songs were rebuilt: two eight-bar sections a song, one triad a bar, mono voices, root-position pads, the first instruments.";
@@ -636,5 +939,21 @@ export const LEGACY_TRACKS: readonly TrackInfo[] = [
     comment:
       "The rich-harmony title that came between the first version and Wind Chimes: sevenths and slash chords two to a bar, a chromatic walking bass, voice-led sixteenth arpeggios, a no-chord run in the bridge and a whole-step lift, with the heavier piano and strings of the time. Replaced because its verse had no hook and spent all its richness at once.",
     song: dawnSong,
+  },
+  {
+    id: "v2-lake",
+    title: "Fairies Dancing in the Morning Mist (v2)",
+    where: "Misty Lake, second version",
+    comment:
+      "The rebuilt engine's first stage 1 theme, with its synthesized trumpet and FM piano: an A minor tune, a circle-of-fifths bridge and a royal-road hook lifted a step for its last round. Replaced because nothing in it stuck after a run: no motif ran through it, and every section sat at the same level.",
+    song: v2LakeSong,
+  },
+  {
+    id: "v2-cirno",
+    title: "The Strongest Frozen Tomboy (v2)",
+    where: "Cirno's theme, second version",
+    comment:
+      "The rebuilt engine's first Cirno theme: D minor at 172 BPM, a piano riff and a trumpet hook, bells and glass for the ice. Replaced by a theme that knows when her spell cards come.",
+    song: v2CirnoSong,
   },
 ].map((t) => ({ credit: "Original composition for Gensokyo Survivors", ...t }));

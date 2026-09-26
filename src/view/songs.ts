@@ -178,6 +178,49 @@ const softBass: Inst = {
   r: 0.15,
 };
 
+// ---------- recorded voices (instruments/: the University of Iowa's samples, cut by scripts/music-samples.ts) ----------
+
+/** A grand piano: notes ring on a little as if the pedal were down, and soft ones are darker. The FM piano plays until it loads. */
+const grand: Inst = { ...piano, sample: "piano", sampleGain: 0.78, tone: { cut: 2400, kt: 2, env: 9000, fd: 0.35 }, r: 0.45, ring: 0.3 };
+/** The grand played quietly, with more pedal. */
+const grandSoft: Inst = { ...grand, sampleGain: 0.66, tone: { cut: 1300, kt: 1.6, env: 3500, fd: 0.5 }, ring: 0.7 };
+/** A trumpet: it scoops up into the note and takes a late vibrato when held. */
+const brass: Inst = { ...trumpet, sample: "trumpet", sampleGain: 1.4, tone: { cut: 2800, kt: 1.2, env: 7000, fd: 0.25 }, scoop: 35, vib: { depth: 14, delay: 0.24 } };
+/** The trumpet darkened, for the midboss. */
+const darkBrass: Inst = { ...brass, tone: { cut: 1300, kt: 0.9, env: 2200, fd: 0.3 }, vib: { depth: 18, delay: 0.3 } };
+/** A string section: four saws spread across the stereo field, bowed in slowly. */
+const ensemble: Inst = {
+  osc: [
+    ["sawtooth", 0, -13, 0.28, -0.75],
+    ["sawtooth", 0, 11, 0.28, 0.75],
+    ["sawtooth", 0, -4, 0.22, -0.3],
+    ["sawtooth", 0, 6, 0.22, 0.3],
+  ],
+  a: 0.4,
+  d: 1.6,
+  s: 0.85,
+  r: 0.65,
+  cut: 1150,
+  kt: 0.55,
+  q: 0.4,
+  vib: { depth: 7, delay: 0.4 },
+};
+const quickEnsemble: Inst = { ...ensemble, a: 0.05, r: 0.3, cut: 1600, kt: 0.8 };
+/** The picked bass without its sub-octave: the kick keeps the lowest octave to itself. */
+const pickBass: Inst = {
+  ...bass,
+  osc: [
+    ["sawtooth", 0, 0, 0.55],
+    ["square", 0, -8, 0.2],
+    ["sine", 0, 0, 0.25],
+  ],
+};
+const darkEnsemble: Inst = { ...ensemble, cut: 700, kt: 0.35 };
+/** The strings as a quiet line under a verse (lent to the counter voice, which is louder than the pad). */
+const climbStrings: Inst = { ...ensemble, gain: 0.6 };
+/** A second trumpet in harmony under the lead, lent to the keys voice (quieter than the lead): it keeps a section's weight. */
+const secondBrass: Inst = { ...brass, gain: 2.4, tone: { cut: 2200, kt: 1, env: 5000, fd: 0.25 }, scoop: 25 };
+
 /** Transposes a part's absolute notes by n semitones (chord-tone digits are left alone). */
 function shift(part: string, n: number): string {
   const names = ["c", "c#", "d", "eb", "e", "f", "f#", "g", "ab", "a", "bb", "b"];
@@ -189,6 +232,8 @@ function shift(part: string, n: number): string {
 }
 
 const ARP16 = "0 1 2 3 4 3 2 1 0 1 2 3 4 3 2 1";
+/** The same at half speed: a bridge's first bars. */
+const ARP8 = "0 1 2 3 4 3 2 1";
 
 // ---------- title: "Wind Chimes at the Hakurei Shrine" (B minor; the last hook lifts to E major) ----------
 //
@@ -355,200 +400,421 @@ export const shopSong: Song = {
   loop: 0,
 };
 
-// ---------- Misty Lake: "Fairies Dancing in the Morning Mist" (A minor, a C major hook that lifts to D) ----------
+// ---------- Misty Lake: "Fairies Dancing in the Morning Mist" (A minor; the chorus in C major, the last one in D) ----------
+//
+// One hook, in the first bar: from the fifth up a fourth and on up the scale to the minor third,
+// off the beat (E-A-B-C), then a fall from the chord's seventh (E-D-C-A over F: the mist is that
+// major seventh), answered a step lower over G and E7. The verse's second half climbs against a
+// bass that sinks by half steps (A G# G F#), with bells answering a step higher each time. The
+// pre-chorus climbs a whole scale on the bass with the trumpet a tenth above it, and the chorus
+// breaks into C major on a deceptive E7-to-F: a little repeated-note figure that walks down the
+// royal road and back up, then long notes over a falling bass. The bridge is a waterfall of seventh
+// chords on the piano. The second verse gets a string line that climbs an octave under the hook,
+// and the last chorus is a step up, in D, with a second trumpet in thirds under the first and the
+// ride cymbal on every beat.
+//
+// In a run the e-piano and the drums' second layer come in as the swarm thickens. Daiyousei's
+// stretch (M, outside the form) plays the hook in D minor on a dark trumpet over toms until she is
+// gone; then the pre-chorus climbs out of it into the D major chorus. The boss's winds sweep the
+// song away through a closing filter (Music.blowAway).
 
-const LAKE_A = `a4 _ c5 e5 a5 _ g5 e5 | g5 _ a5 _ e5 _ c5 _ | f5 _ e5 f5 a5 _ c6 _ | b5 _ _ _ g#5 _ e5 _ |
-  a5 _ b5 c6 e6 _ d6 c6 | b5 _ c6 _ g5 _ e5 _ | f5 _ a5 _ c6 _ d6 c6 | b5 _ _ _ g#5 _ [a5 b5] _`;
-const LAKE_B = `d6 _ _ c6 a5 _ f5 _ | g5 _ a5 _ b5 _ d6 _ | e6 _ _ d6 c6 _ g5 _ | a5 _ c6 _ f6 _ e6 _ |
-  d6 _ _ c6 b5 _ f5 _ | g#5 _ b5 _ e6 _ d6 _ | c6 _ b5 a5 e5 _ a5 _ | b5 _ _ _ e6 _ g#5 _`;
-const LAKE_C = `c6 _ a5 c6 f6 _ e6 c6 | d6 _ b5 d6 g6 _ f6 d6 | e6 _ _ d6 b5 _ g5 b5 | c6 _ _ _ a5 _ e5 _ |
-  f5 _ a5 _ d6 _ f6 _ | g6 _ f6 _ e6 _ d6 _ | e6 _ _ _ g#6 _ b6 _ | a6 _ _ _ _ _ . .`;
-const LAKE_CH_A = "Am | Am/G | Fmaj7 | E7 | Am | Am/G | Dm7 | E7";
-const LAKE_CH_B = "Dm7 | G | Cmaj7 | Fmaj7 | Bm7b5 | E7 | Am | E7";
-const LAKE_CH_C = "Fmaj7 | G | Em7 | Am | Dm7 | G | E7 | Am";
-const LAKE_BASS = "0 0 0^ 0 0 0 0^ 2";
-const LAKE_BEAT = "kh . h . sh . h kh . h kh . sh . h .";
+const LAKE_HOOK = `e5 a5 _ b5 c6 _ b5 c6 | e6 _ _ d6 c6 _ a5 _ | d5 g5 _ a5 b5 _ a5 b5 | d6 _ _ c6 b5 _ g#5 _`;
+const LAKE_VERSE = `${LAKE_HOOK} |
+  e5 a5 _ b5 c6 _ b5 c6 | e6 _ _ d6 c6 _ d6 e6 | f6 _ _ e6 d6 _ c6 d6 | e6 _ _ _ b5 _ g#5 _ |
+  e5 _ _ a5 c6 _ _ b5 | _ _ a5 _ b5 _ _ _ | e5 _ _ a5 c6 _ _ d6 | _ _ c6 _ d6 _ _ _ |
+  e5 _ _ a5 c6 _ _ e6 | _ _ d6 _ e6 _ _ _ | d6 _ _ e6 f6 _ a6 _ | _ _ _ _ g#6 _ e6 _`;
+const LAKE_CH_A = "Am | F | G | E7 | Am | F | Dm7 | E7 | Am | Am/G# | Am/G | D/F# | Fmaj7 | C/E | Dm7 | E7sus4 E7";
+/** The second verse's colours: ninths, a sixth, the flat ninth on the dominant. */
+const LAKE_CH_A2 = "Am9 | Fmaj7 | G6 | E7b9 | Am9 | Fmaj9 | Dm9 | E7 | Am | Am/G# | Am/G | D/F# | Fmaj7 | C/E | Dm7 | E7sus4 E7";
+/** Bells answer the lament in its long notes, a step higher each time. */
+const LAKE_A_BELLS = `. | . | . | . | . | . | . | . |
+  . | . . . . e6 _ _ _ | . | . . . . f#6 _ _ _ | . | . . . . g6 _ _ _ | . | .`;
+/** Strings under the second verse: one line that climbs an octave, A to A, while the bass falls. */
+const LAKE_A2_CLIMB = `a4 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | b4 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ |
+  c5 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | d5 _ _ _ _ _ _ _ | _ _ _ _ e5 _ _ _ |
+  e5 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | f#5 _ _ _ _ _ _ _ |
+  g5 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | a5 _ _ _ _ _ _ _ | _ _ _ _ g#5 _ _ _`;
+
+const LAKE_CH_B = "Dm7 | Em7 | Fmaj7 | G | Am7 | Bm7b5 | Cmaj7 D | E7sus4 E7";
+/** The climb: each bar the same figure a step higher, a tenth above the bass. */
+const LAKE_B_CLIMB = `f5 _ _ e5 f5 _ a5 _ | g5 _ _ e5 g5 _ b5 _ | a5 _ _ g5 a5 _ c6 _ | b5 _ _ a5 b5 _ d6 _ |
+  c6 _ _ b5 c6 _ e6 _ | d6 _ _ c6 d6 _ f6 _ | e6 _ _ d6 c6 _ d6 _`;
+const LAKE_B = `${LAKE_B_CLIMB} | e6 _ _ _ d6 _ b5 _`;
+/** The second time its last bar turns to F#7, for the chorus in D. */
+const LAKE_B2 = `${LAKE_B_CLIMB} | e6 _ _ _ a#5 _ c#6 _`;
+/** Piano sparkle in the trumpet's long notes: a run up the chord. */
+const LAKE_B_RUNS = "4^ 5^ 6^ 7^ 8^ . . . . . . . . . . .";
+
+const LAKE_CH_C = "Fmaj7 | G | Am | E7 | Fmaj7 | G | Am | G7/B | C | G/B | Am | Am/G | Fmaj7 | G | E7sus4 E7 | Am";
+const LAKE_C_WALK = `c6 c6 e6 _ _ d6 c6 _ | b5 b5 d6 _ _ c6 b5 _ | a5 a5 c6 _ _ b5 a5 _ | g#5 g#5 b5 _ _ a5 g#5 _ |
+  a5 a5 c6 _ _ b5 a5 _ | b5 b5 d6 _ _ c6 b5 _ | c6 c6 e6 _ _ d6 c6 _ | d6 d6 f6 _ _ e6 d6 _`;
+const LAKE_C_LONG = `e6 _ _ _ _ _ d6 c6 | d6 _ _ _ _ _ c6 b5 | c6 _ _ _ _ _ b5 a5 | b5 _ _ _ g5 _ e5 _`;
+const LAKE_C_HOME = `c6 c6 e6 _ _ d6 c6 _ | b5 b5 d6 _ _ c6 b5 _ | a5 _ _ _ g#5 _ b5 _ | a5 _ _ _ _ _ . .`;
+const LAKE_C = `${LAKE_C_WALK} | ${LAKE_C_LONG} | ${LAKE_C_HOME}`;
+/** The piano doubles the trumpet, an octave up for the long notes. */
+const LAKE_C_PIANO = `${LAKE_C_WALK} | ${shift(LAKE_C_LONG, 12)} | ${LAKE_C_HOME}`;
+/** The last chorus's second trumpet: thirds under the walk, a line of its own under the long notes, a tritone into the last E7. */
+const LAKE_C_HARM = `a5 a5 c6 _ _ b5 a5 _ | g5 g5 b5 _ _ a5 g5 _ | e5 e5 a5 _ _ g#5 e5 _ | e5 e5 g#5 _ _ f#5 e5 _ |
+  f5 f5 a5 _ _ g5 f5 _ | g5 g5 b5 _ _ a5 g5 _ | a5 a5 c6 _ _ b5 a5 _ | b5 b5 d6 _ _ c6 b5 _ |
+  c6 _ _ _ g5 _ b5 a5 | b5 _ _ _ g5 _ a5 g5 | a5 _ _ _ e5 _ g5 e5 | g5 _ _ _ e5 _ c5 _ |
+  a5 a5 c6 _ _ b5 a5 _ | g5 g5 b5 _ _ a5 g5 _ | e5 _ _ _ d5 _ g#5 _ | e5 _ _ _ _ _ . .`;
+
+const LAKE_CH_D = "Fmaj7 | Em7 | Dm7 | Cmaj7 | Bbmaj7 | Am7 | Bm7b5 | E7";
+/** A waterfall of sevenths: every bar lands on its chord's seventh, a step below the last. */
+const LAKE_D = `e6 _ _ _ _ _ c6 _ | d6 _ _ _ _ _ b5 _ | c6 _ _ _ _ _ a5 _ | b5 _ _ _ _ _ g5 _ |
+  a5 _ _ _ _ _ f5 _ | g5 _ _ _ _ _ e5 _ | f5 _ a5 _ d6 _ f6 _ | e6 _ _ _ d6 _ [c6 b5] [a5 g#5]`;
+
+const LAKE_M = `a4 d5 _ e5 f5 _ e5 f5 | a5 _ _ g5 f5 _ d5 _ | g4 c5 _ d5 e5 _ d5 e5 | g5 _ _ f5 e5 _ c#5 _ |
+  a4 d5 _ e5 f5 _ e5 f5 | a5 _ _ bb5 a5 _ f5 _ | g5 _ _ f5 e5 _ d5 e5 | f5 _ _ _ e5 _ c#5 _`;
+
+const LAKE_BEAT = "k . h . s . h k . . h . s . h .";
+const LAKE_BEAT_B = "k . h k s . h . k . h k s . h o";
+const LAKE_BEAT_C = `kc . h k s . h . k . k h s . h o | ${Array(3).fill("k . h k s . h . k . k h s . h o").join(" | ")}`;
+/** The last chorus rides: the ride on every beat over the chorus beat. */
+const LAKE_BEAT_C2 = `kc . h k sr . h . kr . k h sr . h o | ${Array(3).fill("kr . h k sr . h . kr . k h sr . h o").join(" | ")}`;
 const LAKE_PERC = ". h? h h? x h? h h? . h? h h? x h? h h?";
-const LAKE_FILL = "kh . h . sh . h . s s t t m m l l";
+const LAKE_FILL = "k . h . s . s s t t t t m m l l";
+const LAKE_BUILD = "kw . s . s . s s s s s s s! s! s! s!";
+const OCTAVES = "0 0^ 0 0^ 0 0^ 0 0^";
 
 export const lakeSong: Song = {
-  bpm: 152,
+  bpm: 156,
+  key: "A minor",
   voiceLead: true,
-  inst: { lead: piano, counter: bell, keys: epiano, arp: glass, bass, pad: strings },
+  inst: { lead: grand, counter: bell, keys: epiano, arp: glass, bass: pickBass, pad: ensemble },
+  mix: { lead: 0.2, counter: 0.1, keys: 0.045, arp: 0.055, bass: 0.19, pad: 0.045, drums: 0.24, perc: 0.2 },
+  pan: { counter: -0.15, keys: 0.2 },
+  layers: { perc: 0.4, keys: 0.25 },
+  fadeIn: 0.05,
   sections: {
     intro: {
       chords: "Am | F | G | E7",
+      lead: LAKE_HOOK,
       arp: ARP16,
-      bass: "0 . . 0 . . 0 .",
-      drums: "k . . . h . . . k . . . h . . .",
-      fill: "k . s . k . s . s s s s s! s s! s!",
+      bass: "0 _ _ _ _ _ _ _",
+      drums: ". | . | . | w . . . . . . .",
       crash: false,
+      dyn: [0.62, 0.85],
     },
-    A: { chords: LAKE_CH_A, lead: LAKE_A, arp: ARP16, keys: ". . * . . * . .", bass: LAKE_BASS, drums: LAKE_BEAT, perc: LAKE_PERC },
+    A: {
+      chords: LAKE_CH_A,
+      lead: LAKE_VERSE,
+      counter: LAKE_A_BELLS,
+      keys: ". . * . . * . .",
+      arp: ARP16,
+      bass: "0 _ 0 0^ _ 0 0^ 0",
+      drums: LAKE_BEAT,
+      perc: LAKE_PERC,
+      fill: LAKE_FILL,
+      dyn: [0.8, 0.92],
+    },
     B: {
       chords: LAKE_CH_B,
       lead: LAKE_B,
-      counter: "3 _ _ _ 2 _ _ _",
-      arp: ARP16,
+      counter: LAKE_B_RUNS,
       keys: ". * . * . * . *",
-      bass: "0 0 0^ 0 0 0^ 0 0^",
-      drums: LAKE_BEAT,
+      arp: ARP16,
+      bass: OCTAVES,
+      drums: LAKE_BEAT_B,
       perc: LAKE_PERC,
-      fill: LAKE_FILL,
-      inst: { lead: trumpet, counter: quickStrings },
+      fill: LAKE_BUILD,
+      dyn: [0.85, 1],
+      inst: { lead: brass, counter: grand },
     },
     C: {
       chords: LAKE_CH_C,
       lead: LAKE_C,
-      counter: "2^ _ _ _ 1^ _ 2^ _",
-      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
-      keys: "* . . * . . * .",
-      bass: "0 0^ 0 0^ 0 0^ 0 0^",
-      drums: "kh . h h sh . h . kh . kh h sh . h o",
+      counter: LAKE_C_PIANO,
+      keys: ". * . * . * . *",
+      arp: ARP16,
+      bass: OCTAVES,
+      drums: LAKE_BEAT_C,
       perc: LAKE_PERC,
       fill: LAKE_FILL,
-      inst: { lead: trumpet },
+      crash: false,
+      inst: { lead: brass, counter: grand },
+    },
+    D: {
+      chords: LAKE_CH_D,
+      lead: LAKE_D,
+      keys: "* . . . . . * . | * . . . . . . .",
+      arp: `${ARP8} | ${ARP8} | ${ARP8} | ${ARP8} | ${ARP16} | ${ARP16} | ${ARP16} | ${ARP16}`,
+      bass: `0 _ _ _ _ _ _ _ | 0 _ _ _ _ _ _ _ | 0 _ _ _ _ _ _ _ | 0 _ _ _ _ _ _ _ | 0 _ _ _ 0^ _ _ _ | 0 _ _ _ 0^ _ _ _ | 0 _ 0^ _ 0 _ 0^ _ | ${OCTAVES}`,
+      drums: `k . . . r . . . s? . . . r . . . | k . . . r . . . s? . . . r . . . | k . . . r . . . s? . . . r . . . | k . . . r . . . s? . . . r . r . |
+        k . r . r . r . s . r . r . r . | k . r . r . r . s . r . r . r . | k . r . s . r . k . r . s . r s | k . r . s . r . k . r . s . r s`,
+      // With the swarm thick, soft offbeat hats keep the pulse through the waterfall.
+      perc: ". . h? . . . h? . . . h? . . . h? .",
+      fill: LAKE_BUILD,
+      crash: false,
+      dyn: [0.8, 1],
+      inst: { lead: grandSoft },
     },
     A2: {
-      chords: LAKE_CH_A,
-      lead: LAKE_A,
-      counter: "2^ _ _ _ 1^ _ _ _",
+      chords: LAKE_CH_A2,
+      lead: LAKE_VERSE,
+      counter: LAKE_A2_CLIMB,
+      keys: ". . * . . * . *",
       arp: ARP16,
-      keys: ". . * . . * . .",
-      bass: LAKE_BASS,
-      drums: LAKE_BEAT,
+      bass: OCTAVES,
+      drums: LAKE_BEAT_B,
       perc: LAKE_PERC,
+      fill: LAKE_FILL,
+      inst: { counter: climbStrings },
+    },
+    B2: {
+      chords: "Dm7 | Em7 | Fmaj7 | G | Am7 | Bm7b5 | Cmaj7 D | E7 F#7",
+      lead: LAKE_B2,
+      counter: LAKE_B_RUNS,
+      keys: ". * . * . * . *",
+      arp: ARP16,
+      bass: OCTAVES,
+      drums: LAKE_BEAT_B,
+      perc: LAKE_PERC,
+      fill: LAKE_BUILD,
+      dyn: [0.9, 1],
+      inst: { lead: brass, counter: grand },
     },
     C2: {
       chords: LAKE_CH_C,
       lead: LAKE_C,
-      counter: shift(LAKE_C, -12),
-      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
-      keys: "* . . * . . * .",
-      bass: "0 0^ 0 0^ 0 0^ 0 0^",
-      drums: "kh . h h sh . h . kh . kh h sh . h o",
+      counter: LAKE_C_PIANO,
+      keys: LAKE_C_HARM,
+      arp: ARP16,
+      bass: OCTAVES,
+      drums: LAKE_BEAT_C2,
       perc: LAKE_PERC,
       fill: LAKE_FILL,
+      crash: false,
       tr: 2,
-      inst: { lead: trumpet, counter: quickStrings },
+      inst: { lead: brass, counter: grand, keys: secondBrass },
     },
     turn: {
-      chords: "F | E7",
-      lead: "a5 _ c6 _ f6 _ e6 _ | g#5 _ _ _ b5 _ e6 _",
+      chords: "G | E7",
+      lead: "d5 g5 _ a5 b5 _ a5 b5 | d6 _ _ c6 b5 _ g#5 _",
+      counter: "d5 g5 _ a5 b5 _ a5 b5 | d6 _ _ c6 b5 _ g#5 _",
       arp: ARP16,
-      bass: "0 0 0^ 0 0 0 0^ 0",
-      drums: "kh . h . sh . h . kh . h . sh . h . | s . s s s s s s t t m m l l s! s!",
+      bass: OCTAVES,
+      drums: "k . h k s . h . k . k h s . h o | s . s s t t t t m m m m l l s! s!",
       crash: false,
-      inst: { lead: trumpet },
+      inst: { lead: brass, counter: grand },
+    },
+    // Daiyousei holds the stage: the hook in D minor, dark, over toms. Outside the form; it repeats until she is gone.
+    M: {
+      chords: "Dm | Bb | C | A7 | Dm | Bb | Gm7 | A7",
+      lead: LAKE_M,
+      counter: "f4 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | g4 _ _ _ _ _ _ _ | a4 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | bb4 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | c#5 _ _ _ _ _ _ _",
+      arp: "0 1 2 1 0 1 2 1 0 1 2 1 0 1 2 1",
+      bass: "0 0 0 0 0 0 0 0",
+      drums: "k . m . s . m k . k m . s . l l",
+      perc: ". h h . . h h . . h h . . h h .",
+      fill: "k . m . s . m k s s m m l l l! l!",
+      vamp: true,
+      inst: { lead: darkBrass, counter: darkEnsemble, arp: pluck },
     },
   },
-  form: ["intro", "A", "B", "C", "A2", "B", "C", "C2", "turn"],
+  form: ["intro", "A", "B", "C", "D", "A2", "B2", "C2", "turn"],
   loop: 1,
+  parts: { midboss: { to: "M", q: "bar", then: "B2" } },
 };
 
-// ---------- Cirno: "The Strongest Frozen Tomboy" (D minor, icy and fast; the last hook in E minor) ----------
+// ---------- Cirno: "The Strongest Frozen Tomboy" (B minor; the chorus in D major, the last one in E) ----------
+//
+// Her riff is the lake's hook frozen: the same climb from the fifth to the minor third, a step
+// higher, chipped into staccato against a repeated F# (ice on a pedal), with the lake's fall from
+// the seventh between. The dialogue waits on it in the bells; her first spell card drops the band
+// in on it. The verse runs up in sequences on the piano with the trumpet holding thirds under it,
+// the pre-chorus climbs to A7 and stops dead, and the chorus in D major sits on ninths (the ice)
+// with a Just-the-Two-of-Us turn in its third phrase. The bridge remembers the lake's hook, slow,
+// in B minor, then the riff climbs back into the last chorus, a step up in E, where a second
+// trumpet takes the harmony under the tune and the bells ring it an octave up.
+//
+// In the fight the dialogue vamps on the intro; her first card lands the riff on the next beat,
+// the second lifts into the chorus, and the last one into the key change (always: even when the
+// song has already come round to it).
 
-const CIRNO_A = `a5 _ d6 _ [c6 a5] [f5 a5] d6 _ | e6 _ f6 _ [e6 d6] [c6 d6] a5 _ | bb5 _ d6 _ f6 _ [e6 f6] g6 | e6 _ _ _ c6 _ g5 _ |
-  a5 _ d6 _ [c6 a5] [f5 a5] d6 _ | e6 _ f6 _ a6 _ [g6 f6] e6 | d6 _ [bb5 d6] g6 _ f6 e6 d6 | c#6 _ e6 _ a6 _ g6 e6`;
-const CIRNO_B = `f6 _ _ e6 d6 _ bb5 _ | c6 _ d6 _ e6 _ g6 _ | e6 _ _ d6 c6 _ a5 _ | d6 _ _ _ f6 _ a6 _ |
-  g6 _ _ f6 d6 _ bb5 _ | c6 _ e6 _ g6 _ bb6 _ | a6 _ _ _ f6 _ c6 _ | e6 _ c#6 _ a5 _ [c#6 e6] [g6 bb6]`;
-const CIRNO_C = `d6 _ f6 _ [e6 d6] c6 d6 _ | e6 _ g6 _ [f6 e6] d6 e6 _ | c6 _ e6 _ a6 _ g6 e6 | f6 _ _ _ d6 _ a5 _ |
-  d6 _ f6 _ [e6 d6] c6 d6 _ | e6 _ g6 _ c7 _ bb6 g6 | a6 _ _ _ c#6 _ e6 _ | d6 _ _ _ _ _ . .`;
-const CIRNO_CH_A = "Dm | Dm | Bb | C | Dm | Dm | Gm | A7";
-const CIRNO_CH_B = "Bb | C | Am | Dm | Gm | C | F | A7";
-const CIRNO_CH_C = "Bb | C | Am | Dm | Bb | C | A7 | Dm";
-const CIRNO_BASS = "0 0^ 0 0^ 0 0^ 0 0^";
-const CIRNO_BEAT = "kh . h h sh . h . kh . kh h sh . h o";
-const CIRNO_PERC = ". h h? h x h h? h . h h? h x h h? t";
-const CIRNO_FILL = "kh . h h sh . h . s s t t [s s] [m m] l! l!";
-const CIRNO_KEYS = "* . . * . . * .";
+const CIRNO_RIFF = `f#5' b5' f#5' c#6' f#5' d6 _ e6 | f#6 _ _ e6 d6 _ b5 _ | e5' a5' e5' b5' e5' c#6 _ d6 | e6 _ _ d6 c#6 _ a#5 _ |
+  f#5' b5' f#5' c#6' f#5' d6' f#5' e6' | f#6 _ _ _ [e6 f#6] [e6 d6] [c#6 d6] [b5 c#6] | d6' _ b5' _ g5' _ e5' _ | a#5 _ c#6 _ e6 _ f#6! _`;
+const CIRNO_CH_RIFF = "Bm | Gmaj7 | A | F#7 | Bm | Gmaj7 | Em7 | F#7";
+/** The riff in the bells, waiting: its first bars and their echoes. */
+const CIRNO_WAIT = `f#5' b5' f#5' c#6' f#5' d6 _ _ | . | f#5' b5' f#5' c#6' f#5' d6 _ e6 | f#6 _ _ _ _ _ . . |
+  e5' a5' e5' b5' e5' c#6 _ _ | . | e5' b5' e5' c#6' e5' d6 _ c#6 | e6 _ _ _ c#6 _ a#5 _`;
+
+const CIRNO_CH_A = "Bm | A | G | F#7 | Bm | A | G | F#7 | Em7 | F#m7 | Gmaj7 | A | Bm | Bm/A | Gmaj7 | F#7sus4 F#7";
+const CIRNO_A = `b5 _ a5 b5 d6 _ c#6 b5 | c#6 _ b5 c#6 e6 _ d6 c#6 | d6 _ c#6 d6 f#6 _ e6 d6 | c#6 _ _ a#5 f#5 _ _ _ |
+  b5 _ a5 b5 d6 _ c#6 b5 | c#6 _ b5 c#6 e6 _ d6 c#6 | d6 e6 f#6 g6 f#6 _ e6 d6 | c#6 d6 e6 f#6 _ _ . . |
+  g6 _ _ f#6 e6 _ b5 _ | a5 _ _ b5 c#6 _ e6 _ | f#6 _ _ e6 d6 _ b5 _ | c#6 _ _ d6 e6 _ a6 _ |
+  f#6 _ _ e6 d6 _ c#6 d6 | e6 _ _ d6 c#6 _ a5 _ | b5 _ d6 _ g6 _ f#6 _ | e6 _ _ _ c#6 _ a#5 _`;
+/** The trumpet holds the chord's fifth, then its third, under the piano's runs. */
+const CIRNO_A_HORN = `f#5 _ _ _ _ _ _ _ | e5 _ _ _ _ _ _ _ | d5 _ _ _ _ _ _ _ | c#5 _ _ _ e5 _ _ _ |
+  f#5 _ _ _ _ _ _ _ | e5 _ _ _ _ _ _ _ | d5 _ _ _ g5 _ _ _ | a#5 _ _ _ _ _ _ _ |
+  g5 _ _ _ _ _ _ _ | a5 _ _ _ _ _ _ _ | b5 _ _ _ _ _ _ _ | c#6 _ _ _ _ _ _ _ |
+  d6 _ _ _ _ _ _ _ | c#6 _ _ _ _ _ _ _ | b5 _ _ _ _ _ _ _ | a#5 _ _ _ _ _ _ _`;
+
+const CIRNO_CH_B = "Em7 | F#m7 | Gmaj7 | A | Em7 | F#m7 | G A | A7";
+/** Up in steps with a turn down inside each (the third, the ninth, the root), then a leap to the fifth; it stops dead on A7. */
+const CIRNO_B = `g5 _ _ f#5 e5 _ b5 _ | a5 _ _ g#5 f#5 _ c#6 _ | b5 _ _ a5 g5 _ d6 _ | c#6 _ _ b5 a5 _ e6 _ |
+  e6 _ _ d6 b5 _ g5 _ | f#5 _ _ a5 c#6 _ e6 _ | d6 _ _ _ c#6 _ _ _ | e6! . . . . . . .`;
+
+const CIRNO_CH_C = "Gmaj7 | A | F#m7 | Bm7 | Gmaj7 | A | Dmaj7 | D7 | Gmaj7 | F#7 | Bm7 | Am7 D7 | Gmaj7 | A | F#7sus4 F#7 | Bm";
+const CIRNO_C = `a5 _ _ _ b5 _ d6 _ | c#6 _ _ _ b5 _ a5 _ | c#6 _ _ _ e6 _ _ d6 | _ _ c#6 _ b5 _ _ _ |
+  a5 _ _ _ b5 _ d6 _ | c#6 _ _ _ b5 _ e6 _ | _ _ _ _ d6 _ c#6 _ | c6 _ _ _ a5 _ f#5 _ |
+  d6 d6 _ e6 _ d6 b5 _ | c#6 c#6 _ e6 _ c#6 a#5 _ | d6 d6 _ c#6 _ b5 a5 _ | c6 _ _ b5 a5 _ f#5 _ |
+  a5 _ _ _ b5 _ d6 _ | c#6 _ _ _ b5 _ e6 _ | _ _ _ _ c#6 _ a#5 _ | b5 _ _ _ _ _ . .`;
+
+/** The last chorus's second trumpet, under the lead: thirds, a held B against the ninths, a D7 walking down. */
+const CIRNO_C_HARM = `f#5 _ _ _ g5 _ b5 _ | a5 _ _ _ g#5 _ e5 _ | a5 _ _ _ c#6 _ _ b5 | _ _ a5 _ f#5 _ _ _ |
+  f#5 _ _ _ g5 _ b5 _ | a5 _ _ _ g#5 _ c#6 _ | _ _ _ _ f#5 _ a5 _ | a5 _ _ _ f#5 _ d5 _ |
+  b5 b5 _ b5 _ b5 g5 _ | a#5 a#5 _ c#6 _ a#5 f#5 _ | b5 b5 _ a5 _ g5 f#5 _ | a5 _ _ g5 f#5 _ d5 _ |
+  f#5 _ _ _ g5 _ b5 _ | a5 _ _ _ g#5 _ c#6 _ | _ _ _ _ a#5 _ f#5 _ | f#5 _ _ _ _ _ . .`;
+
+const CIRNO_CH_D = "Bm | Gmaj7 | A | F#7 | Em7 | F#m7 | Gmaj7 | B7sus4 B7";
+/** The lake's hook, slow and soft, then her riff climbing back on a pedal. */
+const CIRNO_D = `${shift(LAKE_HOOK, 2)} |
+  e5' g5' e5' a5' e5' b5' e5' d6' | f#5' a5' f#5' b5' f#5' c#6' f#5' e6' | g5' b5' g5' c#6' g5' d6' g5' f#6' | f#5' b5' f#5' c#6' d#6' e6' f#6' a6'`;
+
+const CIRNO_BEAT = "k . h k s . h . k k h . s . h o";
+const CIRNO_BEAT4 = `kc . h k s . h . k k h . s . h o | ${Array(3).fill(CIRNO_BEAT).join(" | ")}`;
+const CIRNO_PERC = ". h? h h? x h? h h? . h? h h? x h? h t";
+const CIRNO_FILL = "k . h k s . h . s s t t m m l! l!";
+const CIRNO_BUILD = "kw . s . s . s s s s s s s! s! s! s!";
 
 export const cirnoSong: Song = {
-  bpm: 172,
+  bpm: 176,
+  key: "B minor",
   voiceLead: true,
-  inst: { lead: piano, counter: bell, keys: epiano, arp: glass, bass, pad: strings },
-  mix: { lead: 0.22, counter: 0.09 },
-  layers: { perc: 0.4, counter: 0 },
-  fadeIn: 0.1,
+  inst: { lead: grand, counter: bell, keys: epiano, arp: glass, bass: pickBass, pad: ensemble },
+  mix: { lead: 0.2, counter: 0.1, keys: 0.045, arp: 0.06, bass: 0.19, pad: 0.045, drums: 0.24, perc: 0.2 },
+  pan: { counter: -0.15, keys: 0.2 },
+  layers: { perc: 0.45 },
+  fadeIn: 0.8,
   sections: {
+    // The dialogue: the riff in the bells over a bowed cymbal, until her first spell card.
     intro: {
-      chords: "Dm | Bb | C | A7",
-      arp: "0 1 2 3 1 2 3 4 2 3 4 5 3 4 5 6",
-      counter: "3^ . . . . . . . | . . . . . . . .",
-      bass: "0 . . 0 . . 0 .",
-      drums: "k . . . s . . . k . k . s . . .",
+      chords: "Bm | Bm | Gmaj7 | Gmaj7 | Em9 | Em9 | F#7sus4 | F#7",
+      counter: CIRNO_WAIT,
+      arp: ARP16,
+      bass: "0 _ _ _ _ _ _ _",
+      drums: "z . . . . . . . | . | . | . | . | . | . | w . . . . . . .",
+      crash: false,
+      vamp: true,
+      dyn: [0.62, 0.72],
+      inst: { pad: darkEnsemble },
+    },
+    launch: {
+      chords: CIRNO_CH_RIFF,
+      lead: CIRNO_RIFF,
+      counter: CIRNO_RIFF,
+      keys: ". * . * . * . *",
+      arp: ARP16,
+      bass: OCTAVES,
+      drums: CIRNO_BEAT4,
+      perc: CIRNO_PERC,
       fill: CIRNO_FILL,
       crash: false,
     },
-    A: { chords: CIRNO_CH_A, lead: CIRNO_A, arp: ARP16, keys: CIRNO_KEYS, bass: CIRNO_BASS, drums: CIRNO_BEAT, perc: CIRNO_PERC },
+    A: {
+      chords: CIRNO_CH_A,
+      lead: CIRNO_A,
+      counter: CIRNO_A_HORN,
+      keys: ". * . * . * . *",
+      arp: ARP16,
+      bass: OCTAVES,
+      drums: CIRNO_BEAT,
+      perc: CIRNO_PERC,
+      fill: CIRNO_FILL,
+      inst: { counter: brass },
+    },
     B: {
       chords: CIRNO_CH_B,
       lead: CIRNO_B,
-      counter: "2 _ _ _ 1 _ _ _",
-      arp: ARP16,
-      keys: ". * . * . * . *",
-      bass: "0 0 0^ 0 0 0 0^ 2",
+      keys: `. * . * . * . * | . * . * . * . * | . * . * . * . * | . * . * . * . * | . * . * . * . * | . * . * . * . * | * . * . * . * . | * . . . . . . .`,
+      arp: `${ARP16} | ${ARP16} | ${ARP16} | ${ARP16} | ${ARP16} | ${ARP16} | ${ARP16} | 0 . . . . . . . . . . . . . . .`,
+      bass: `${OCTAVES} | ${OCTAVES} | ${OCTAVES} | ${OCTAVES} | ${OCTAVES} | ${OCTAVES} | ${OCTAVES} | 0 . . . . . . .`,
       drums: CIRNO_BEAT,
       perc: CIRNO_PERC,
-      fill: CIRNO_FILL,
-      inst: { lead: trumpet, counter: quickStrings },
+      fill: "kc! . . . s . s . s s s s s! s! s! s!",
+      inst: { lead: brass },
     },
     C: {
       chords: CIRNO_CH_C,
       lead: CIRNO_C,
-      counter: "3^ _ 2^ _ 1^ _ 2^ _",
-      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
-      keys: CIRNO_KEYS,
-      bass: CIRNO_BASS,
-      drums: CIRNO_BEAT,
+      counter: CIRNO_C,
+      keys: shift(CIRNO_C, 12),
+      arp: ARP16,
+      bass: OCTAVES,
+      drums: CIRNO_BEAT4,
       perc: CIRNO_PERC,
       fill: CIRNO_FILL,
-      inst: { lead: trumpet },
-    },
-    A2: {
-      chords: CIRNO_CH_A,
-      lead: CIRNO_A,
-      counter: shift(CIRNO_A, -12),
-      arp: ARP16,
-      keys: CIRNO_KEYS,
-      bass: CIRNO_BASS,
-      drums: CIRNO_BEAT,
-      perc: CIRNO_PERC,
-    },
-    break: {
-      chords: "Gm | A7 | Bb | A7",
-      counter: "d6 _ _ _ bb5 _ _ _ | c#6 _ _ _ e6 _ _ _ | f6 _ _ _ d6 _ _ _ | e6 _ _ _ a6 _ _ _",
-      arp: "0 1 2 3 1 2 3 4 2 3 4 5 3 4 5 6",
-      bass: "0 _ _ _ 0 _ _ _",
-      drums: "k . . . . . . . k . . . . . . .",
-      fill: "s . s . s s s s s s s s s! s! s! s!",
       crash: false,
+      inst: { lead: brass, counter: grand, keys: bell },
+    },
+    D: {
+      chords: CIRNO_CH_D,
+      lead: CIRNO_D,
+      counter: ". | . | . | . | b4 _ _ _ _ _ _ _ | c#5 _ _ _ _ _ _ _ | d5 _ _ _ _ _ _ _ | e5 _ _ _ d#5 _ _ _",
+      arp: ARP16,
+      bass: `0 _ _ _ _ _ _ _ | 0 _ _ _ _ _ _ _ | 0 _ _ _ _ _ _ _ | 0 _ _ _ _ _ _ _ | ${OCTAVES} | ${OCTAVES} | ${OCTAVES} | ${OCTAVES}`,
+      drums: `k . . . r . . . s? . . . r . . . | k . . . r . . . s? . . . r . . . | k . . . r . . . s? . . . r . . . | k . . . r . . . s? . . . r . r . |
+        k . h . s . h . k . h . s . h . | k . h . s . h . k . h . s . s . | k . s . s . s . s . s . s s s s | k . s . s . s . s . s . s s s s`,
+      fill: CIRNO_BUILD,
+      crash: false,
+      dyn: [0.72, 1],
+      inst: { lead: grandSoft, counter: quickEnsemble },
     },
     C2: {
       chords: CIRNO_CH_C,
       lead: CIRNO_C,
-      counter: shift(CIRNO_C, -12),
-      arp: "0 2 4 2 1 3 5 3 0 2 4 2 1 3 5 3",
-      keys: CIRNO_KEYS,
-      bass: CIRNO_BASS,
-      drums: CIRNO_BEAT,
+      counter: CIRNO_C,
+      keys: CIRNO_C_HARM,
+      arp: shift(CIRNO_C, 12),
+      bass: OCTAVES,
+      drums: CIRNO_BEAT4,
       perc: CIRNO_PERC,
       fill: CIRNO_FILL,
+      crash: false,
       tr: 2,
-      inst: { lead: trumpet, counter: quickStrings },
+      inst: { lead: brass, counter: grand, keys: secondBrass, arp: bell },
     },
     turn: {
-      chords: "C | A7",
-      lead: "e6 _ g6 _ c7 _ bb6 _ | a6 _ _ _ c#6 _ e6 _",
+      chords: "A | F#7",
+      lead: "e5' a5' e5' b5' e5' c#6 _ d6 | e6 _ _ d6 c#6 _ a#5 _",
+      counter: "e5' a5' e5' b5' e5' c#6 _ d6 | e6 _ _ d6 c#6 _ a#5 _",
       arp: ARP16,
-      bass: CIRNO_BASS,
-      drums: "kh . h h sh . h . kh . kh h sh . h o | s s s s s s s s t t m m l l s! s!",
+      bass: OCTAVES,
+      drums: `${CIRNO_BEAT} | s . s s t t t t m m m m l l s! s!`,
       crash: false,
-      inst: { lead: trumpet },
+    },
+    // Her second spell card: a bar's lift into the chorus.
+    lift1: {
+      chords: "A7",
+      lead: "e5 _ _ _ . . [e5 f#5] [g5 g#5]",
+      arp: ARP16,
+      bass: "0 _ 0 _ 0 0 0 0",
+      drums: CIRNO_BUILD,
+      crash: false,
+      inst: { lead: brass },
+    },
+    // Her last spell card: two bars' climb into the key change.
+    lift2: {
+      chords: "F#m7 G#m7 | Amaj7 B7",
+      lead: "a4 _ _ _ b4 _ _ _ | c#5 _ _ _ d#5 _ [f#5 g#5] [a5 a#5]",
+      counter: "f#5 _ _ _ g#5 _ _ _ | a5 _ _ _ b5 _ _ _",
+      arp: ARP16,
+      bass: `${OCTAVES} | ${OCTAVES}`,
+      drums: `k . s . k . s . k s k s s s s s | ${CIRNO_BUILD}`,
+      crash: false,
+      inst: { lead: brass, counter: quickEnsemble },
     },
   },
-  form: ["intro", "A", "B", "C", "A2", "B", "break", "C", "C2", "turn"],
+  form: ["intro", "launch", "A", "B", "C", "D", "C2", "turn"],
   loop: 1,
+  parts: {
+    intro: { to: "intro" },
+    spell0: { to: "launch", q: "beat" },
+    spell1: { to: "C", via: "lift1", q: "bar", advance: true },
+    // The key change is the last card's, even if the chorus came round to it before.
+    last: { to: "C2", via: "lift2", q: "bar" },
+  },
 };
 
 // ---------- Forest of Magic: "Mushrooms under the Canopy" (E dorian, lilting) ----------
@@ -736,6 +1002,29 @@ export const clearSong: Song = {
   loop: null,
 };
 
+// ---------- Misty Lake cleared: the lake's hook in D major on the trumpet (the key its last chorus reached), then silence ----------
+
+export const lakeClearSong: Song = {
+  bpm: 150,
+  key: "D major",
+  voiceLead: true,
+  inst: { lead: brass, counter: grand, keys: epiano, arp: glass, bass: pickBass, pad: ensemble },
+  mix: { counter: 0.12, bass: 0.19, drums: 0.24 },
+  sections: {
+    fanfare: {
+      chords: "D | Bm | G A | D",
+      lead: "a4 d5 _ e5 f#5 _ e5 f#5 | a5 _ _ g5 f#5 _ d5 _ | g5 _ _ f#5 e5 _ [f#5 g5] [a5 b5] | d6! _ _ _ _ _ _ _",
+      counter: "a5 d6 _ e6 f#6 _ e6 f#6 | a6 _ _ g6 f#6 _ d6 _ | g6 _ _ f#6 e6 _ [f#6 g6] [a6 b6] | d7 _ _ _ _ _ _ _",
+      arp: `${ARP16} | ${ARP16} | ${ARP16} | 0 1 2 3 4 5 6 7 . . . . . . . .`,
+      bass: "0 _ 0 0^ _ 0 0^ 0 | 0 _ 0 0^ _ 0 0^ 0 | 0 _ 0 _ 0 _ 0 _ | 0 _ _ _ _ _ _ _",
+      drums: "kc . h . s . h k . . h . s . h . | k . h . s . h k . . h . s . h . | k . h . s . h . s s t t m m l l | kc! . . . . . . . . . . . . . . .",
+      crash: false,
+    },
+  },
+  form: ["fanfare"],
+  loop: null,
+};
+
 // ---------- game over: a falling sting, then silence ----------
 
 export const overSong: Song = {
@@ -790,14 +1079,16 @@ export const TRACKS: readonly TrackInfo[] = ([
     id: "lake",
     title: "Fairies Dancing in the Morning Mist",
     where: "Misty Lake",
-    comment: "The stage 1 theme: bright and a little mischievous, with a circle-of-fifths bridge and a royal-road hook that lifts a step for its last round.",
+    comment:
+      "The stage 1 theme. The piano plays the hook alone in the first bar: up a fourth from the fifth and on up to the minor third, off the beat, then a fall from the seventh. The verse sinks over a lament bass, the trumpet climbs a whole scale a tenth above the bass, and the chorus breaks into C major on a deceptive cadence. The last chorus is a step up, with a second trumpet under the first. In a run it thickens with the swarm, Daiyousei gets the hook in D minor over toms, and the boss's winds blow it away.",
     song: lakeSong,
   },
   {
     id: "cirno",
     title: "The Strongest Frozen Tomboy",
     where: "Cirno's theme",
-    comment: "Fast, icy and very sure of itself. Bells and glass arpeggios for the ice, a piano riff for the attitude, and a trumpet that refuses to lose.",
+    comment:
+      "Her riff is the lake's hook frozen: the same climb a step higher, chipped into staccato over a repeated F#. The dialogue waits on it in the bells, her first spell card drops the band in, the second lifts into the chorus in D major and the last into the key change, a second trumpet under the tune. The bridge remembers the lake.",
     song: cirnoSong,
   },
   {
@@ -815,5 +1106,12 @@ export const TRACKS: readonly TrackInfo[] = ([
     song: rumiaSong,
   },
   { id: "clear", title: "Stage Clear", where: "Stage clear", comment: "Four bars of fanfare. You earned them.", song: clearSong },
+  {
+    id: "clear-lake",
+    title: "The Mist Lifts",
+    where: "Misty Lake cleared",
+    comment: "The lake's hook once more, in D major on the trumpet, where its last chorus left off.",
+    song: lakeClearSong,
+  },
   { id: "over", title: "Pichuun", where: "Game over", comment: "It happens to everyone. Continue?", song: overSong },
 ] satisfies Omit<TrackInfo, "credit">[]).map((t) => ({ credit: ORIGINAL, ...t }));

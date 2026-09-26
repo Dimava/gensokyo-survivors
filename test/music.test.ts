@@ -1,10 +1,13 @@
 // The music notation (src/view/music.ts): every song compiles, parts fill
 // their sections, chords transpose, the pad's voicings step, and the notation
-// features (slash bass, "~" hold, "N" no chord, stabs, dynamics) do what the
-// header says. No audio runs here: compiling is pure.
+// features (slash bass, "~" hold, "N" no chord, stabs, dynamics, articulations,
+// swells, parts and vamps) do what the header says; the sampled instruments'
+// index is sound and the loader finds their timing marker. No audio runs
+// here: compiling is pure.
 
 import { describe, expect, test } from "bun:test";
-import { compileSong, songLength, transposeName, voiceChord, type Inst, type Song } from "../src/view/music.ts";
+import { FAMILIES } from "../src/view/instruments/index.ts";
+import { compileSong, findMark, moveBar, songLength, transposeName, voiceChord, type Inst, type Melodic, type Song } from "../src/view/music.ts";
 import { TRACKS } from "../src/view/songs.ts";
 import { LEGACY_TRACKS } from "../src/view/songs-legacy.ts";
 
@@ -27,11 +30,13 @@ describe("music", () => {
           if (part) expect({ track: t.id, name, v, ok: bars % part.split("|").length === 0 }).toEqual({ track: t.id, name, v, ok: true });
         }
       }
-      // Melodies stay in a sane range.
+      // Melodies stay in a sane range, and a recorded voice within four semitones of its recordings (stretched further, it thins).
       for (const e of c.events) {
         if (e.drum) continue;
-        expect(e.midi).toBeGreaterThanOrEqual(24);
-        expect(e.midi).toBeLessThanOrEqual(100);
+        const sample = (e.inst ?? t.song.inst[e.voice as Melodic]).sample;
+        const midis = sample ? FAMILIES[sample].notes.map((n) => n.midi) : [27, 105];
+        const range = [Math.min(...midis) - 4, Math.max(...midis) + 4];
+        expect({ track: t.id, voice: e.voice, midi: e.midi, ok: e.midi >= range[0]! && e.midi <= range[1]! }).toEqual({ track: t.id, voice: e.voice, midi: e.midi, ok: true });
       }
       const len = songLength(t.song);
       expect(len.total).toBeGreaterThan(2);
@@ -78,5 +83,62 @@ describe("music", () => {
     expect(c.events.find((e) => e.voice === "lead")!.midi).toBe(74);
     expect(c.sections.map((s) => s.key)).toEqual(["C major", "D major"]);
     expect(c.chords.at(-1)!.name).toBe("D");
+  });
+
+  test("' plays a note short, ~ lets it fall; a swell rises to the next barline", () => {
+    const c = compileSong(song({ A: { chords: "C | C", lead: "c5' d5~ e5 _ | .", drums: ". w . . | [. w] . . .", pad: false } }));
+    expect(c.events.filter((e) => e.voice === "lead").map((e) => e.art)).toEqual(["'", "~", undefined]);
+    const swells = c.events.filter((e) => e.drum === "w");
+    expect(swells.map((e) => e.t + e.len)).toEqual([1, 2]);
+  });
+
+  test("sections outside the form are kept after it; vamps and moves land on their quantum", () => {
+    const c = compileSong(
+      song(
+        { intro: { chords: "C", vamp: true, pad: false }, A: { chords: "C | G", pad: false }, M: { chords: "Am | E", pad: false } },
+        { form: ["intro", "A"], parts: { midboss: { to: "M", then: "A" } } },
+      ),
+    );
+    expect(c.places.map((p) => [p.name, p.form, p.vamp])).toEqual([
+      ["intro", 0, true],
+      ["A", 1, false],
+      ["M", -1, false],
+    ]);
+    // The form's length leaves the islands out.
+    expect(c.bars).toBe(3);
+    const a = { name: "A", from: 1, to: 3 };
+    expect(moveBar("beat", 1.3, a)).toBe(1.5);
+    expect(moveBar("half", 1.3, a)).toBe(1.5);
+    expect(moveBar("bar", 1.3, a)).toBe(2);
+    expect(moveBar(2, 1.3, a)).toBe(3);
+    expect(moveBar("bar", 2.9, a)).toBe(3);
+  });
+
+  test("every sampled note lies inside its file, in order, its loop inside it", () => {
+    for (const [family, f] of Object.entries(FAMILIES)) {
+      let end = 0;
+      for (const n of f.notes) {
+        expect({ family, note: n.name, ok: n.at >= end && n.len > 0 && n.gain > 0 }).toEqual({ family, note: n.name, ok: true });
+        if (n.loop) expect({ family, note: n.name, ok: n.loop[0] > 0 && n.loop[1] > n.loop[0] && n.loop[1] < n.len }).toEqual({ family, note: n.name, ok: true });
+        end = n.at + n.len;
+      }
+      if (family !== "kit") for (let i = 1; i < f.notes.length; i++) expect(f.notes[i]!.midi).toBeGreaterThan(f.notes[i - 1]!.midi);
+    }
+  });
+
+  test("the loader finds the timing marker by its shape, not by the loudest sample", () => {
+    const sr = 44100;
+    const d = new Float32Array(sr);
+    // A codec's delay moved the marker 12.3 ms late; the first note is louder than it.
+    const mark = 0.05 + 0.0123;
+    const m0 = Math.round(mark * sr);
+    const bw = Math.floor(0.004 * sr);
+    for (let i = -bw; i <= bw; i++) d[m0 + i] = 0.5 * (0.5 + 0.5 * Math.cos((Math.PI * i) / bw)) * Math.sin((2 * Math.PI * 5000 * i) / sr);
+    for (let i = 0; i < sr * 0.2; i++) d[Math.round(0.13 * sr) + i] = 0.85 * Math.exp(-i / sr / 0.1) * Math.sin((2 * Math.PI * 440 * i) / sr);
+    const buf = { sampleRate: sr, length: d.length, getChannelData: () => d } as unknown as AudioBuffer;
+    expect(Math.abs(findMark(buf) - m0 / sr)).toBeLessThan(0.0002);
+    // No marker at all: the nominal place.
+    const quiet = { sampleRate: sr, length: d.length, getChannelData: () => new Float32Array(sr) } as unknown as AudioBuffer;
+    expect(findMark(quiet)).toBeCloseTo(0.05, 6);
   });
 });

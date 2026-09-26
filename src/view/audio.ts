@@ -2,9 +2,9 @@
 // from oscillators and a noise buffer with WebAudio. Volumes follow prefs.
 
 import { watch } from "vue";
-import { Music, type Song } from "./music.ts";
+import { loadSamples, Music, type Song } from "./music.ts";
 import { prefs } from "./prefs.ts";
-import { cirnoSong, clearSong, forestSong, lakeSong, menuSong, overSong, rumiaSong, shopSong, TRACKS } from "./songs.ts";
+import { cirnoSong, clearSong, forestSong, lakeClearSong, lakeSong, menuSong, overSong, rumiaSong, shopSong, TRACKS } from "./songs.ts";
 import { LEGACY_TRACKS } from "./songs-legacy.ts";
 
 /** Every track the music room can play: the soundtrack and its earlier versions. */
@@ -128,7 +128,13 @@ class Synth {
     }
     this.applyVolumes();
     this.songs = new Music(ctx, this.musicBus, this.noiseBuf);
-    this.songs.play(this.previewing ? this.preview : this.song);
+    // The sampled piano, trumpet and cymbals load in the background; until then their synthesized stand-ins play.
+    void loadSamples(ctx);
+    if (this.previewing) this.songs.play(this.preview);
+    else {
+      this.songs.intensity(this.level);
+      this.songs.play(this.song, { adaptive: true, part: this.part });
+    }
   }
 
   applyVolumes(): void {
@@ -300,25 +306,62 @@ class Synth {
   private previewing = false;
   private preview: Song | null = null;
 
-  /** Picks the song for a track; stage and boss tracks have one per stage (the lake's by default). */
-  music(track: Track, stage = "lake"): void {
+  /**
+   * Picks the song for a track; stage and boss tracks have one per stage
+   * (the lake's by default), and `part` names the run's moment for songs
+   * that follow it (music-mood.ts musicPart: a midboss, the boss's
+   * dialogue, her spell cards).
+   */
+  music(track: Track, stage = "lake", part = ""): void {
     if (track === "keep") return;
     if (track === "results") {
       // A fanfare or sting rings out first; after it (or with none), the calm theme.
-      const oneShot = this.track === "clear" || this.track === "over";
+      const oneShot = this.track?.startsWith("clear") || this.track === "over";
       if (oneShot && !(this.songs?.done ?? false)) return;
       track = "shop";
     }
-    const key = track && (track === "stage" || track === "boss" ? `${track}:${stage}` : track);
-    if (key === this.track) return;
+    const key = track && (track === "stage" || track === "boss" || track === "clear" ? `${track}:${stage}` : track);
+    if (key === this.track) {
+      if (part !== this.part) {
+        this.part = part;
+        if (!this.previewing) this.songs?.part(part);
+      }
+      return;
+    }
     this.track = key;
+    this.part = part;
     this.song = songFor(track, stage);
-    if (!this.previewing) this.songs?.play(this.song, track === "hush" ? 2.5 : undefined);
+    if (this.previewing) return;
+    // A clear lets her theme stop dead under the explosion, then the fanfare. (The boss's winds, which
+    // break the stage theme off, come from their event: gust.)
+    const opts = track === "clear" ? { fade: 0.35, delay: 1.25 } : track === "hush" ? { fade: 2.5 } : {};
+    this.songs?.play(this.song, { ...opts, adaptive: true, part });
+  }
+  private part = "";
+
+  /**
+   * The boss's winds (boss:approach, the tick they blow the swarm away): they
+   * break the stage theme off, and the hush holds until her dialogue. The
+   * host's next music() finds the hush already playing.
+   */
+  gust(): void {
+    if (!this.track?.startsWith("stage:")) return;
+    this.track = "hush";
+    this.part = "";
+    this.song = null;
+    if (!this.previewing) this.songs?.blowAway();
   }
 
   /** How hard the run is going (0..1): extra layers (a busier drum kit) come in above a song's thresholds. */
   intensity(x: number): void {
-    this.songs?.intensity(x);
+    this.level = x;
+    if (!this.previewing) this.songs?.intensity(x);
+  }
+  private level = 0;
+
+  /** A spell card ends: a capture (or a bonus) gets a run of glass over the music, on its chord. */
+  flourish(result: "captured" | "broken" | "timeout"): void {
+    if (result !== "timeout" && !this.previewing) this.songs?.flourish(result);
   }
 
   /** The game is paused: the music sinks behind a lowpass. */
@@ -329,11 +372,34 @@ class Synth {
   }
   private isPaused = false;
 
-  /** Music room: plays a track by id instead of the game's music ("" stops it: silence); null hands the music back. */
+  /** Music room: plays a track by id instead of the game's music ("" stops it: silence), every layer in; null hands the music back. */
   listen(id: string | null): void {
     this.previewing = id !== null;
     this.preview = id ? (ROOM.find((t) => t.id === id)?.song ?? null) : null;
-    this.songs?.play(this.previewing ? this.preview : this.song, 0.4);
+    this.songs?.intensity(this.previewing ? 1 : this.level);
+    if (this.previewing) this.songs?.play(this.preview, { fade: 0.4 });
+    else this.songs?.play(this.song, { fade: 0.4, adaptive: true, part: this.part });
+  }
+
+  /** Music room: plays a track the way a run does, and moves it through the run's moments (a part name, "" for none). */
+  rehearse(id: string, part: string): void {
+    const song = ROOM.find((t) => t.id === id)?.song ?? null;
+    this.previewing = true;
+    if (this.preview !== song) {
+      this.preview = song;
+      this.songs?.play(song, { fade: 0.4, adaptive: true, part });
+    } else this.songs?.part(part);
+  }
+
+  /** Music room: the boss's winds, over the track playing. */
+  winds(): void {
+    this.songs?.blowAway();
+    this.preview = null;
+  }
+
+  /** The section playing (music room). */
+  section(): string | null {
+    return this.songs?.section() ?? null;
   }
 
   /** Music room: jumps the track playing to `bar`. */
@@ -356,6 +422,7 @@ const SONGS: Record<string, Song> = {
   menu: menuSong,
   shop: shopSong,
   clear: clearSong,
+  "clear:lake": lakeClearSong,
   over: overSong,
   "stage:lake": lakeSong,
   "boss:lake": cirnoSong,
