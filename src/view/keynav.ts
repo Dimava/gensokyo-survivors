@@ -242,7 +242,10 @@ function onDirection(e: KdsEvent, dx: number, dy: number): void {
 
 function activate(e: KdsEvent): void {
   const s = top();
-  if (!s || e.event.timeStamp - s.born < GRACE_MS) return;
+  if (!s) return;
+  // Or the browser's own Enter/Space activation clicks the control a second time (and past the grace).
+  e.event.preventDefault();
+  if (e.event.timeStamp - s.born < GRACE_MS) return;
   confirm(s);
 }
 
