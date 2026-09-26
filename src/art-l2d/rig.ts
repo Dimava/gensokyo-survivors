@@ -111,6 +111,11 @@ export interface Model {
   physics: Pendulum[];
   /** A flier (fairies, Cirno, Rumia): moving, the animator floats her along instead of walking her. */
   fly?: boolean;
+  /**
+   * The pose she stands in (a portrait's three-quarter turn, a tilt of the
+   * head): added by the animator to what it sets, so she looks about from it.
+   */
+  rest?: Record<string, number>;
 }
 
 // ---------------------------------------------------------------- building

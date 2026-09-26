@@ -332,8 +332,55 @@ export const PHYSICS: Pendulum[] = [
 ];
 
 /** A model from the standard rig plus a character's parts (the face included). */
-export function model(id: string, parts: Part[]): Model {
-  return { id, w: W, h: H, params: PARAMS, deformers: DEFORMERS, parts, physics: PHYSICS };
+export function model(id: string, parts: Part[], extra: BustExtra = {}): Model {
+  return {
+    id,
+    w: W,
+    h: H,
+    params: [...PARAMS, ...(extra.params ?? [])],
+    deformers: [...DEFORMERS, ...(extra.deformers ?? [])],
+    parts,
+    physics: [...PHYSICS, ...(extra.physics ?? [])],
+    ...(extra.rest ? { rest: extra.rest } : {}),
+  };
+}
+
+/** What a portrait adds to the standard rig: its own parameters, deformers and pendulums, and the pose it stands in (Model.rest). */
+export interface BustExtra {
+  params?: ParamDef[];
+  deformers?: Deformer[];
+  physics?: Pendulum[];
+  rest?: Record<string, number>;
+}
+
+/**
+ * Loose sleeves on a portrait: `SleeveSway` (+1 toward +x) swings their lower
+ * ends, more the further down, on a pendulum pushed by the body's turn, the
+ * head's and the breath: they lag a turn and settle after it.
+ */
+export const SLEEVE_SWAY: BustExtra = {
+  params: [{ id: "SleeveSway", min: -1, max: 1, def: 0 }],
+  physics: [
+    {
+      output: "SleeveSway",
+      inputs: [
+        { param: "BodyAngleX", weight: 1 / 8 },
+        { param: "AngleX", weight: 1 / 60 },
+        { param: "Breath", weight: 0.25 },
+      ],
+      stiffness: 18,
+      damping: 3.6,
+      gain: 1.5,
+    },
+  ],
+};
+
+/** A sleeve-sway warp over `rect`, hung from `parent`: points below `from` swing up to `amp` units at `to` and below. */
+export function sleeveSway(id: string, parent: string, rect: Rect, from: number, to: number, amp: number): Deformer {
+  return warp(id, parent, rect, 4, 6, [["SleeveSway", SWAY]], (x, y, [f = 0]) => {
+    const k = clamp01((y - from) / (to - from)) ** 1.5;
+    return [x + f * amp * k, y - Math.abs(f) * amp * 0.15 * k];
+  });
 }
 
 /**

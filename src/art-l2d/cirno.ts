@@ -97,23 +97,91 @@ const bow = `${bowLobe}${mirrorSvg(bowLobe)}
 <rect x="204" y="98" width="32" height="34" rx="10" fill="${BOW.base}" ${ln(BOW.line, 2.4)}/>
 <path d="M210 106 Q220 102 230 106" fill="none" ${ln("#fff", 2)} opacity="0.45"/>`;
 
+// ---------------------------------------------------------------- the second body (shoulders, a waist, hands on her hips)
+
+/** The blouse's shoulders and chest above the pinafore, sloping softly from the neck. */
+const blouse2 = `
+<path d="M198 382 C178 392 160 398 148 410 C138 422 138 438 144 452 L296 452 C302 438 302 422 292 410 C280 398 262 392 242 382 Z" fill="${WHITE.base}" ${ln(WHITE.line)}/>
+<path d="M150 424 C160 436 172 446 184 452 L146 452 Z M290 424 C280 436 268 446 256 452 L294 452 Z" fill="${WHITE.shade}"/>`;
+
+/** The pinafore: a fitted bodice, a waist, and the skirt flaring out below it. */
+const dress2 = `
+<path d="M162 444 C190 454 250 454 278 444 C284 482 280 524 264 562 C262 568 262 572 264 578 C282 598 298 622 310 646 L130 646 C142 622 158 598 176 578 C178 572 178 568 176 562 C160 524 156 482 162 444 Z" fill="${BLUE.base}" ${ln(BLUE.line)}/>
+<path d="M162 444 C156 482 160 524 176 562 C178 568 178 572 176 578 C158 598 142 622 130 646 L164 646 C170 620 180 598 192 580 C184 548 176 510 176 470 C176 458 170 448 162 444 Z" fill="${BLUE.shade}"/>
+<path d="M278 444 C284 482 280 524 264 562 C262 568 262 572 264 578 C282 598 298 622 310 646 L282 646 C274 620 262 598 250 580 C258 548 264 510 264 470 C264 458 270 448 278 444 Z" fill="${BLUE.shade}" opacity="0.75"/>
+<path d="M166 450 C194 460 246 460 274 450" fill="none" ${ln(BLUE.light, 3)} opacity="0.8"/>
+<path d="M182 488 Q200 508 216 500 M258 488 Q240 508 224 500" fill="none" ${ln(BLUE.shade, 2.4)} opacity="0.85"/>
+<path d="M200 520 C204 540 206 552 204 566 M240 520 C236 540 234 552 236 566" fill="none" ${ln(BLUE.shade, 2)} opacity="0.6"/>
+<path d="M176 568 C200 576 240 576 264 568" fill="none" ${ln(BLUE.line, 2)}/>
+<path d="M177 573 C200 581 240 581 263 573" fill="none" ${ln(BLUE.light, 2)} opacity="0.7"/>
+<path d="M196 584 C186 606 176 626 168 646 M220 586 L220 646 M244 584 C254 606 264 626 272 646" fill="none" ${ln(BLUE.shade, 2.4)}/>`;
+
+/**
+ * An arm akimbo (screen left; the right mirrors it): from under the puffed
+ * sleeve the upper arm goes down and out to the elbow, the forearm comes back
+ * in and the hand rests on her hip, the knuckles out.
+ */
+const armAkimbo = `
+<path d="M120 452 C104 486 88 516 74 542 C68 556 74 568 88 570 C112 572 140 574 162 576 L164 554 C142 550 124 546 106 544 C120 520 138 494 160 466 Z" fill="${SKIN.base}" ${ln(SKIN.line)}/>
+<path d="M124 468 C112 494 98 518 86 538 C90 546 96 548 104 546 C114 526 128 504 144 484 Z" fill="${SKIN.shade}" opacity="0.8"/>
+<path d="M88 568 C112 570 140 572 160 574 L160 567 C138 565 116 563 96 561 Z" fill="${SKIN.shade}" opacity="0.8"/>
+<path d="M78 552 C80 558 84 562 92 562" fill="none" ${ln(SKIN.line, 1.4)} opacity="0.5"/>
+<path d="M156 558 C158 548 170 544 180 548 C190 552 192 566 188 576 C184 586 170 588 162 582 C156 578 154 568 156 558 Z" fill="${SKIN.base}" ${ln(SKIN.line, 2.2)}/>
+<path d="M176 552 C182 560 184 570 180 580 M168 550 C172 558 174 570 170 582" fill="none" ${ln(SKIN.line, 1.4)} opacity="0.55"/>
+<path d="M160 578 C166 584 176 586 184 580" fill="none" ${ln(SKIN.shade, 2.6)}/>`;
+
+/** The puffed sleeve over the shoulder, gathered into a blue band. */
+const puff2 = `
+<path d="M190 392 C156 390 124 402 116 428 C112 446 124 462 144 464 C160 466 176 458 184 444 Z" fill="${WHITE.base}" ${ln(WHITE.line)}/>
+<path d="M120 440 C132 454 154 458 178 448 L182 456 C162 466 132 468 118 454 Z" fill="${WHITE.shade}"/>
+<path d="M154 398 C148 412 146 426 150 444 M134 408 C130 420 130 434 134 448" fill="none" ${ln(WHITE.shade, 2)}/>
+<path d="M118 456 C132 470 160 470 182 458" fill="none" ${ln(BLUE.base, 6)}/>
+<path d="M120 458 C134 471 160 471 180 460" fill="none" ${ln(BLUE.light, 1.6)} opacity="0.7"/>`;
+
 // ---------------------------------------------------------------- parts
 
-const parts: Part[] = [
+/** Wings, hair, bow, neck, collar, ribbon and face: the same on both bodies. */
+const head: Part[] = [
   { id: "wingsL", parent: "body", order: 0, rect: { x: 10, y: 330, w: 190, h: 220 }, mesh: grid(4, 4), svg: wingsL },
   { id: "backHair", parent: "back", order: 1, rect: { x: 96, y: 122, w: 248, h: 272 }, mesh: grid(8, 8), svg: backHair },
   { id: "bow", parent: "bow", order: 2, rect: { x: 100, y: 56, w: 240, h: 112 }, mesh: grid(8, 4), svg: bow },
-  { id: "skin", parent: "body", order: 10, rect: { x: 94, y: 430, w: 252, h: 216 }, mesh: grid(8, 4), svg: skinArms },
   { id: "neck", parent: "neckTop", order: 11, rect: { x: 196, y: 306, w: 48, h: 96 }, mesh: grid(2, 4), svg: neck },
-  { id: "blouse", parent: "body", order: 12, rect: { x: 134, y: 376, w: 172, h: 100 }, mesh: grid(6, 3), svg: blouse },
-  { id: "dress", parent: "body", order: 13, rect: { x: 136, y: 434, w: 168, h: 212 }, mesh: grid(6, 6), svg: dress },
-  { id: "puffL", parent: "body", order: 14, rect: { x: 98, y: 384, w: 92, h: 90 }, mesh: grid(3, 3), svg: puffL },
-  { id: "collar", parent: "body", order: 15, rect: { x: 174, y: 372, w: 92, h: 48 }, mesh: grid(3, 2), svg: collar },
-  { id: "ribbon", parent: "body", order: 16, rect: { x: 180, y: 386, w: 80, h: 58 }, mesh: grid(3, 2), svg: ribbon },
+  { id: "collar", parent: "body", order: 19, rect: { x: 174, y: 372, w: 92, h: 48 }, mesh: grid(3, 2), svg: collar },
+  { id: "ribbon", parent: "body", order: 20, rect: { x: 180, y: 386, w: 80, h: 58 }, mesh: grid(3, 2), svg: ribbon },
   ...faceParts({ eye: EYE, brow: HAIR.shade }),
   { id: "sideL", parent: "side", order: 50, rect: { x: 104, y: 224, w: 50, h: 128 }, mesh: grid(2, 6), svg: sideL },
   { id: "bangs", parent: "bangs", order: 52, rect: { x: 98, y: 118, w: 244, h: 192 }, mesh: grid(10, 8), svg: bangsArt(TIPS, HAIR) },
 ];
-parts.push(...["wingsL", "puffL", "sideL"].map((id) => mirror(parts.find((p) => p.id === id)!)));
+head.push(...["wingsL", "sideL"].map((id) => mirror(head.find((p) => p.id === id)!)));
 
-export const cirno = model("cirno", parts);
+/** The first body (a straight tube, the arms hanging straight), kept to compare in the lab. */
+const puffV1: Part = { id: "puffL", parent: "body", order: 14, rect: { x: 98, y: 384, w: 92, h: 90 }, mesh: grid(3, 3), svg: puffL };
+export const cirnoV1 = model("cirno", [
+  ...head,
+  { id: "skin", parent: "body", order: 10, rect: { x: 94, y: 430, w: 252, h: 216 }, mesh: grid(8, 4), svg: skinArms },
+  { id: "blouse", parent: "body", order: 12, rect: { x: 134, y: 376, w: 172, h: 100 }, mesh: grid(6, 3), svg: blouse },
+  { id: "dress", parent: "body", order: 13, rect: { x: 136, y: 434, w: 168, h: 212 }, mesh: grid(6, 6), svg: dress },
+  puffV1,
+  mirror(puffV1),
+]);
+
+/**
+ * Cirno: chin up, head cocked, hands on her hips, elbows out: the strongest
+ * there is. Rounded shoulders under puffed sleeves, a fitted pinafore with a
+ * waist and a skirt flaring below it.
+ */
+const arm: Part = { id: "armL", parent: "body", order: 17, rect: { x: 62, y: 444, w: 134, h: 150 }, mesh: grid(5, 5), svg: armAkimbo };
+const puff: Part = { id: "puffL", parent: "body", order: 18, rect: { x: 108, y: 384, w: 84, h: 92 }, mesh: grid(3, 3), svg: puff2 };
+export const cirno = model(
+  "cirno",
+  [
+    ...head,
+    { id: "blouse", parent: "body", order: 12, rect: { x: 134, y: 376, w: 172, h: 82 }, mesh: grid(6, 3), svg: blouse2 },
+    { id: "dress", parent: "body", order: 13, rect: { x: 126, y: 438, w: 188, h: 208 }, mesh: grid(6, 8), svg: dress2 },
+    arm,
+    mirror(arm),
+    puff,
+    mirror(puff),
+  ],
+  { rest: { AngleY: 7, AngleZ: 7, BodyAngleX: -3 } },
+);

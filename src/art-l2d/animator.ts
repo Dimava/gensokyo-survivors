@@ -285,6 +285,9 @@ export class Animator {
     if (fly > 0) r.set("AngleY", (r.params.AngleY ?? 0) - this.dir.y * FLY.lean * fly);
     // (Looking far to one side while walking that way would turn the body past its range: it eases into it.)
     r.set("BodyAngleX", 10 * soft((lx * BODY + lean * (7 * walk + 3 * slow + FLY.turn * fly) + w * SHIFT.turn) / 10));
+    // The model's own stance (a portrait's three-quarter turn and tilt), under all of it.
+    const rest = r.model.rest;
+    if (rest) for (const k in rest) r.set(k, (r.params[k] ?? 0) + rest[k]!);
     const down = this.down;
     const recoil = this.recoil;
     // The ground is the side she was knocked to (+x for knock +1, the side the field tips her onto).

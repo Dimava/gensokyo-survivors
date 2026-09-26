@@ -9,8 +9,13 @@ import { Animator, pose } from "./animator.ts";
 import { FILM } from "./film.ts";
 import { SHOULDER } from "./chibi.ts";
 import { partImages, RigView, sharedRenderer } from "./pixi-model.ts";
-import { Rig, type Params } from "./rig.ts";
+import { Rig, type Model, type Params } from "./rig.ts";
 import { RATE } from "./tempo.ts";
+import { reimuV1 } from "./reimu.ts";
+import { cirnoV1 } from "./cirno.ts";
+
+/** Earlier looks of the portraits, to compare in the lab (bun scripts/l2d-lab.ts reimu.v1,reimu). */
+const EARLIER: Record<string, Model> = { "reimu.v1": reimuV1, "cirno.v1": cirnoV1 };
 
 export interface LabPose {
   look?: Look;
@@ -38,7 +43,7 @@ export async function renderPoses(id: string, poses: LabPose[], scale = 1, crop?
   // "fairy.sprite" picks a sprite rig; a bare id the portrait (or the sprite when there is none).
   const [who, kind] = id.split(".");
   const set = ART_L2D[who!];
-  const model = kind === "sprite" || !set?.portrait ? set?.sprite?.model : set.portrait;
+  const model = EARLIER[id] ?? (kind === "sprite" || !set?.portrait ? set?.sprite?.model : set.portrait);
   if (!model) throw new Error(`no model ${id}`);
   const c = crop ?? { x: 0, y: 0, w: model.w, h: model.h };
   const renderer = await sharedRenderer();
@@ -53,6 +58,7 @@ export async function renderPoses(id: string, poses: LabPose[], scale = 1, crop?
   for (const p of poses) {
     for (const d of model.params) rig.params[d.id] = d.def;
     pose(rig, p.look ?? { x: 0, y: 0 });
+    for (const [k, v] of Object.entries(model.rest ?? {})) rig.set(k, (rig.params[k] ?? 0) + v);
     for (const [k, v] of Object.entries(p.params ?? {})) rig.set(k, v);
     view.update();
     out.push(await renderer.extract.base64({ target: root, frame, resolution: 1 }));
