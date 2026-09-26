@@ -6,6 +6,8 @@ import { Container, Rectangle } from "pixi.js";
 import { LOOKS, type Look } from "../art/drawing.ts";
 import { ART_L2D } from "./index.ts";
 import { Animator, pose } from "./animator.ts";
+import { FILM } from "./film.ts";
+import { SHOULDER } from "./chibi.ts";
 import { partImages, RigView, sharedRenderer } from "./pixi-model.ts";
 import { Rig, type Params } from "./rig.ts";
 import { RATE } from "./tempo.ts";
@@ -99,76 +101,176 @@ export async function renderGait(id: string, cols = 6, scale = 1.5): Promise<{ u
   return { urls, labels };
 }
 
+/** The film's frame (model units, room for her lying down to either side) and where her feet stand in it: knocked out she tips onto her right (+x) side (knock +1), so they stand left of the middle. */
+const FILM_W = 320;
+const FILM_H = 290;
+const FILM_FEET = { x: 100, y: 200 };
+/** Her middle (100, 120) above her feet (y 188): the tip turns about it, kept this far above the feet, a turn about the feet. */
+const FILM_LEG = 68;
+
+/** Place the film's holder (pivot at her middle) tipped over by `turn` and lifted by `lift` (model units), as renderer.ts tipOver does. */
+function placeFilm(holder: Container, turn: number, lift: number, scale: number): void {
+  holder.rotation = turn;
+  holder.position.set((FILM_FEET.x + FILM_LEG * Math.sin(turn)) * scale, (FILM_FEET.y - lift - FILM_LEG * Math.cos(turn)) * scale);
+}
+
 /**
- * A film strip of a sprite rig through the states the field puts it in, a
- * row each: standing, walking right, walking down, backpedalling with focus
- * (facing right, moving left), the hit (a hit-stop, then flung), lying down,
- * and standing again after it. Each row runs on from the one before (the
- * springs carry over, as in a run) and is sampled `cols` times over about a
- * second. Returns PNG data URLs row by row, and the labels.
+ * A film strip of a sprite rig through the FILM rows, each sampled `cols`
+ * times over `span` seconds, tipped over as the field tips her when she is
+ * knocked out. Returns PNG data URLs row by row, and the labels.
  */
-export async function renderFilm(id: string, cols = 6, scale = 1): Promise<{ urls: string[]; labels: string[] }> {
+export async function renderFilm(id: string, cols = 6, scale = 1, span = 1, only?: string[]): Promise<{ urls: string[]; labels: string[] }> {
   const sr = ART_L2D[id]?.sprite;
   if (!sr) throw new Error(`no sprite rig ${id}`);
   const renderer = await sharedRenderer();
   const rig = new Rig(sr.model);
   const view = new RigView(rig, await partImages(sr.model));
-  view.scale.set(scale);
+  // Turned about her middle (100, 120), which is kept above her feet (100, 188) as she tips: a turn about the feet.
+  const holder = new Container();
+  holder.addChild(view);
+  holder.pivot.set(100, 120);
+  holder.scale.set(scale);
   const root = new Container();
-  root.addChild(view);
-  const frame = new Rectangle(0, 0, sr.model.w * scale, sr.model.h * scale);
+  root.addChild(holder);
+  const frame = new Rectangle(0, 0, FILM_W * scale, FILM_H * scale);
   const urls: string[] = [];
   const labels: string[] = [];
   const anim = new Animator(rig, () => 0.99);
   anim.rate = sr.rate;
   anim.snap();
-  type Row = { name: string; set: (a: Animator, u: number) => void; dt?: (u: number) => number; settle?: number };
-  const still = { x: 0, y: 0 };
-  const rows: Row[] = [
-    { name: "stand", set: (a) => ((a.move = still), (a.target = { x: 0.2, y: 0.3 })), settle: 1 },
-    { name: "walk right", set: (a) => ((a.move = { x: 1, y: 0 }), (a.target = { x: 0.8, y: 0 })), settle: 1 },
-    { name: "walk down", set: (a) => ((a.move = { x: 0, y: 1 }), (a.target = { x: 0, y: 0.8 })), settle: 0.5 },
-    {
-      name: "focus backpedal",
-      set: (a) => {
-        a.move = { x: -1, y: 0 };
-        a.slow = true;
-        a.face = { x: 1, y: 0 };
-        a.target = { x: 0.8, y: 0 };
-      },
-      settle: 1,
-    },
-    {
-      name: "hit",
-      set: (a, u) => {
-        a.move = still;
-        a.slow = false;
-        a.face = null;
-        a.knock = -1;
-        a.recoil = u < 0.3 ? 1 : 1 - 0.6 * ((u - 0.3) / 0.7);
-        a.down = u < 0.3 ? 0 : 0.55 * ((u - 0.3) / 0.7);
-      },
-      // The hit-stop: the first frames do not advance time.
-      dt: (u) => (u < 0.3 ? 0 : 1 / 60),
-    },
-    { name: "down", set: (a) => ((a.recoil = 0), (a.knock = 0), (a.down = 1)) },
-    { name: "up again", set: (a) => ((a.down = 0), (a.target = { x: 0, y: 0.2 })), settle: 0.3 },
-  ];
-  for (const row of rows) {
+  const steps = Math.max(1, Math.round((span * 60) / cols));
+  for (const row of FILM) {
+    const shown = !only?.length || only.some((n) => row.name.startsWith(n));
     row.set(anim, 0);
     for (let i = 0; i < Math.round((row.settle ?? 0) * 60); i++) anim.step(1 / 60);
-    const per = Math.round(60 / cols);
     for (let c = 0; c < cols; c++) {
-      for (let i = 0; i < per; i++) {
-        const u = (c * per + i) / (cols * per);
+      for (let i = 0; i < steps; i++) {
+        const u = (c * steps + i) / (cols * steps);
         row.set(anim, u);
         anim.step(row.dt ? row.dt(u) : 1 / 60);
       }
+      // Every frame is drawn, shown or not, as the field draws them.
       view.update();
-      urls.push(await renderer.extract.base64({ target: root, frame, resolution: 1 }));
+      const turn = row.tip ? row.tip(anim, (c + 1) / cols) : 0;
+      placeFilm(holder, turn, row.tip ? anim.recoil * 24 : 0, scale);
+      const url = await renderer.extract.base64({ target: root, frame, resolution: 1 });
+      if (!shown) continue;
+      urls.push(url);
       labels.push(`${row.name} ${c + 1}`);
     }
   }
   root.destroy({ children: true });
   return { urls, labels };
+}
+
+/** One film row traced frame by frame (traceFilm). */
+export interface TraceRow {
+  name: string;
+  /** Onion-skin frames (PNG data URLs), every `every` steps, the last one at the row's end. */
+  frames: string[];
+  /** Tracked points per step, in frame pixels: x0, y0, x1, y1, ... */
+  pts: Record<string, number[]>;
+  /** Parameter values per step. */
+  params: Record<string, number[]>;
+}
+
+/** The parameters traceFilm records. */
+export const TRACED = ["ArmL", "ArmR", "ArmLBend", "ArmRBend", "Bob", "Step", "Sleeve", "HairSide", "AngleZ", "BodyAngleX"];
+
+/**
+ * The film's motion as data, for judging it the way an animator does (arcs,
+ * spacing, overlap, follow-through): every FILM row stepped at 60 fps, with
+ * the hand ends (each arm part's vertex farthest from its shoulder), the
+ * elbows (the vertex nearest halfway), the head and the hem traced each step
+ * as the field would place them (tipped over when knocked out), the arm and
+ * body parameters recorded, and onion-skin frames every `every` steps.
+ */
+export async function traceFilm(id: string, scale = 1, span = 1, only?: string[], every = 6): Promise<{ w: number; h: number; rows: TraceRow[] }> {
+  const sr = ART_L2D[id]?.sprite;
+  if (!sr) throw new Error(`no sprite rig ${id}`);
+  const renderer = await sharedRenderer();
+  const model = sr.model;
+  const rig = new Rig(model);
+  const view = new RigView(rig, await partImages(model));
+  const holder = new Container();
+  holder.addChild(view);
+  holder.pivot.set(100, 120);
+  holder.scale.set(scale);
+  const root = new Container();
+  root.addChild(holder);
+  const frame = new Rectangle(0, 0, FILM_W * scale, FILM_H * scale);
+  const index = new Map(model.parts.map((p, i) => [p.id, i]));
+  const out = model.parts.map((p) => new Float32Array(rig.meshes[p.id]!.rest.length));
+  const opacity = new Float64Array(model.parts.length);
+  // Tracked vertices: [name, part index, vertex index] (-1: the part's mean).
+  const tracked: [string, number, number][] = [];
+  for (const [side, sx] of [
+    ["L", SHOULDER[0]],
+    ["R", 200 - SHOULDER[0]],
+  ] as const) {
+    const p = index.get(`arm${side}`);
+    if (p === undefined) continue;
+    const rest = rig.meshes[`arm${side}`]!.rest;
+    const dist = (v: number) => Math.hypot(rest[v * 2]! - sx, rest[v * 2 + 1]! - SHOULDER[1]);
+    let far = 0;
+    for (let v = 0; v < rest.length / 2; v++) if (dist(v) > dist(far)) far = v;
+    let mid = 0;
+    for (let v = 0; v < rest.length / 2; v++) if (Math.abs(dist(v) - dist(far) / 2) < Math.abs(dist(mid) - dist(far) / 2)) mid = v;
+    tracked.push([`hand${side}`, p, far], [`elbow${side}`, p, mid]);
+  }
+  for (const name of ["face", "dress"]) if (index.has(name)) tracked.push([name, index.get(name)!, -1]);
+  const anim = new Animator(rig, () => 0.99);
+  anim.rate = sr.rate;
+  anim.snap();
+  const rows: TraceRow[] = [];
+  const steps = Math.max(1, Math.round(span * 60));
+  for (const row of FILM) {
+    const shown = !only?.length || only.some((n) => row.name.startsWith(n));
+    row.set(anim, 0);
+    for (let i = 0; i < Math.round((row.settle ?? 0) * 60); i++) anim.step(1 / 60);
+    const tr: TraceRow = { name: row.name, frames: [], pts: {}, params: {} };
+    for (const [name] of tracked) tr.pts[name] = [];
+    for (const k of TRACED) tr.params[k] = [];
+    for (let i = 0; i < steps; i++) {
+      const u = i / steps;
+      row.set(anim, u);
+      anim.step(row.dt ? row.dt(u) : 1 / 60);
+      if (!shown) continue;
+      const turn = row.tip ? row.tip(anim, (i + 1) / steps) : 0;
+      const lift = row.tip ? anim.recoil * 24 : 0;
+      rig.deformInto(out, opacity);
+      const c = Math.cos(turn);
+      const s = Math.sin(turn);
+      const px = FILM_FEET.x + FILM_LEG * s;
+      const py = FILM_FEET.y - lift - FILM_LEG * c;
+      for (const [name, p, v] of tracked) {
+        const pos = out[p]!;
+        let x = 0;
+        let y = 0;
+        if (v >= 0) {
+          x = pos[v * 2]!;
+          y = pos[v * 2 + 1]!;
+        } else {
+          for (let q = 0; q < pos.length; q += 2) {
+            x += pos[q]!;
+            y += pos[q + 1]!;
+          }
+          x /= pos.length / 2;
+          y /= pos.length / 2;
+        }
+        const dx = x - 100;
+        const dy = y - 120;
+        tr.pts[name]!.push((px + dx * c - dy * s) * scale, (py + dx * s + dy * c) * scale);
+      }
+      for (const k of TRACED) tr.params[k]!.push(rig.params[k] ?? 0);
+      if ((i + 1) % every === 0 || i === steps - 1) {
+        view.update();
+        placeFilm(holder, turn, lift, scale);
+        tr.frames.push(await renderer.extract.base64({ target: root, frame, resolution: 1 }));
+      }
+    }
+    if (shown) rows.push(tr);
+  }
+  root.destroy({ children: true });
+  return { w: FILM_W * scale, h: FILM_H * scale, rows };
 }

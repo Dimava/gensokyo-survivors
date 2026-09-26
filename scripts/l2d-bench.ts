@@ -6,6 +6,7 @@
 //     [--modes reference,current] [--group] [--rebuild] [--portraits] [--idle] [--frames 240] [--repeat 3]
 //     [--resolution 2] [--cpu] [--json out.json]
 // --cpu: software GL (SwiftShader) instead of the GPU. --group, --rebuild, --portraits: bench.ts BenchOptions.
+// PW_WS=<ws endpoint>: use a browser already running (playwright launchServer; its own flags apply) instead of launching one.
 import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -32,7 +33,8 @@ const pwPath = process.env.PW ?? join(tmpdir(), "rec/node_modules/playwright-cor
 const { chromium } = (await import(pwPath)) as { chromium: any };
 // The GPU: ANGLE on Direct3D 11 (headless Chrome falls back to SwiftShader without these).
 const gpuArgs = flag("cpu") ? [] : ["--use-angle=d3d11", "--enable-gpu", "--ignore-gpu-blocklist"];
-const browser = await chromium.launch({ args: gpuArgs });
+const ws = process.env.PW_WS;
+const browser = ws ? await chromium.connect(ws) : await chromium.launch({ args: gpuArgs });
 try {
   const p = await browser.newPage();
   p.on("pageerror", (e: Error) => console.error("pageerror:", e.message));

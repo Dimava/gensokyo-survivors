@@ -264,6 +264,18 @@ interface CompiledOpacity {
   forms: Float64Array;
 }
 
+/**
+ * A soft limit to ±1: exact up to ±0.6, then easing into ±1 rather than
+ * pinning there. Something that swings into a hard limit sticks at it for a
+ * while and leaves it with a jerk; this keeps the swing round to the end.
+ */
+export function soft(v: number): number {
+  const a = Math.abs(v);
+  if (a <= 0.6) return v;
+  const s = 0.6 + 0.4 * Math.tanh((a - 0.6) / 0.4);
+  return v < 0 ? -s : s;
+}
+
 export interface PartFrame {
   id: string;
   /** Deformed vertex positions in model space. */
@@ -377,22 +389,33 @@ export class Rig {
     this.params[id] = def ? Math.max(def.min, Math.min(def.max, v)) : v;
   }
 
-  /** Advance the pendulums by `dt` seconds (call before evaluate). */
+  /**
+   * Advance the pendulums by `dt` seconds (call before evaluate). With no time
+   * passing (0: a hit-stop) they hold where they are, and their outputs show
+   * how far they now lag their inputs: a pose that jumped leaves the hair
+   * behind, and the swing goes on from there when time runs again.
+   */
   step(dt: number): void {
-    const h = Math.min(dt, 0.05);
+    const h = Math.max(0, Math.min(dt, 0.05));
     for (const pen of this.model.physics) {
       let target = 0;
       for (const i of pen.inputs) target += (this.params[i.param] ?? 0) * i.weight;
       let st = this.swing.get(pen);
       if (!st) this.swing.set(pen, (st = { pos: target, vel: 0 }));
       // Two substeps keep stiff springs stable at low frame rates.
-      for (let k = 0; k < 2; k++) {
-        const acc = pen.stiffness * (target - st.pos) - pen.damping * st.vel;
-        st.vel += acc * (h / 2);
-        st.pos += st.vel * (h / 2);
-      }
-      this.params[pen.output] = Math.max(-1, Math.min(1, (st.pos - target) * pen.gain));
+      if (h > 0)
+        for (let k = 0; k < 2; k++) {
+          const acc = pen.stiffness * (target - st.pos) - pen.damping * st.vel;
+          st.vel += acc * (h / 2);
+          st.pos += st.vel * (h / 2);
+        }
+      this.params[pen.output] = soft((st.pos - target) * pen.gain);
     }
+  }
+
+  /** Stop every pendulum where its inputs are (the next step starts them there, unswung). */
+  settle(): void {
+    this.swing.clear();
   }
 
   /**

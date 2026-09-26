@@ -37,11 +37,51 @@ export const CHIBI_PARAMS: ParamDef[] = [
   /** Each arm about its shoulder: +1 swung out and up, away from the body; -1 in, across it. */
   { id: "ArmL", min: -1, max: 1, def: 0 },
   { id: "ArmR", min: -1, max: 1, def: 0 },
+  /** Each forearm (or sleeve end) bent further the same way, +1 out: it trails the arm's swing and overshoots it. */
+  { id: "ArmLBend", min: -1, max: 1, def: 0 },
+  { id: "ArmRBend", min: -1, max: 1, def: 0 },
+  /** The big arm motions past the swing, about the shoulder (+1 out and up): thrown up by a hit, flopped toward the ground when she lies on it. */
+  { id: "ArmLFall", min: -1, max: 1, def: 0 },
+  { id: "ArmRFall", min: -1, max: 1, def: 0 },
+  /**
+   * How fast she moves across the field (+1: full speed toward +x), as the
+   * animator eases it: an input of the physics, so hands, sleeves and hair lag
+   * as she sets off and swing on past when she stops.
+   */
+  { id: "MoveX", min: -1, max: 1, def: 0 },
+  /** Hurt faces: the wince of a hit (eyes squeezed to "> <", a gasp), and knocked out (spinning swirls for eyes; DizzySpin turns them, 0..1 a turn). */
+  { id: "Wince", min: 0, max: 1, def: 0 },
+  { id: "Dizzy", min: 0, max: 1, def: 0 },
+  { id: "DizzySpin", min: 0, max: 1, def: 0 },
 ];
 
-/** The left shoulder (the right mirrors it), and how far (degrees) an arm swings at ArmL = ±1. */
+/** The left shoulder (the right mirrors it), and how far (degrees) an arm swings at ArmL = ±1, and turns at ArmLFall = ±1. */
 export const SHOULDER: [number, number] = [80, 122];
 const ARM_SWING = 18;
+const ARM_FALL = 60;
+/** How far (degrees) the hand end bends at ArmLBend = ±1; the bend grows from nothing at the shoulder to full at ARM_REACH units out. */
+const ARM_BEND = 24;
+const ARM_REACH = 46;
+
+/** One arm's deformers: the big turn about the shoulder (a fling, a flop), the swing on it, and a bend under them that curls the far end. */
+function armDeformers(s: "L" | "R"): Deformer[] {
+  const sx = s === "L" ? SHOULDER[0] : CW - SHOULDER[0];
+  const sy = SHOULDER[1];
+  const out = s === "L" ? 1 : -1;
+  const rect: Rect = s === "L" ? { x: 0, y: 100, w: 104, h: 96 } : { x: 96, y: 100, w: 104, h: 96 };
+  return [
+    rotation(`armFall${s}`, "sleeves", [sx, sy], [[`Arm${s}Fall`, SWAY]], ([a = 0]) => ({ angle: out * a * ARM_FALL })),
+    // The swing foreshortens the arm a little (swung forward or back).
+    rotation(`arm${s}`, `armFall${s}`, [sx, sy], [[`Arm${s}`, SWAY]], ([a = 0]) => ({ angle: out * a * ARM_SWING, scale: 1 - 0.05 * Math.abs(a) })),
+    warp(`armBend${s}`, `arm${s}`, rect, 6, 6, [[`Arm${s}Bend`, SWAY]], (x, y, [b = 0]) => {
+      const dx = x - sx;
+      const dy = y - sy;
+      const t = clamp01((Math.hypot(dx, dy) - 6) / (ARM_REACH - 6));
+      const a = (out * b * ARM_BEND * t * t * (3 - 2 * t) * Math.PI) / 180;
+      return [sx + dx * Math.cos(a) - dy * Math.sin(a), sy + dx * Math.sin(a) + dy * Math.cos(a)];
+    }),
+  ];
+}
 
 /** The left eye: centre, lid line (where it closes) and warp rect. */
 const EYE = { cx: 82, lid: 92, rect: { x: 62, y: 62, w: 40, h: 44 } };
@@ -66,6 +106,8 @@ function eyeWarps(side: "L" | "R"): Deformer[] {
       ["EyeBallX", [-1, 0, 1]],
       ["EyeBallY", [-1, 0, 1]],
     ], ([ex = 0, ey = 0]) => ({ x: ex * 3.5, y: -ey * 2.5 })),
+    // The knocked-out swirl turns about the eye's middle (the right one the other way, mirrored).
+    rotation(`swirl${side}`, "feat", [m(84.6), 89], [["DizzySpin", [0, 1]]], ([s = 0]) => ({ angle: (side === "L" ? 1 : -1) * s * 360 })),
   ];
 }
 
@@ -131,32 +173,42 @@ export function chibiDeformers(opts: ChibiRig = {}): Deformer[] {
       const k = clamp01((y - 124) / 56);
       return [x + f * 10 * k, y - Math.abs(f) * 3 * k];
     }),
-    // Each arm turns about its shoulder, the swing foreshortening it a little (swung forward or back).
-    ...(["L", "R"] as const).map((s) =>
-      rotation(`arm${s}`, "sleeves", [s === "L" ? SHOULDER[0] : CW - SHOULDER[0], SHOULDER[1]], [[`Arm${s}`, SWAY]], ([a = 0]) => ({
-        angle: (s === "L" ? 1 : -1) * a * ARM_SWING,
-        scale: 1 - 0.05 * Math.abs(a),
-      })),
-    ),
+    ...armDeformers("L"),
+    ...armDeformers("R"),
     warp("feet", "body", { x: 70, y: 170, w: 60, h: 30 }, 2, 1, [["Step", SWAY]], (x, y, [f = 0]) => [x, y - 6 * Math.max(0, (x < 100 ? 1 : x > 100 ? -1 : 0) * f)]),
     wingWarp("L", wing.root, wing.amp),
     wingWarp("R", wing.root, wing.amp),
   ];
 }
 
+/** Chibi weights of the portrait pendulums' inputs, as a fraction of the portraits' (see CHIBI_PHYSICS). */
+const CHIBI_INPUT: Record<string, Record<string, number>> = { HairSide: { AngleX: 0.7, BodyAngleX: 0.4 }, HairBack: { AngleX: 0.7, BodyAngleX: 0.4 }, Ribbon: { AngleY: 0.25 } };
+
 /**
  * The portrait pendulums, also pushed by the bob so a floating fairy's hair
- * and ribbons sway; and one per arm: the hands lag the bob (flaring out as she
- * sinks, dropping in as she rises) and the body's turn (the arm on the far
- * side swings out), then settle.
+ * and ribbons sway (their trail as she moves is the animator's). Two inputs
+ * are gentler than the portraits': the body's turn on the side and back hair
+ * (walking, a chibi's body turns ten degrees into the move, twenty turning
+ * round, which would throw the hair to its limits and hold it there on top of
+ * the trail), and the nod on the ribbon (on the flinch of a hit the head snaps
+ * back, and the ribbon would fly the same way whichever side the hit came
+ * from; the animator flings it away from the hit). One per arm:
+ * the hands lag the bob (flaring out as she sinks, dropping in as she rises),
+ * the body's turn (the arm on the far side swings out) and the move across
+ * (trailing as she sets off, swinging forward as she stops), then settle,
+ * about one and a half swings a second.
  */
 const CHIBI_PHYSICS: Pendulum[] = [
-  ...PHYSICS.map((p) => ({ ...p, inputs: [...p.inputs, { param: "Bob", weight: 0.35 }] })),
+  ...PHYSICS.map((p) => ({
+    ...p,
+    inputs: [...p.inputs.map((i) => ({ ...i, weight: i.weight * (CHIBI_INPUT[p.output]?.[i.param] ?? 1) })), { param: "Bob", weight: 0.15 }],
+  })),
   ...(["L", "R"] as const).map((s) => ({
     output: `Arm${s}`,
     inputs: [
-      { param: "Bob", weight: -0.35 },
-      { param: "BodyAngleX", weight: (s === "L" ? -1 : 1) / 10 },
+      { param: "Bob", weight: -0.15 },
+      { param: "BodyAngleX", weight: (s === "L" ? -1 : 1) / 20 },
+      { param: "MoveX", weight: (s === "L" ? -1 : 1) * 0.25 },
     ],
     stiffness: 90,
     damping: 9,
@@ -221,22 +273,34 @@ export function chibiFace(f: ChibiFace): Part[] {
 <path d="M68 84 L62 80 L67 90 Z" fill="${f.eye.lash}"/>`;
   const closed = f.mouth === "o" ? `<ellipse cx="100" cy="107" rx="3.5" ry="3" fill="#8a1f2e" ${ln("#4e0c16", 1.6)}/>` : f.mouth === "grin" ? `<path d="M93 104 Q100 111 107 104 Z" fill="#8a1f2e" ${ln("#4e0c16", 1.8)}/>` : `<path d="M94 105 Q100 110 106 105" fill="none" ${ln("#7a3030", 2.4)}/>`;
   const open = `<path d="M93 103 Q100 106 107 103 Q106 114 100 115 Q94 114 93 103 Z" fill="#8a1f2e" ${ln("#4e0c16", 1.8)}/><ellipse cx="100" cy="112" rx="3.6" ry="2" fill="#ea7482"/>`;
+  const gasp = `<ellipse cx="100" cy="108.5" rx="4.4" ry="5.6" fill="#8a1f2e" ${ln("#4e0c16", 1.8)}/><ellipse cx="100" cy="111.6" rx="2.4" ry="1.5" fill="#ea7482"/>`;
   const vis = opacityKeys([["EyeLOpen", [0, 0.3]]], ([o = 0]) => (o > 0 ? 1 : 0));
+  // Hurt: the lash gives way to "> <" squeezed shut on a hit, or to a swirl knocked out.
+  const HURT: [string, number[]][] = [
+    ["Wince", [0, 0.4]],
+    ["Dizzy", [0, 0.4]],
+  ];
+  const wince = `<path d="M74.5 80.5 L91 88.5 L74.5 96.5" fill="none" stroke="${f.eye.lash}" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const swirl = `<path d="M84.6 89 a1.6 1.6 0 0 1 3.2 0 a3.2 3.2 0 0 1 -6.4 0 a4.8 4.8 0 0 1 9.6 0 a6.4 6.4 0 0 1 -12.8 0 a8 8 0 0 1 16 0" fill="none" stroke="${f.eye.lash}" stroke-width="2.6" stroke-linecap="round"/>`;
   const eyeParts: Part[] = [
     { id: "eyeWhiteL", parent: "eyeL", order: 40, rect: { x: 66, y: 70, w: 34, h: 34 }, mesh: { kind: "poly", points: WHITE_L }, svg: white, keyed: vis },
     { id: "irisL", parent: "irisL", order: 41, rect: { x: 72, y: 74, w: 24, h: 30 }, mesh: grid(1, 1), svg: iris, mask: "eyeWhiteL", keyed: vis },
-    { id: "lashL", parent: "lashL", order: 42, rect: { x: 58, y: 66, w: 44, h: 28 }, mesh: grid(4, 2), svg: lash },
+    { id: "lashL", parent: "lashL", order: 42, rect: { x: 58, y: 66, w: 44, h: 28 }, mesh: grid(4, 2), svg: lash, keyed: opacityKeys(HURT, ([w = 0, d = 0]) => (w || d ? 0 : 1)) },
+    { id: "winceL", parent: "feat", order: 43, rect: { x: 68, y: 74, w: 30, h: 29 }, mesh: grid(1, 1), svg: wince, keyed: opacityKeys([["Wince", [0, 0.4]]], ([w = 0]) => (w ? 1 : 0)) },
+    { id: "dizzyL", parent: "swirlL", order: 43, rect: { x: 72, y: 76, w: 26, h: 26 }, mesh: grid(1, 1), svg: swirl, keyed: opacityKeys([["Dizzy", [0, 0.4]]], ([d = 0]) => (d ? 1 : 0)) },
   ];
   // The right eye mirrors the left one but keeps its own open parameter.
   const right = eyeParts.map((p) => {
     const m = cMirror(p);
-    return p.keyed ? { ...m, keyed: opacityKeys([["EyeROpen", [0, 0.3]]], ([o = 0]) => (o > 0 ? 1 : 0)) } : m;
+    return p.keyed?.params[0] === "EyeLOpen" ? { ...m, keyed: opacityKeys([["EyeROpen", [0, 0.3]]], ([o = 0]) => (o > 0 ? 1 : 0)) } : m;
   });
   return [
     { id: "face", parent: "face", order: 30, rect: { x: 46, y: 54, w: 108, h: 72 }, mesh: grid(4, 3), svg: face },
     { id: "blush", parent: "feat", order: 31, rect: { x: 58, y: 96, w: 84, h: 12 }, mesh: grid(2, 1), svg: blush },
-    { id: "mouthClosed", parent: "feat", order: 33, rect: { x: 88, y: 98, w: 24, h: 16 }, mesh: grid(1, 1), svg: closed, keyed: opacityKeys([["MouthOpen", [0, 0.25]]], ([o = 0]) => 1 - o / 0.25) },
-    { id: "mouthOpen", parent: "mouth", order: 34, rect: { x: 88, y: 98, w: 24, h: 20 }, mesh: grid(1, 2), svg: open, keyed: opacityKeys([["MouthOpen", [0, 0.25]]], ([o = 0]) => o / 0.25) },
+    // Hurt, the mouth is a round gasp instead of the smile.
+    { id: "mouthClosed", parent: "feat", order: 33, rect: { x: 88, y: 98, w: 24, h: 16 }, mesh: grid(1, 1), svg: closed, keyed: opacityKeys([["MouthOpen", [0, 0.25]], ...HURT], ([o = 0, w = 0, d = 0]) => (w || d ? 0 : 1 - o / 0.25)) },
+    { id: "mouthOpen", parent: "mouth", order: 34, rect: { x: 88, y: 98, w: 24, h: 20 }, mesh: grid(1, 2), svg: open, keyed: opacityKeys([["MouthOpen", [0, 0.25]], ...HURT], ([o = 0, w = 0, d = 0]) => (w || d ? 0 : o / 0.25)) },
+    { id: "mouthGasp", parent: "mouth", order: 34, rect: { x: 90, y: 100, w: 20, h: 18 }, mesh: grid(1, 2), svg: gasp, keyed: opacityKeys(HURT, ([w = 0, d = 0]) => (w || d ? 1 : 0)) },
     ...eyeParts,
     ...right,
   ];

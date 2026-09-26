@@ -191,10 +191,10 @@ export function fairyParts(o: FairyOpts): Part[] {
     { id: "dress", parent: "body", order: 12, rect: { x: 48, y: 108, w: 104, h: 86 }, mesh: grid(4, 4), svg: dressArt(o.dress, o.trim) },
     ...pair(
       o.sleeves === "detached"
-        ? { id: "armL", parent: "armL", order: 13, rect: { x: 38, y: 112, w: 60, h: 74 }, mesh: grid(2, 3), svg: detachedL(o.sleeve ?? o.dress, o.trim) }
+        ? { id: "armL", parent: "armBendL", order: 13, rect: { x: 38, y: 112, w: 60, h: 74 }, mesh: grid(3, 5), svg: detachedL(o.sleeve ?? o.dress, o.trim) }
         : o.sleeves === "spread"
-          ? { id: "armL", parent: "armL", order: 13, rect: { x: 12, y: 106, w: 76, h: 40 }, mesh: grid(3, 1), svg: spreadL(o.sleeve ?? o.dress) }
-          : { id: "armL", parent: "armL", order: 13, rect: { x: 56, y: 114, w: 32, h: 50 }, mesh: grid(2, 2), svg: armL(o.sleeve ?? o.dress, o.trim) },
+          ? { id: "armL", parent: "armBendL", order: 13, rect: { x: 12, y: 106, w: 76, h: 40 }, mesh: grid(5, 2), svg: spreadL(o.sleeve ?? o.dress) }
+          : { id: "armL", parent: "armBendL", order: 13, rect: { x: 56, y: 114, w: 32, h: 50 }, mesh: grid(2, 4), svg: armL(o.sleeve ?? o.dress, o.trim) },
     ),
     { id: "collar", parent: "body", order: 14, rect: { x: 82, y: 108, w: 36, h: 20 }, mesh: grid(2, 1), svg: collar },
     ...chibiFace(o.face),
@@ -218,7 +218,7 @@ export function fairyParts(o: FairyOpts): Part[] {
   if (o.bow) parts.push({ id: "collarBow", parent: "body", order: 15, rect: { x: 80, y: 112, w: 40, h: 22 }, mesh: grid(2, 1), svg: collarBow(o.bow) });
   if (o.ribbon) parts.push({ id: "ribbon", parent: "bow", order: 55, rect: { x: 106, y: 14, w: 56, h: 34 }, mesh: grid(2, 2), svg: headRibbon(o.ribbon) });
   if (o.ponytail) parts.push({ id: "ponytail", parent: "side", order: 3, rect: { x: 132, y: 22, w: 56, h: 118 }, mesh: grid(2, 5), svg: ponytailArt(o.hair, o.ponytail) });
-  if (o.sunflower) parts.push({ id: "sunflower", parent: "armL", order: 20, rect: { x: 18, y: 112, w: 68, h: 78 }, mesh: grid(3, 3), svg: SUNFLOWER });
+  if (o.sunflower) parts.push({ id: "sunflower", parent: "armBendL", order: 20, rect: { x: 18, y: 112, w: 68, h: 78 }, mesh: grid(3, 3), svg: SUNFLOWER });
   parts.push(...(o.extra ?? []));
   return parts;
 }
