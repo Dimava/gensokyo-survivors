@@ -207,7 +207,7 @@ function hover(): void {
     </div>
     <div class="choices">
       <!-- A slot holds a tablet on the pile of the levels still waiting; it outlives its tablets, so the pile stays put while they come and go. -->
-      <div v-for="(c, i) in L.choices" :key="i" class="slot" :style="{ '--i': i }">
+      <div v-for="(c, i) in L.choices" :key="i" class="stack" :style="{ '--i': i }">
         <span v-if="L.mode === 'live' && L.pending > 1" class="pile" aria-hidden="true">
           <i v-for="s in pileOf(L, i)" :key="s.k" :style="{ '--k': s.k, '--dx': s.dx, '--dr': s.dr }" />
         </span>
@@ -333,15 +333,16 @@ h2 {
   gap: 16px;
   flex-wrap: wrap;
   justify-content: safe center;
-  /* Room under the tablets for their piles, whether or not there are any, so nothing moves as they go. */
-  padding-bottom: 12px;
+  /* Room over the tablets for their piles, whether or not there are any, so nothing moves as they go. */
+  padding-top: 40px;
 }
-.slot {
+/* Not ".slot": that is the global selectable tile, whose brackets would draw a second time round the tablet. */
+.stack {
   position: relative;
   display: flex;
 }
-/* The levels waiting under this one: tablets seen from their backs, each a few px lower and a little
-   askew, darker the deeper they lie; only their feet show under the top tablet. */
+/* The levels waiting under this one: tablets seen from their backs, each standing a step higher and a
+   little askew, darker the deeper they lie; their heads show above the top tablet. */
 .pile {
   position: absolute;
   inset: 0;
@@ -352,10 +353,11 @@ h2 {
   position: absolute;
   inset: 0;
   border-radius: 2px;
-  border: 1px solid rgba(232, 193, 90, calc(0.46 - var(--k) * 0.05));
+  border: 1px solid rgba(232, 193, 90, calc(0.5 - var(--k) * 0.06));
+  border-top-width: 2px;
   background: color-mix(in srgb, #17110e, #000 calc(var(--k) * 9%));
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-  transform: translate(var(--dx), calc(var(--k) * 4px)) rotate(var(--dr));
+  transform: translate(var(--dx), calc(var(--k) * -8px)) rotate(var(--dr));
 }
 .pile i:first-child {
   box-shadow:
@@ -461,7 +463,7 @@ ul {
 }
 @keyframes frompile {
   from {
-    transform: translate(1px, 4px) rotate(0.5deg);
+    transform: translate(1px, -8px) rotate(0.5deg);
     border-top-color: rgba(232, 193, 90, 0.41);
     background: #15100d;
   }
