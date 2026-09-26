@@ -102,28 +102,22 @@ const vars = computed(() => ({
     inset 0 0 0 5px #000,
     0 4px 12px rgba(0, 0, 0, 0.55);
 }
+/* The rim metals match the rarity colours everywhere else (RARITY_INFO): ai-blued steel, wisteria, gold.
+   SSR is told by its brackets and foil, not by a glow round the card. */
 .rarity-R {
-  --m1: #d6ecff;
-  --m2: #4d8fd6;
-  --m3: #1f3f73;
+  --m1: #dfe6fa;
+  --m2: #5b76c0;
+  --m3: #22305f;
 }
 .rarity-SR {
-  --m1: #fff1c2;
-  --m2: #c9962e;
-  --m3: #6e4a10;
+  --m1: #efe4ff;
+  --m2: #8b6cc6;
+  --m3: #3b2767;
 }
 .rarity-SSR {
   --m1: #fffbe0;
   --m2: #f0c040;
   --m3: #8a5a08;
-  box-shadow:
-    inset 0 0 0 1px var(--m3),
-    inset 2px 2px 0 1px var(--m1),
-    inset -2px -2px 0 1px var(--m3),
-    inset 0 0 0 4px var(--m2),
-    inset 0 0 0 5px #000,
-    0 4px 12px rgba(0, 0, 0, 0.55),
-    0 0 16px rgba(255, 201, 77, 0.55);
 }
 .face.unknown {
   filter: grayscale(0.85) brightness(0.65);

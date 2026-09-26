@@ -9,11 +9,15 @@ export type Rarity = "N" | "R" | "SR" | "SSR";
 
 export const RARITIES: readonly Rarity[] = ["N", "R", "SR", "SSR"];
 
+/**
+ * Colours are the shrine's pigments (refs/gui/NOTES.md, Rarity and kind colours), the same
+ * as each rarity's rim metal on the card: silver, ai indigo, wisteria, gold leaf.
+ */
 export const RARITY_INFO: Record<Rarity, { label: string; color: number; css: string; refund: number }> = {
-  N: { label: "Normal", color: 0xb8c4d6, css: "#b8c4d6", refund: 10 },
-  R: { label: "Rare", color: 0x4da3ff, css: "#4da3ff", refund: 25 },
-  SR: { label: "Super Rare", color: 0xc56bff, css: "#c56bff", refund: 60 },
-  SSR: { label: "Legendary", color: 0xffc94d, css: "#ffc94d", refund: 150 },
+  N: { label: "Normal", color: 0xc4bcab, css: "#c4bcab", refund: 10 },
+  R: { label: "Rare", color: 0x6f8fd6, css: "#6f8fd6", refund: 25 },
+  SR: { label: "Super Rare", color: 0xa68ad6, css: "#a68ad6", refund: 60 },
+  SSR: { label: "Legendary", color: 0xe8c15a, css: "#e8c15a", refund: 150 },
 };
 
 export type CardEffect =
@@ -34,12 +38,13 @@ export type CardEffect =
  */
 export type CardKind = "attack" | "guard" | "heal" | "buff" | "utility";
 
+/** Pigments rather than screen neon: shu vermilion, sky, young bamboo, yamabuki, iris. */
 export const CARD_KINDS: Record<CardKind, { label: string; color: number; css: string }> = {
-  attack: { label: "Attack", color: 0xff5a36, css: "#ff5a36" },
-  guard: { label: "Guard", color: 0x3fe0ff, css: "#3fe0ff" },
-  heal: { label: "Heal", color: 0x52e07a, css: "#52e07a" },
-  buff: { label: "Empower", color: 0xffc233, css: "#ffc233" },
-  utility: { label: "Utility", color: 0xb77bff, css: "#b77bff" },
+  attack: { label: "Attack", color: 0xec6039, css: "#ec6039" },
+  guard: { label: "Guard", color: 0x5fbfe0, css: "#5fbfe0" },
+  heal: { label: "Heal", color: 0x5cc486, css: "#5cc486" },
+  buff: { label: "Empower", color: 0xf2b33d, css: "#f2b33d" },
+  utility: { label: "Utility", color: 0xc77fbd, css: "#c77fbd" },
 };
 
 export interface CardDef {

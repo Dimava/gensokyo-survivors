@@ -5,13 +5,19 @@ import { host, state } from "../host.ts";
 import { runView } from "../../sim/game.ts";
 import { handSize, handSlots, spiritAt } from "../../sim/cards.ts";
 import { CARDS_TUNING, XP } from "../../sim/tuning.ts";
-import { cardDef, cardText } from "../../content/cards.ts";
+import { CARDS, CARD_KINDS, cardDef, cardText, type CardEffect } from "../../content/cards.ts";
 import { weaponDef } from "../../content/weapons.ts";
 import { passiveDef } from "../../content/passives.ts";
 import { bossDef, bossName } from "../../content/bosses.ts";
 import { stageDef } from "../../content/stages.ts";
 import { runCoins } from "../../sim/rules.ts";
 import type { CharacterId } from "../../content/names.ts";
+
+/** A lingering card effect wears its card's kind colour, as the card does in the hand. */
+const kindCss = (effect: CardEffect): string => {
+  const card = CARDS.find((c) => c.effect === effect);
+  return card ? CARD_KINDS[card.kind].css : "#f6f0e1";
+};
 
 export const hud = computed(() => {
   void state.frame;
@@ -83,14 +89,14 @@ export const hud = computed(() => {
   if (v.has(p, "empowered") && p.empowered.until > t)
     statuses.push({ id: "empowered", label: `Power +${p.empowered.pct}%`, left: (p.empowered.until - t) / 60, color: "#ff8c42", help: "Power Charm: your weapons deal more damage." });
   const runEnt = v.derived("state");
-  if (v.has(runEnt, "timestop")) statuses.push({ id: "timestop", label: "Time stopped", left: (runEnt.timestop.until - t) / 60, color: "#9aa7c7", help: "Enemy bullets are frozen in time." });
+  if (v.has(runEnt, "timestop")) statuses.push({ id: "timestop", label: "Time stopped", left: (runEnt.timestop.until - t) / 60, color: kindCss("timeStop"), help: "Enemy bullets are frozen in time." });
   if (v.has(p, "triggers")) {
     for (const row of p.triggers) {
       const pid = v.has(runEnt, "timed") ? runEnt.timed.pids[row.rule] : undefined;
       const label = row.rule === "grazeHeal" ? "Graze Ribbon" : row.rule === "vengeance" ? "Vengeful Amulet" : "Border of Life";
       const help =
         row.rule === "grazeHeal" ? "Grazing bullets restores HP." : row.rule === "vengeance" ? "Getting hit blasts nearby enemies." : "The next fatal hit leaves you standing.";
-      statuses.push({ id: row.rule, label, left: pid ? null : null, color: row.rule === "lastStand" ? "#ffc94d" : "#c56bff", help });
+      statuses.push({ id: row.rule, label, left: pid ? null : null, color: kindCss(row.rule as CardEffect), help });
     }
   }
   if (t < p.life.invulnUntil && run.phase !== "over") statuses.push({ id: "invuln", label: "Untouchable", left: (p.life.invulnUntil - t) / 60, color: "#ffffff", help: "Nothing can hurt you for a moment." });

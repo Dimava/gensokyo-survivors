@@ -92,6 +92,7 @@ import { wallet } from "./useGame.ts";
 import CardFace from "./CardFace.vue";
 import CardBack from "./CardBack.vue";
 import Keys from "./Keys.vue";
+import Hanko from "./Hanko.vue";
 
 const opening = computed(() => {
   void state.meta;
@@ -109,7 +110,7 @@ const N = pulls.length;
 
 const RANK: Record<Rarity, number> = { N: 0, R: 1, SR: 2, SSR: 3 };
 /** The glow of each rarity: its rim metal (CardFace), SSR's the brightest gold. */
-const METAL: Record<Rarity, string> = { N: "#e6ebf5", R: "#5aa8ff", SR: "#f0b040", SSR: "#fff1a8" };
+const METAL: Record<Rarity, string> = { N: "#e9e4d8", R: "#8ea6e6", SR: "#bda3ec", SSR: "#fff1a8" };
 
 // ---------- timing (seconds at animation speed 1) ----------
 const ENTER = 0.34;
@@ -989,15 +990,15 @@ const bestName = bestIdx >= 0 ? cardDef(pulls[bestIdx]!.card).name : "";
             <div class="face front">
               <CardFace :card="p.card" :level="p.level" />
               <i v-if="RANK[p.rarity] >= 2" class="foil"></i>
-              <div v-if="p.outcome === 'refund'" class="maxed"><b>MAX</b></div>
+              <div v-if="p.outcome === 'refund'" class="maxed"><b><Hanko ch="極" :tilt="0" /></b></div>
               <i class="sheen"></i>
               <i class="shade"></i>
             </div>
             <i class="edge l"></i>
             <i class="edge r"></i>
           </div>
-          <div v-if="p.outcome === 'new'" class="badge new">NEW</div>
-          <div v-if="big && p.outcome === 'level'" class="tag">Lv {{ p.level }} ▲</div>
+          <div v-if="p.outcome === 'new'" class="badge new" title="New"><Hanko ch="新" :tilt="0" /></div>
+          <div v-if="big && p.outcome === 'level'" class="tag"><small>Lv</small> {{ p.level }}</div>
           <div v-if="p.outcome === 'refund'" class="coinrise">+{{ p.refund }} {{ CURRENCY.icon }}</div>
         </div>
         <div ref="fx" class="fx"></div>
@@ -1079,7 +1080,7 @@ h2 {
   font-size: 2rem;
 }
 .times {
-  color: var(--gold, #ffc94d);
+  color: var(--gold, #e8c15a);
 }
 .hint {
   margin: 4px 0 0;
@@ -1315,13 +1316,11 @@ h2 {
   background: rgba(10, 8, 16, 0.45);
   opacity: 0;
 }
+/* A card already at the top level is stamped 極 across its face; the label under it says what it paid. */
 .maxed b {
-  font: 800 30px/1 var(--display);
-  letter-spacing: 0.12em;
-  color: #d23a2a;
-  border: 3px solid #d23a2a;
-  padding: 4px 8px 2px;
-  background: rgba(244, 236, 216, 0.92);
+  width: 76px;
+  height: 76px;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
   opacity: 0;
 }
 .rays {
@@ -1357,35 +1356,41 @@ h2 {
   border-width: 2px;
 }
 .badge.new {
-  /* A vermilion paper tag stamped on the corner. */
+  /* A new card is stamped 新 on its corner, the seal of every other "new" in the game (Hanko.vue). */
   position: absolute;
-  top: calc(-12px * var(--bs));
+  top: calc(-14px * var(--bs));
   right: calc(-14px * var(--bs));
   z-index: 4;
-  padding: 5px 9px 4px;
-  font: 900 calc(15px * var(--bs)) / 1 "Segoe UI", system-ui, sans-serif;
-  letter-spacing: 0.12em;
-  color: #fff;
-  background: linear-gradient(180deg, #f0503a, #b41e18);
-  border: 2px solid #ffe0b0;
-  border-radius: 3px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+  width: calc(44px * var(--bs));
+  height: calc(44px * var(--bs));
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
   opacity: 0;
 }
+.badge.new :deep(.hanko),
+.maxed b :deep(.hanko) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
 .tag {
-  /* A ×10 grid's level-up note, on the card's foot. */
+  /* A ×10 grid's level-up note: a lacquer tab on the card's foot, the new level in gold. */
   position: absolute;
   left: 50%;
   bottom: -14px;
   margin-left: -60px;
   width: 120px;
   text-align: center;
-  font: 900 28px/1.2 "Segoe UI", system-ui, sans-serif;
-  color: #7dffb0;
-  background: rgba(8, 20, 14, 0.85);
-  border: 2px solid #7dffb0;
-  border-radius: 6px;
+  font: 800 30px/1.25 var(--display);
+  color: #e8c15a;
+  background: rgba(23, 17, 14, 0.94);
+  border: 2px solid rgba(232, 193, 90, 0.7);
+  border-radius: 2px;
   opacity: 0;
+}
+.tag small {
+  font-size: 0.6em;
+  color: #d6c48c;
 }
 .coinrise {
   position: absolute;
@@ -1396,10 +1401,10 @@ h2 {
   text-align: center;
   white-space: nowrap;
   font: 900 calc(22px * var(--bs)) / 1 "Segoe UI", system-ui, sans-serif;
-  color: var(--gold, #ffc94d);
+  color: var(--gold, #e8c15a);
   text-shadow:
-    0 0 8px rgba(255, 201, 77, 0.8),
-    0 2px 3px #000;
+    0 2px 0 #000,
+    0 0 3px rgba(0, 0, 0, 0.8);
   pointer-events: none;
   opacity: 0;
 }
@@ -1439,7 +1444,7 @@ h2 {
   font-weight: 700;
 }
 .out.coin {
-  color: var(--gold, #ffc94d);
+  color: var(--gold, #e8c15a);
 }
 .chev {
   width: 44px;
@@ -1452,10 +1457,10 @@ h2 {
 .chev path {
   stroke: rgba(255, 255, 255, 0.2);
 }
+/* The level's chevrons in gold leaf, as a card's level is gold everywhere else. */
 .chev path.on,
 .chev path.up {
-  stroke: #7dffb0;
-  filter: drop-shadow(0 0 2px #7dffb0);
+  stroke: #e8c15a;
 }
 .chev path.up {
   transform-box: fill-box;
@@ -1463,11 +1468,12 @@ h2 {
   transform: scale(0);
 }
 .lv {
-  color: #7dffb0;
+  font-family: var(--display);
+  color: #e8c15a;
 }
 .pity {
   font-size: 0.75rem;
-  color: var(--gold, #ffc94d);
+  color: var(--gold, #e8c15a);
 }
 .foot {
   min-height: 46px;
@@ -1486,7 +1492,7 @@ h2 {
 }
 .coins {
   margin-left: 10px;
-  color: var(--gold, #ffc94d);
+  color: var(--gold, #e8c15a);
   font-weight: 700;
 }
 .flash {

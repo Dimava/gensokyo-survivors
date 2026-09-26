@@ -1,5 +1,6 @@
 :root {
-  --bg: #0b1020;
+  /* The night ground, under everything before the sky or the field is drawn. */
+  --bg: #0c0917;
   /* The shrine at night (refs/gui/NOTES.md): warm lacquer and gold, washi-white words. */
   --panel: rgba(23, 17, 14, 0.95);
   --panel-2: #1d1612;
@@ -8,12 +9,8 @@
   --text: #f3eee4;
   --muted: #b3a992;
   --red: #e0314b;
-  --red-2: #ff5c7a;
-  --gold: #ffc94d;
-  --blue: #4da3ff;
-  --green: #7bd88f;
-  --cyan: #6fd3ff;
-  --violet: #c56bff;
+  /* Gold leaf: one gold for words, rules and fittings alike. */
+  --gold: #e8c15a;
   /* Display type: the serif of the spell-card names, for titles and headings (refs/gui/NOTES.md, Type). */
   --display: "Shippori Mincho B1", "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif;
   /* Section headers: letter-spaced small caps in shimenawa straw. */
@@ -436,17 +433,18 @@ label:has(> [data-nav-sel]) {
   transform: scale(0.94);
 }
 
+/* The rarity colours of RARITY_INFO (content/cards.ts), for CSS. */
 .rarity-N {
-  --rc: #b8c4d6;
+  --rc: #c4bcab;
 }
 .rarity-R {
-  --rc: #4da3ff;
+  --rc: #6f8fd6;
 }
 .rarity-SR {
-  --rc: #c56bff;
+  --rc: #a68ad6;
 }
 .rarity-SSR {
-  --rc: #ffc94d;
+  --rc: #e8c15a;
 }
 
 input[type="range"] {
