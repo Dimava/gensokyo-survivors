@@ -28,6 +28,7 @@ export const KEEP = [
   "player:hurt",
   "player:downed",
   "player:revived",
+  "ward:block",
   "card:played",
   "boss:approach",
   "vn:closed",
