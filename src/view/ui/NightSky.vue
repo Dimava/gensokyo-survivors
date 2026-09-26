@@ -2,20 +2,91 @@
 // The backdrop of every screen outside a run: the night over the Hakurei
 // Shrine (the credits' sky, standing still). Stars twinkle by group and
 // fireflies drift; everything else is one flat SVG, nothing repaints per frame.
+import { onBeforeUnmount, onMounted, ref, shallowRef } from "vue";
 
 /** Deterministic stars (a small LCG), the same sky as the credits. */
 const stars = (() => {
   let s = 20240917;
   const r = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
-  return Array.from({ length: 110 }, () => ({ x: r() * 1600, y: r() * 560, r: 0.6 + r() ** 3 * 2, o: 0.35 + r() * 0.65 }));
+  return Array.from({ length: 110 }, (_, i) => ({ i, x: r() * 1600, y: r() * 560, r: 0.6 + r() ** 3 * 2, o: 0.35 + r() * 0.65 }));
 })();
-const starGroups = [0, 1, 2].map((g) => stars.filter((_, i) => i % 3 === g));
+const starGroups = [0, 1, 2].map((g) => stars.filter((st) => st.i % 3 === g));
+
+/**
+ * The words that stand straight on the sky. A star under one of them is put out: in a word it
+ * reads as an accent or a stray comma ("Recȯrds", "most,have"), not as a star.
+ */
+const WORDS = [
+  ".screen.title .logo",
+  ".screen.title .foot",
+  ".menu .logo",
+  ".menu .entry > span",
+  ".screen-head h1",
+  ".screen-head .sub",
+  ".screen-head .tab",
+  ".screen-head .opt",
+  ".screen.cards > .count",
+  ".screen.cards > .warn",
+].join(",");
+
+const el = ref<HTMLElement>();
+const hidden = shallowRef(new Set<number>());
+
+/** Measures the words' own line boxes (not their blocks) and hides the stars that touch one. */
+function clearWords(): void {
+  const box = el.value?.getBoundingClientRect();
+  if (!box) return;
+  // The layers are a 1600x900 view box, "xMidYMax slice".
+  const s = Math.max(box.width / 1600, box.height / 900);
+  const x0 = box.left + (box.width - 1600 * s) / 2;
+  const y0 = box.top + box.height - 900 * s;
+  const lines: DOMRect[] = [];
+  const range = document.createRange();
+  for (const w of document.querySelectorAll(WORDS)) {
+    range.selectNodeContents(w);
+    lines.push(...range.getClientRects());
+  }
+  const out = new Set<number>();
+  for (const st of stars) {
+    const x = x0 + st.x * s;
+    const y = y0 + st.y * s;
+    const m = st.r * s + 3;
+    if (lines.some((q) => x > q.left - m && x < q.right + m && y > q.top - m && y < q.bottom + m)) out.add(st.i);
+  }
+  if (out.size !== hidden.value.size || [...out].some((i) => !hidden.value.has(i))) hidden.value = out;
+}
+
+// Screens come and go, and words change, under the sky: look again after the DOM settles.
+let frame = 0;
+let late = 0;
+function soon(): void {
+  cancelAnimationFrame(frame);
+  clearTimeout(late);
+  frame = requestAnimationFrame(clearWords);
+  late = window.setTimeout(clearWords, 450);
+}
+let watcher: MutationObserver | null = null;
+onMounted(() => {
+  soon();
+  const ui = document.querySelector(".ui");
+  if (ui) {
+    watcher = new MutationObserver(soon);
+    watcher.observe(ui, { childList: true, subtree: true, characterData: true });
+  }
+  window.addEventListener("resize", soon);
+});
+onBeforeUnmount(() => {
+  watcher?.disconnect();
+  window.removeEventListener("resize", soon);
+  cancelAnimationFrame(frame);
+  clearTimeout(late);
+});
 const flies = Array.from({ length: 9 }, (_, i) => ({ x: 120 + ((i * 173) % 1360), y: 700 + ((i * 53) % 150) }));
 const flyGroups = [0, 1].map((g) => flies.filter((_, i) => i % 2 === g));
 </script>
 
 <template>
-  <div class="nightsky" aria-hidden="true">
+  <div ref="el" class="nightsky" aria-hidden="true">
     <svg class="layer" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice">
       <defs>
         <linearGradient id="ns-sky" x1="0" y1="0" x2="0" y2="1">
@@ -38,7 +109,9 @@ const flyGroups = [0, 1].map((g) => flies.filter((_, i) => i % 2 === g));
       <rect width="1600" height="900" fill="url(#ns-sky)" />
     </svg>
     <svg v-for="g in 3" :key="g" class="layer twinkle" :class="`t${g}`" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice">
-      <circle v-for="(st, i) in starGroups[g - 1]" :key="i" :cx="st.x" :cy="st.y" :r="st.r" :opacity="st.o" fill="#fff6e0" />
+      <template v-for="st in starGroups[g - 1]" :key="st.i">
+        <circle v-if="!hidden.has(st.i)" :cx="st.x" :cy="st.y" :r="st.r" :opacity="st.o" fill="#fff6e0" />
+      </template>
     </svg>
     <svg class="layer" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice">
       <circle cx="1270" cy="150" r="36" fill="#fff2c8" mask="url(#ns-moon)" />
