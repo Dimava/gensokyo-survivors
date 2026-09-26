@@ -7,6 +7,10 @@ import { host } from "../host.ts";
 defineProps<{ inRun?: boolean }>();
 
 const confirmErase = ref(false);
+const ART_STYLES = [
+  ["drawn", "Drawn"],
+  ["live2d", "Live2D"],
+] as const;
 const pct = (v: number): string => `${Math.round(v * 100)}%`;
 /** How far a slider is filled (its vermilion cord). */
 const fill = (v: number, min = 0, max = 1): Record<string, string> => ({ "--v": `${((v - min) / (max - min)) * 100}%` });
@@ -71,15 +75,30 @@ function erase(): void {
         <input v-model="prefs.fps" type="checkbox" />
         <span>Show frame rate and simulation cost</span>
       </label>
-      <label>
+      <!-- The art style is a choice of two words, as the gallery's, not a web select. -->
+      <div class="row">
         <span>Art style</span>
-        <select v-model="prefs.artStyle">
-          <option value="drawn">Drawn</option>
-          <option value="live2d">Live2D (animated)</option>
-        </select>
-        <b></b>
-      </label>
-      <p class="help muted">Live2D animates every character and enemy: rigged portraits in dialogue, flapping, blinking sprites in the field.</p>
+        <span class="opts" role="radiogroup" aria-label="Art style">
+          <button
+            v-for="[id, label] in ART_STYLES"
+            :key="id"
+            class="opt"
+            :class="{ on: prefs.artStyle === id }"
+            role="radio"
+            :aria-checked="prefs.artStyle === id"
+            @click="prefs.artStyle = id"
+          >
+            {{ label }}
+          </button>
+        </span>
+      </div>
+      <p class="help muted">
+        {{
+          prefs.artStyle === "live2d"
+            ? "Every character and enemy moves: rigged portraits in dialogue, sprites that flap and blink in the field."
+            : "Every character and enemy is a still drawing, in dialogue and in the field."
+        }}
+      </p>
       <button class="btn small" @click="resetHints">Replay the tutorial hints</button>
     </section>
     <section v-if="!inRun">
@@ -114,7 +133,9 @@ h3 {
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
-label {
+/* A setting is a row: its name, its control across the middle, its value at the end. */
+label,
+.row {
   display: grid;
   grid-template-columns: 170px 1fr 56px;
   gap: 12px;
@@ -122,6 +143,11 @@ label {
 }
 label b {
   text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.opts {
+  display: flex;
+  margin-left: -10px;
 }
 label.check {
   display: flex;
@@ -130,6 +156,7 @@ label.check {
 /* Sliders: a thin line, the filled part a vermilion cord, the thumb Reimu's yin-yang orb (refs/gui/NOTES.md, Slider). */
 input[type="range"] {
   appearance: none;
+  width: 100%;
   height: 18px;
   margin: 0;
   background: transparent;
@@ -168,7 +195,7 @@ input[type="range"]::-moz-range-thumb {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'%3E%3Ccircle r='.94' fill='%23fff'/%3E%3Cpath d='M0-.94A.94.94 0 0 1 0 .94A.47.47 0 0 1 0 0A.47.47 0 0 0 0-.94Z' fill='%23e0314b'/%3E%3Ccircle cy='-.47' r='.15' fill='%23e0314b'/%3E%3Ccircle cy='.47' r='.15' fill='%23fff'/%3E%3Ccircle r='.94' fill='none' stroke='%231b1512' stroke-width='.12'/%3E%3C/svg%3E") center / 100% 100%;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }
-/* The browser's own checkbox and select (a blue tick, a white box) dressed in the game's colours. */
+/* The browser's own checkbox (a blue tick, a white box) dressed in the game's colours. */
 input[type="checkbox"] {
   appearance: none;
   flex: none;
@@ -196,21 +223,6 @@ input[type="checkbox"]:checked::before {
   border: solid #f6f0e1;
   border-width: 0 0 2px 2px;
   transform: translateY(-1px) rotate(-45deg);
-}
-select {
-  appearance: none;
-  justify-self: start;
-  padding: 0.35em 2.2em 0.35em 0.75em;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  font: inherit;
-  color: var(--text);
-  background: var(--panel-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23d6c48c' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 0.75em center / 10px 6px;
-  cursor: pointer;
-}
-select option {
-  background: #10142a;
-  color: var(--text);
 }
 section > .btn {
   align-self: flex-start;

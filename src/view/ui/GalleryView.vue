@@ -329,53 +329,6 @@ h3 {
   align-items: baseline;
   margin-right: 14px;
 }
-/* A small option set: words with thin dividers; the chosen one is gold, on a gold hairline. */
-.opt {
-  position: relative;
-  padding: 3px 10px 5px;
-  border: none;
-  background: none;
-  font-family: var(--display);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: rgba(233, 225, 207, 0.55);
-  transition: color var(--glide);
-}
-.opt + .opt::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 28%;
-  bottom: 28%;
-  width: 1px;
-  background: rgba(214, 196, 140, 0.35);
-}
-.opt::after {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 1px;
-  height: 1px;
-  background: #e8c15a;
-  opacity: 0;
-  transition: opacity var(--glide);
-}
-.opt:hover,
-.opt[data-nav-sel] {
-  color: #f6f0e1;
-}
-.opt.on {
-  color: #e8c15a;
-}
-.opt.on::after {
-  opacity: 1;
-}
-/* The keys' option: washi, on a washi hairline. */
-.opt[data-nav-sel]::after {
-  opacity: 1;
-  background: #f6f0e1;
-}
 /* The tabs follow the title on every tab; whatever else the head holds stands at the right, by Back. */
 .tabs {
   display: flex;

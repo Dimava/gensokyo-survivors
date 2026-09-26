@@ -433,6 +433,55 @@ label:has(> [data-nav-sel]) {
   transform: scale(0.94);
 }
 
+/* Option words (refs/gui/NOTES.md): a small set of choices is words with thin dividers, not buttons;
+   the chosen one is gold on a gold hairline, the keys' one washi on a washi hairline. */
+.opt {
+  position: relative;
+  padding: 3px 10px 5px;
+  border: none;
+  background: none;
+  font-family: var(--display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(233, 225, 207, 0.55);
+  transition: color var(--glide);
+}
+.opt + .opt::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 28%;
+  bottom: 28%;
+  width: 1px;
+  background: rgba(214, 196, 140, 0.35);
+}
+.opt::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 1px;
+  height: 1px;
+  background: #e8c15a;
+  opacity: 0;
+  transition: opacity var(--glide);
+}
+.opt:hover,
+.opt[data-nav-sel] {
+  color: #f6f0e1;
+}
+.opt.on {
+  color: #e8c15a;
+}
+.opt.on::after {
+  opacity: 1;
+}
+/* The keys' option: washi, on a washi hairline. */
+.opt[data-nav-sel]::after {
+  opacity: 1;
+  background: #f6f0e1;
+}
+
 /* The rarity colours of RARITY_INFO (content/cards.ts), for CSS. */
 .rarity-N {
   --rc: #c4bcab;
