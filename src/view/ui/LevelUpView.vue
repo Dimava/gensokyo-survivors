@@ -81,6 +81,32 @@ interface Layer {
   picked: number;
   /** Another offer replaced this one at once (chained level-up, reroll): its title and buttons stay hidden. */
   chained: boolean;
+  /** Where the picked tablet flies: from its centre to the kit slot (or bar) it went to, in px. */
+  fly?: { x: number; y: number };
+}
+
+/**
+ * The HUD place a choice goes to: its weapon plaque or item medallion (a new one takes the first
+ * empty slot of its shape), life for the onigiri, the tally's Donations row for an offering.
+ */
+function kitTarget(c: Choice): HTMLElement | null {
+  const q = (sel: string) => document.querySelector<HTMLElement>(sel);
+  if (c.weapon) return q(`.hud .kit [data-kit="${c.weapon.id}"]`) ?? q(".hud .kit .tile.empty:not(.round)");
+  if (c.item?.id === "onigiri") return q(".hud .hp");
+  if (c.item?.id === "offering") return q(".hud .trow.gold");
+  if (c.item) return q(`.hud .kit [data-kit="${c.item.id}"]`) ?? q(".hud .kit .tile.round.empty");
+  return null;
+}
+/** The vector from a live tablet to where its choice goes, measured before the tablets are replaced. */
+function flight(index: number, c: Choice): { x: number; y: number } | undefined {
+  const tablet = document.querySelectorAll<HTMLElement>(".lvl.live .choice")[index];
+  const to = kitTarget(c);
+  if (!tablet || !to) return undefined;
+  const a = tablet.getBoundingClientRect();
+  const b = to.getBoundingClientRect();
+  // The UI may be zoomed (App.vue): translate in its own px.
+  const z = tablet.offsetWidth ? a.width / tablet.offsetWidth : 1;
+  return { x: (b.left + b.width / 2 - (a.left + a.width / 2)) / z, y: (b.top + b.height / 2 - (a.top + a.height / 2)) / z };
 }
 
 // The sim resolves a pick at once and the run goes on; the exit is played by a
@@ -101,7 +127,9 @@ watch(
     const ev = ui.levelPick && ui.levelPick.id > seenPick ? ui.levelPick : null;
     if (ev) seenPick = ev.id;
     const mode = !ev ? "fade" : ev.index === null ? "reroll" : "pick";
-    const ghost: Layer = { ...prev, id: `g${nextGhost++}`, mode, picked: ev?.index ?? -1, chained: !!key };
+    const choice = ev && ev.index !== null ? prev.choices[ev.index] : undefined;
+    const fly = choice && ev && ev.index !== null ? flight(ev.index, choice) : undefined;
+    const ghost: Layer = { ...prev, id: `g${nextGhost++}`, mode, picked: ev?.index ?? -1, chained: !!key, fly };
     ghosts.value = [...ghosts.value.slice(-2), ghost];
     const t = window.setTimeout(
       () => {
@@ -155,8 +183,14 @@ function hover(): void {
         v-for="(c, i) in L.choices"
         :key="L.level + '-' + i + c.name"
         class="choice"
-        :class="{ picked: i === L.picked }"
-        :style="{ '--c': c.color, '--i': i, animationDelay: L.mode === 'live' ? `calc(${i * 0.07}s * var(--anim))` : undefined }"
+        :class="{ picked: i === L.picked, flies: i === L.picked && !!L.fly }"
+        :style="{
+          '--c': c.color,
+          '--i': i,
+          '--tx': i === L.picked && L.fly ? `${L.fly.x}px` : undefined,
+          '--ty': i === L.picked && L.fly ? `${L.fly.y}px` : undefined,
+          animationDelay: L.mode === 'live' ? `calc(${i * 0.07 + (ghosts.length ? 0.16 : 0)}s * var(--anim))` : undefined,
+        }"
         :tabindex="L.mode === 'live' ? undefined : -1"
         @mouseenter="L.mode === 'live' && hover()"
         @click="L.mode === 'live' && pick(i)"
@@ -226,9 +260,17 @@ function hover(): void {
 .lvl.chained .foot {
   visibility: hidden;
 }
+/* The chosen tablet is pressed, then flies into Reimu's kit and shrinks to its slot (HudView bumps the slot as it lands);
+   with nowhere to go it only sinks away. The others drop out quickly, and a following offer deals in after them. */
 .lvl.pick .choice.picked {
-  animation: taken calc(0.45s * var(--anim)) cubic-bezier(0.3, 0, 0.5, 1) both;
+  animation: taken calc(0.3s * var(--anim)) ease-in both;
   z-index: 1;
+}
+.lvl.pick .choice.picked.flies {
+  animation: tokit calc(0.5s * var(--anim)) linear both;
+}
+.lvl:not(.live) .choice:not(.picked) {
+  animation-duration: calc(0.22s * var(--anim));
 }
 .lvl.reroll .choice {
   animation: flip calc(0.25s * var(--anim)) ease-in calc(var(--i) * 0.04s * var(--anim)) both;
@@ -356,21 +398,30 @@ ul {
   0% {
     transform: translateY(-6px) scale(1.03);
   }
-  35% {
-    transform: translateY(-10px) scale(1.12);
-    border-color: #fff;
-    filter: brightness(1.5);
-    box-shadow:
-      0 0 36px 6px var(--c),
-      0 0 90px 10px color-mix(in srgb, var(--c) 60%, transparent);
+  30% {
+    transform: translateY(-1px) scale(0.98);
+  }
+  100% {
+    transform: translateY(-40px) scale(0.9);
+    opacity: 0;
+  }
+}
+@keyframes tokit {
+  0% {
+    transform: translate(0, -6px) scale(1.03);
+    animation-timing-function: ease-out;
+  }
+  16% {
+    transform: translate(0, -1px) scale(0.97);
+    border-color: #e8c15a;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.8, 0.4);
+  }
+  92% {
     opacity: 1;
   }
   100% {
-    transform: translateY(-34px) scale(1.3);
-    filter: brightness(2.2) blur(3px);
-    box-shadow:
-      0 0 60px 16px var(--c),
-      0 0 140px 30px color-mix(in srgb, var(--c) 40%, transparent);
+    transform: translate(var(--tx), var(--ty)) scale(0.1);
+    border-color: #e8c15a;
     opacity: 0;
   }
 }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { host, state } from "../host.ts";
 import { input } from "../input.ts";
 import Keys from "./Keys.vue";
 import { audio } from "../audio.ts";
+import { anim } from "../prefs.ts";
 import { CURRENCY, PLAYER_CHARACTER } from "../../content/names.ts";
 import { SLOTS } from "../../sim/tuning.ts";
 import { fmtTime, hex } from "./useGame.ts";
@@ -42,6 +43,37 @@ const cast = computed(() => {
   const def = cardDef(ui.cardFlash.card);
   return { id: ui.cardFlash.id, def, icon: cardIcon(def.id), kc: CARD_KINDS[def.kind].css };
 });
+
+/**
+ * A weapon or item that just gained a level (a level-up pick) bumps in its slot as the picked tablet
+ * lands there (LevelUpView flies it in); the bump waits out the flight.
+ */
+const bumped = ref(new Set<string>());
+/** Of those, the ones that were not in the kit before: they stay out of sight until the tablet lands. */
+const arrived = ref(new Set<string>());
+const kitLevels = computed(() => {
+  const x = hud.value;
+  return x ? [...x.weapons, ...x.passives].map((k) => `${k.id}:${k.level}`).join(",") : "";
+});
+let bumpTimer = 0;
+watch(kitLevels, (now, before) => {
+  if (!before || !now) return;
+  const was = new Map(before.split(",").map((e) => e.split(":") as [string, string]));
+  const up = now
+    .split(",")
+    .map((e) => e.split(":") as [string, string])
+    .filter(([id, lv]) => id && Number(lv) > Number(was.get(id) ?? 0))
+    .map(([id]) => id);
+  if (!up.length) return;
+  bumped.value = new Set(up);
+  arrived.value = new Set(up.filter((id) => !was.has(id)));
+  clearTimeout(bumpTimer);
+  bumpTimer = window.setTimeout(() => {
+    bumped.value = new Set();
+    arrived.value = new Set();
+  }, anim(1) * 1000);
+});
+onBeforeUnmount(() => clearTimeout(bumpTimer));
 
 /** Touch screens have no Shift: focus is a button held with the other thumb. */
 const touch = matchMedia("(pointer: coarse)").matches;
@@ -99,7 +131,8 @@ function pause(): void {
             v-for="w in h.weapons"
             :key="w.id"
             class="tile"
-            :class="{ max: w.level === w.max }"
+            :data-kit="w.id"
+            :class="{ max: w.level === w.max, bump: bumped.has(w.id), arrive: arrived.has(w.id) }"
             :title="`${w.name} (level ${w.level} of ${w.max}): ${w.desc}`"
           >
             <svg class="ico" viewBox="0 0 24 24" fill="currentColor" :style="{ color: hex(w.color) }" v-html="itemIcon(w.id)"></svg>
@@ -111,7 +144,8 @@ function pause(): void {
             v-for="p in h.passives"
             :key="p.id"
             class="tile round"
-            :class="{ max: p.level === p.max }"
+            :data-kit="p.id"
+            :class="{ max: p.level === p.max, bump: bumped.has(p.id), arrive: arrived.has(p.id) }"
             :title="`${p.name} (level ${p.level} of ${p.max}): ${p.desc}`"
           >
             <svg class="ico" viewBox="0 0 24 24" fill="currentColor" :style="{ color: hex(p.color) }" v-html="itemIcon(p.id)"></svg>
@@ -468,6 +502,52 @@ function pause(): void {
 .tile.empty {
   opacity: 0.35;
   box-shadow: none;
+}
+/* A level just gained: the slot takes the flown-in tablet with a small jolt and a gold ring. */
+.tile.bump {
+  animation: bump calc(0.45s * var(--anim)) cubic-bezier(0.2, 1.4, 0.4, 1) calc(0.42s * var(--anim)) both;
+}
+.tile.bump.arrive {
+  animation-name: arrive;
+}
+@keyframes arrive {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+  }
+  30% {
+    opacity: 1;
+    scale: 1.28;
+    box-shadow:
+      0 0 0 2px #e8c15a,
+      0 2px 0 rgba(0, 0, 0, 0.4);
+  }
+  100% {
+    scale: 1;
+    box-shadow:
+      0 0 0 3px rgba(232, 193, 90, 0),
+      0 2px 0 rgba(0, 0, 0, 0.4);
+  }
+}
+@keyframes bump {
+  0% {
+    scale: 1;
+    box-shadow:
+      0 0 0 0 rgba(232, 193, 90, 0),
+      0 2px 0 rgba(0, 0, 0, 0.4);
+  }
+  30% {
+    scale: 1.28;
+    box-shadow:
+      0 0 0 2px #e8c15a,
+      0 2px 0 rgba(0, 0, 0, 0.4);
+  }
+  100% {
+    scale: 1;
+    box-shadow:
+      0 0 0 3px rgba(232, 193, 90, 0),
+      0 2px 0 rgba(0, 0, 0, 0.4);
+  }
 }
 .pips {
   position: absolute;
