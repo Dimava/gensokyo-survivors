@@ -52,6 +52,11 @@ const trips = computed(() => {
 });
 
 const full = computed(() => trips.value.length >= MAX_EXPEDITIONS);
+/** Who an errand would send: the one picked, else the first companion at the shrine, so no Send button waits dead. */
+const chosen = computed(() => {
+  const free = companions.value.filter((c) => !c.away);
+  return free.find((c) => c.id === picked.value)?.id ?? free[0]?.id ?? "";
+});
 
 function fmt(seconds: number): string {
   const s = Math.ceil(seconds);
@@ -61,12 +66,12 @@ function fmt(seconds: number): string {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : m ? `${m}m ${String(r).padStart(2, "0")}s` : `${r}s`;
 }
 function pick(id: string): void {
-  picked.value = picked.value === id ? "" : id;
+  picked.value = id;
   audio.play("ui");
 }
 function send(dest: string): void {
-  if (!picked.value) return;
-  const res = host.meta("expedition:send", { who: picked.value, dest });
+  if (!chosen.value) return;
+  const res = host.meta("expedition:send", { who: chosen.value, dest });
   if (res.ok) picked.value = "";
 }
 function claim(trip: string): void {
@@ -96,7 +101,7 @@ function recall(trip: string): void {
       <section class="panel box">
         <h3>Companions</h3>
         <div class="comps">
-          <button v-for="c in companions" :key="c.id" class="comp" :class="{ sel: picked === c.id, away: c.away }" :disabled="c.away" @click="pick(c.id)">
+          <button v-for="c in companions" :key="c.id" class="comp" :class="{ sel: chosen === c.id, away: c.away }" :disabled="c.away" @click="pick(c.id)">
             <Face :who="c.id" :size="40" />
             <b>{{ c.short }}</b>
             <span class="muted">{{ c.away ? "Away" : c.title }}</span>
@@ -115,8 +120,8 @@ function recall(trip: string): void {
             <span>{{ fmt(d.seconds) }}</span>
             <span class="gold">{{ CURRENCY.icon }} {{ d.coins }}</span>
           </div>
-          <button class="btn small" :disabled="!picked || full" @click="send(d.id)">
-            {{ full ? "All slots busy" : picked ? `Send ${charOf(picked).short}` : "Send" }}
+          <button class="btn small" :disabled="!chosen || full" @click="send(d.id)">
+            {{ full ? "All slots busy" : chosen ? `Send ${charOf(chosen).short}` : "Everyone is away" }}
           </button>
         </div>
       </section>
