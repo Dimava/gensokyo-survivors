@@ -13,7 +13,8 @@ export interface Atlas {
   bullet: Texture[];
   /** The same bullets with their inner glow put out, drawn once grazed. */
   bulletSpent: Texture[];
-  drop: { gem: Texture; gemGreen: Texture; gemRed: Texture; coin: Texture; heart: Texture };
+  /** Gems by tier (blue, green, red), and the same catching the light (a moment of a twinkle). */
+  drop: { gems: Texture[]; glints: Texture[]; coin: Texture; heart: Texture };
   shot: Texture[];
   spark: Texture;
   star: Texture;
@@ -140,17 +141,36 @@ export function buildAtlas(renderer: Renderer): Atlas {
     // Grazed ("spent"): the coloured glow stays, the white inner glow goes out. Tint only multiplies, so this is its own texture.
     cells.push({ name: `bulletS${i}`, w: s, h: s, draw: (g, cx, cy) => drawBullet(g, cx, cy, b.shape, b.size, b.color, spentCore(b.color)) });
   });
-  // EXP drops are Touhou's point items: small square tiles with a dark rim, a
-  // lit top-left bevel and a white mark, in blue, then green, then red as they grow.
-  // Small and quiet: a field can hold hundreds of them, so no bright centre, only the lit bevel.
-  const gem = (color: number, rim: number) => (g: Graphics, cx: number, cy: number) => {
-    g.rect(cx - 5, cy - 5, 10, 10).fill(rim);
-    g.rect(cx - 3.8, cy - 3.8, 7.6, 7.6).fill(color);
-    g.poly([cx - 3.8, cy - 3.8, cx + 3.8, cy - 3.8, cx + 2.4, cy - 2.4, cx - 2.4, cy - 2.4, cx - 2.4, cy + 2.4, cx - 3.8, cy + 3.8]).fill({ color: 0xffffff, alpha: 0.3 });
-  };
-  cells.push({ name: "gem", w: 20, h: 22, draw: gem(0x4a7cd0, 0x1a2a55) });
-  cells.push({ name: "gemGreen", w: 20, h: 22, draw: gem(0x4aa66a, 0x173d25) });
-  cells.push({ name: "gemRed", w: 20, h: 22, draw: gem(0xc9434a, 0x4f1216) });
+  // EXP drops are gems: a small square-cut stone seen from above (the square is Touhou's item
+  // silhouette, which no bullet has), its bevel in four facets around a flat table, lit from the top
+  // left, on a faint dark rim; blue, then green, then red as they grow. A field can hold hundreds, so
+  // they stay small and quiet: no halo, no bright centre. Now and then one catches the light (the glint
+  // cells: the table paled and a four-point sparkle).
+  const gem =
+    ([base, lit, dark]: readonly number[], glint: boolean) =>
+    (g: Graphics, cx: number, cy: number): void => {
+      const o = 5;
+      const i = 2.4;
+      g.rect(cx - o - 0.9, cy - o - 0.9, (o + 0.9) * 2, (o + 0.9) * 2).fill({ color: 0x0b0a14, alpha: 0.55 });
+      g.rect(cx - o, cy - o, o * 2, o * 2).fill(base!);
+      g.poly([cx - o, cy - o, cx + o, cy - o, cx + i, cy - i, cx - i, cy - i]).fill({ color: lit!, alpha: 0.85 });
+      g.poly([cx - o, cy - o, cx - i, cy - i, cx - i, cy + i, cx - o, cy + o]).fill({ color: lit!, alpha: 0.4 });
+      g.poly([cx + o, cy - o, cx + o, cy + o, cx + i, cy + i, cx + i, cy - i]).fill({ color: dark!, alpha: 0.6 });
+      g.poly([cx - o, cy + o, cx - i, cy + i, cx + i, cy + i, cx + o, cy + o]).fill({ color: dark!, alpha: 0.9 });
+      if (glint) {
+        g.rect(cx - i, cy - i, i * 2, i * 2).fill({ color: 0xffffff, alpha: 0.55 });
+        g.star(cx - 1.1, cy - 1.1, 4, 5.2, 0.8).fill({ color: 0xffffff, alpha: 0.95 });
+      } else g.circle(cx - 1.1, cy - 1.1, 0.8).fill({ color: 0xffffff, alpha: 0.9 });
+    };
+  const TIERS = [
+    [0x4d8fe8, 0xa9ccff, 0x1f4589],
+    [0x4aa66a, 0xa4e6b8, 0x1a4f2e],
+    [0xd0454c, 0xffaaa6, 0x6e161c],
+  ] as const;
+  TIERS.forEach((c, i) => {
+    cells.push({ name: `gem${i}`, w: 20, h: 22, draw: gem(c, false) });
+    cells.push({ name: `glint${i}`, w: 20, h: 22, draw: gem(c, true) });
+  });
   cells.push({
     // A mon: a round coin with a square hole.
     name: "coin",
@@ -354,7 +374,7 @@ export function buildAtlas(renderer: Renderer): Atlas {
     enemyWhite: ENEMIES.map((_, i) => f(`enemyW${i}`)),
     bullet: BULLET_STYLES.map((_, i) => f(`bullet${i}`)),
     bulletSpent: BULLET_STYLES.map((_, i) => f(`bulletS${i}`)),
-    drop: { gem: f("gem"), gemGreen: f("gemGreen"), gemRed: f("gemRed"), coin: f("coin"), heart: f("heart") },
+    drop: { gems: [0, 1, 2].map((i) => f(`gem${i}`)), glints: [0, 1, 2].map((i) => f(`glint${i}`)), coin: f("coin"), heart: f("heart") },
     shot: WEAPONS.map((_, i) => f(`shot${i}`)),
     spark: f("spark"),
     star: f("star"),

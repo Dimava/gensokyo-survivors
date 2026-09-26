@@ -98,7 +98,7 @@ function pause(): void {
 <template>
   <div class="hud">
     <!-- Left: Reimu's corner. Her face in a gold ring with her level on a tab at its foot; her life,
-         her charms and her experience (point-item blue) beside it; under them her kit: weapons as
+         her charms and her experience (gem blue) beside it; under them her kit: weapons as
          square plaques, items as round medallions, a pip under each per level, a full one framed in gold. -->
     <div class="tl">
       <div class="facewrap">
@@ -123,7 +123,7 @@ function pause(): void {
             </svg>
           </span>
         </div>
-        <div class="xp" :title="`Experience ${Math.floor(h.xp)} of ${h.next}: point items fill it, and a full bar is a level-up.`">
+        <div class="xp" :title="`Experience ${Math.floor(h.xp)} of ${h.next}: gems fill it, and a full bar is a level-up.`">
           <div class="xpfill" :style="{ width: xpPct + '%' }"></div>
         </div>
         <div class="kit">
@@ -382,7 +382,7 @@ function pause(): void {
   font-size: 9px;
   color: #d6c48c;
 }
-/* Experience: a thin trough under her life, filled in the blue of the point items that fill it. */
+/* Experience: a thin trough under her life, filled in the blue of the gems that fill it. */
 .xp {
   width: 230px;
   height: 5px;

@@ -588,19 +588,29 @@ export class Playfield {
       }
     }
 
-    // Drops.
+    // Drops. Gems lie still and now and then catch the light, each on its own beat (from where it lies);
+    // coins and hearts bob.
     const d = v.packed("drops");
-    const dp = pool(this.dropPC, d.count, this.atlas.drop.gem);
+    const dp = pool(this.dropPC, d.count, this.atlas.drop.gems[0]!);
     const dkind = d.col("kind");
     const dval = d.col("value");
+    const dx0 = d.col("x");
+    const dy0 = d.col("y");
     const bob = Math.sin(this.time * 4) * 0.08;
     for (let i = 0; i < d.count; i++) {
       const q = dp[i]!;
-      q.x = d.col("x")[i]!;
-      q.y = d.col("y")[i]!;
+      const x = dx0[i]!;
+      const y = dy0[i]!;
+      q.x = x;
+      q.y = y;
       const kind = dkind[i]!;
-      q.texture = kind === 1 ? this.atlas.drop.coin : kind === 2 ? this.atlas.drop.heart : dval[i]! >= 20 ? this.atlas.drop.gemRed : dval[i]! >= 5 ? this.atlas.drop.gemGreen : this.atlas.drop.gem;
-      const s = (kind === 0 ? Math.min(1.8, 0.8 + Math.sqrt(dval[i]!) * 0.12) : 1) + bob;
+      let s = 1 + bob;
+      if (kind === 0) {
+        const tier = dval[i]! >= 20 ? 2 : dval[i]! >= 5 ? 1 : 0;
+        const beat = (this.time * 0.45 + ((x * 0.0137 + y * 0.0291) % 1) + 1) % 1;
+        q.texture = (beat < 0.035 ? this.atlas.drop.glints : this.atlas.drop.gems)[tier]!;
+        s = Math.min(1.8, 0.8 + Math.sqrt(dval[i]!) * 0.12);
+      } else q.texture = kind === 1 ? this.atlas.drop.coin : this.atlas.drop.heart;
       q.scaleX = s;
       q.scaleY = s;
     }
