@@ -8,7 +8,7 @@ import { CHARACTERS, type CharacterId } from "../../content/names.ts";
 import { hex } from "./useGame.ts";
 
 /** Where the head sits in each sprite: its width and the height of its centre, as fractions of the drawing. */
-const HEAD: Partial<Record<CharacterId, [w: number, y: number]>> = { reimu: [0.75, 0.32], daiyousei: [0.6, 0.4] };
+const HEAD: Partial<Record<CharacterId, [w: number, y: number]>> = { reimu: [0.75, 0.32], daiyousei: [0.6, 0.4], cirno: [0.54, 0.44], rumia: [0.54, 0.41] };
 const RIM = 2;
 
 const props = withDefaults(defineProps<{ who: CharacterId; size?: number }>(), { size: 42 });

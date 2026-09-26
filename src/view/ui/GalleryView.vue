@@ -139,13 +139,17 @@ function draw(d: Drawing, key: string, px: number): string {
   <div v-keynav="{ pointer: true }" class="screen gallery">
     <div class="screen-head">
       <h1>Gallery</h1>
-      <div class="tabs">
+      <!-- The tabs are words, as the title menu's: the open one stands on a short vermilion brush stroke. -->
+      <nav class="tabs" role="tablist">
         <span class="key">Q</span>
-        <button v-for="[id, label] in TABS" :key="id" class="btn small tab" :class="{ primary: tab === id }" @click="tab = id">{{ label }}</button>
+        <button v-for="[id, label] in TABS" :key="id" class="tab" role="tab" :aria-selected="tab === id" :class="{ on: tab === id }" @click="tab = id">
+          <span>{{ label }}</span>
+        </button>
         <span class="key">E</span>
-      </div>
+      </nav>
+      <!-- A way of showing, not an action: small words, the chosen one in gold on a hairline. -->
       <div v-if="tab === 'characters'" class="styles">
-        <button v-for="[id, label] in STYLES" :key="id" class="btn small" :class="{ primary: style === id }" @click="style = id">{{ label }}</button>
+        <button v-for="[id, label] in STYLES" :key="id" class="opt" :class="{ on: style === id }" @click="style = id">{{ label }}</button>
       </div>
       <button class="btn back" @click="host.go('menu')">Back</button>
     </div>
@@ -154,7 +158,7 @@ function draw(d: Drawing, key: string, px: number): string {
       <CreditsRoll v-if="tab === 'credits'" />
       <template v-if="tab === 'characters'">
       <h3>Characters</h3>
-      <div class="grid" :class="{ wide: style !== 'drawn' }">
+      <div class="grid chars" :class="{ wide: style !== 'drawn' }">
         <div v-for="c in characters" :key="c.key" class="item" tabindex="0">
           <div class="art" :class="{ both: style === 'both' }">
             <div
@@ -208,7 +212,7 @@ function draw(d: Drawing, key: string, px: number): string {
       <div class="section-head">
         <h3>Items</h3>
         <div class="styles">
-          <button v-for="l in ITEM_LOOKS" :key="l.id" class="btn small" :class="{ primary: prefs.itemArt === l.id }" :title="l.blurb" @click="pickItemArt(l.id)">{{ l.label }}</button>
+          <button v-for="l in ITEM_LOOKS" :key="l.id" class="opt" :class="{ on: prefs.itemArt === l.id }" :title="l.blurb" @click="pickItemArt(l.id)">{{ l.label }}</button>
         </div>
       </div>
       <p class="muted look-note">{{ ITEM_LOOKS.find((l) => l.id === prefs.itemArt)?.blurb }}. The level-up cards use the look picked here.</p>
@@ -316,28 +320,154 @@ h3 {
 .portrait.live {
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
 }
+/* A bust fades out at the waist, as in the credits, instead of stopping at a ruled edge. */
+.portrait {
+  mask-image: linear-gradient(180deg, #000 78%, transparent 99%);
+}
 .styles {
   display: flex;
-  gap: 6px;
-  margin-left: auto;
-  margin-right: 12px;
+  align-items: baseline;
+  margin-right: 14px;
 }
+/* A small option set: words with thin dividers; the chosen one is gold, on a gold hairline. */
+.opt {
+  position: relative;
+  padding: 3px 10px 5px;
+  border: none;
+  background: none;
+  font-family: var(--display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(233, 225, 207, 0.55);
+  transition: color var(--glide);
+}
+.opt + .opt::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 28%;
+  bottom: 28%;
+  width: 1px;
+  background: rgba(214, 196, 140, 0.35);
+}
+.opt::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 1px;
+  height: 1px;
+  background: #e8c15a;
+  opacity: 0;
+  transition: opacity var(--glide);
+}
+.opt:hover,
+.opt[data-nav-sel] {
+  color: #f6f0e1;
+}
+.opt.on {
+  color: #e8c15a;
+}
+.opt.on::after {
+  opacity: 1;
+}
+/* The keys' option: washi, on a washi hairline. */
+.opt[data-nav-sel]::after {
+  opacity: 1;
+  background: #f6f0e1;
+}
+/* The tabs follow the title on every tab; whatever else the head holds stands at the right, by Back. */
 .tabs {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 18px;
+  gap: 2px;
+  margin-left: 22px;
+  margin-right: auto;
+}
+.tabs .key {
+  margin: 0 6px;
+}
+/* A tab: a word in the display face, dimmed until open; the open one stands on a short brush stroke,
+   and the keyboard's tab is held in 「」 as a menu entry is. */
+.tab {
+  position: relative;
+  isolation: isolate;
+  padding: 4px 12px 7px;
+  border: none;
+  background: none;
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: rgba(233, 225, 207, 0.55);
+  text-shadow: 0 2px 0 rgba(6, 5, 12, 0.75);
+  transition: color var(--glide);
+}
+.tab > span {
+  position: relative;
+}
+.tab::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 2px;
+  bottom: 1px;
+  height: 9px;
+  z-index: -1;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpath d='M4 30C30 17 110 10 220 11S372 14 397 21L392 27C396 31 384 36 370 38C300 46 220 50 140 49S34 49 8 45C14 41 2 38 4 30Z' fill='%23b3261e'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path calc(0.22s * var(--anim)) ease-out;
+}
+.tab.on {
+  color: #fff8ea;
+}
+.tab.on::before {
+  clip-path: inset(0 0 0 0);
+}
+.tab:hover {
+  color: #f6f0e1;
+}
+.tab > span::before,
+.tab > span::after {
+  position: absolute;
+  top: 0;
+  opacity: 0;
+  transition: opacity var(--glide);
+}
+.tab > span::before {
+  content: "「";
+  right: calc(100% + 0.05em);
+}
+.tab > span::after {
+  content: "」";
+  left: calc(100% + 0.05em);
+}
+.tab[data-nav-sel] {
+  color: #fff8ea;
+}
+.tab[data-nav-sel] > span::before,
+.tab[data-nav-sel] > span::after {
+  opacity: 1;
 }
 .sprite :deep(svg) {
   display: block;
 }
 .name {
   margin-top: 8px;
-  font-weight: 600;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 .sub {
   font-size: 12px;
   margin-top: 2px;
+}
+/* A character's title, as the credits set it: straw italic. */
+.grid.chars .sub {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 13px;
+  color: #d6c48c;
 }
 .section-head {
   display: flex;

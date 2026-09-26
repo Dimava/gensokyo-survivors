@@ -5,7 +5,7 @@ import { host, state } from "../host.ts";
 import { audio } from "../audio.ts";
 import { CHARACTERS, CURRENCY, type CharacterId } from "../../content/names.ts";
 import { DESTINATIONS, MAX_EXPEDITIONS, destination } from "../../content/expeditions.ts";
-import { hex, wallet } from "./useGame.ts";
+import { wallet } from "./useGame.ts";
 import NavHints from "./NavHints.vue";
 import Face from "./Face.vue";
 
@@ -42,7 +42,7 @@ const trips = computed(() => {
       return {
         id: t.id,
         who: charOf(t.expedition.who).short,
-        color: hex(charOf(t.expedition.who).color),
+        whoId: t.expedition.who as CharacterId,
         dest: d,
         back: t.expedition.back,
         left,
@@ -94,7 +94,7 @@ function recall(trip: string): void {
     </div>
     <div class="body">
       <section class="panel box">
-        <h3>1. Choose a companion</h3>
+        <h3>Companions</h3>
         <div class="comps">
           <button v-for="c in companions" :key="c.id" class="comp" :class="{ sel: picked === c.id, away: c.away }" :disabled="c.away" @click="pick(c.id)">
             <Face :who="c.id" :size="40" />
@@ -105,10 +105,10 @@ function recall(trip: string): void {
         <p class="muted small">More companions join when you collect one of their skill cards (Marisa, Sakuya, Yukari) from Card Packs.</p>
       </section>
       <section class="panel box">
-        <h3>2. Send them somewhere</h3>
+        <h3>Errands</h3>
         <div v-for="d in DESTINATIONS" :key="d.id" class="dest">
           <div>
-            <b>{{ d.name }}</b>
+            <b class="dname">{{ d.name }}</b>
             <div class="muted small">{{ d.blurb }}</div>
           </div>
           <div class="meta">
@@ -116,16 +116,16 @@ function recall(trip: string): void {
             <span class="gold">{{ CURRENCY.icon }} {{ d.coins }}</span>
           </div>
           <button class="btn small" :disabled="!picked || full" @click="send(d.id)">
-            {{ full ? "All slots busy" : picked ? `Send ${charOf(picked).short}` : "Pick a companion" }}
+            {{ full ? "All slots busy" : picked ? `Send ${charOf(picked).short}` : "Send" }}
           </button>
         </div>
       </section>
       <section class="panel box wide">
-        <h3>Away now</h3>
+        <h3>Away</h3>
         <p v-if="!trips.length" class="muted">Nobody is away.</p>
         <TransitionGroup name="pop">
           <div v-for="t in trips" :key="t.id" class="trip" :class="{ back: t.back }">
-            <i :style="{ background: t.color }"></i>
+            <Face :who="t.whoId" :size="36" />
             <div class="grow">
               <div>
                 <b>{{ t.who }}</b> · {{ t.dest.name }}
@@ -211,6 +211,10 @@ h3 {
   padding: 8px 0;
   border-bottom: 1px solid var(--line);
 }
+.dname {
+  font-family: var(--display);
+  font-size: 1.02rem;
+}
 .meta {
   display: flex;
   flex-direction: column;
@@ -230,22 +234,17 @@ h3 {
   align-items: center;
   padding: 10px 0;
 }
-.trip i {
-  flex: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-}
+
 .grow {
   flex: 1;
 }
 .bar {
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.4);
+  height: 6px;
+  border-radius: 1px;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(232, 193, 90, 0.18);
   overflow: hidden;
-  margin: 4px 0;
+  margin: 5px 0 4px;
 }
 .fill {
   height: 100%;

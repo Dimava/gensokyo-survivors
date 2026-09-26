@@ -7,6 +7,7 @@ import { STAT_DEFS } from "../../content/stats.ts";
 import { loadout, owned } from "./useGame.ts";
 import CardFace from "./CardFace.vue";
 import NavHints from "./NavHints.vue";
+import Hanko from "./Hanko.vue";
 
 const byId = computed(() => new Map(owned.value.map((o) => [o.card, o])));
 const deckSize = computed(() => owned.value.filter((o) => o.inDeck).length);
@@ -52,8 +53,10 @@ onBeforeUnmount(() => {
         @click="toggle(c.id)"
       >
         <CardFace :card="c.id" :level="byId.get(c.id)?.level ?? 1" :unknown="!byId.has(c.id)" />
-        <span v-if="byId.get(c.id)?.fresh" class="new">NEW</span>
-        <span v-if="byId.has(c.id)" class="state">{{ byId.get(c.id)?.inDeck ? "In deck ✓" : "Not in deck" }}</span>
+        <span v-if="byId.get(c.id)?.fresh" class="new" title="New"><Hanko ch="新" :tilt="8" /></span>
+        <span v-if="byId.has(c.id)" class="state"
+          ><b v-if="byId.get(c.id)?.fresh" class="newword">New · </b>{{ byId.get(c.id)?.inDeck ? "In deck ✓" : "Not in deck" }}</span
+        >
         <span v-if="byId.has(c.id)" class="copies muted">Copies found: {{ byId.get(c.id)?.copies }}</span>
       </button>
     </div>
@@ -90,12 +93,16 @@ onBeforeUnmount(() => {
   border-left: 2px solid #c8352a;
   color: #e8d9c0;
 }
+/* Two rows of five fit the screen above the key legend: the faces are held at 84%. */
 .grid {
   width: min(1100px, 94vw);
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  padding-bottom: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px 16px;
+  padding-bottom: 44px;
+}
+.slot :deep(.face) {
+  zoom: 0.84;
 }
 .slot {
   position: relative;
@@ -126,17 +133,15 @@ onBeforeUnmount(() => {
 .slot:disabled {
   cursor: default;
 }
+/* A card just found is stamped 新 on its corner. */
 .new {
   position: absolute;
-  top: 0;
-  right: 0;
-  padding: 1px 7px;
-  border: 1px solid rgba(232, 193, 90, 0.7);
-  border-radius: 2px;
-  background: rgba(23, 17, 14, 0.9);
-  color: #e8c15a;
-  font-weight: 700;
-  font-size: 0.75rem;
+  top: -6px;
+  right: 2px;
+  z-index: 3;
+  font-size: 26px;
+  line-height: 0;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.5));
 }
 .state {
   font-weight: 700;
@@ -147,5 +152,8 @@ onBeforeUnmount(() => {
 }
 .copies {
   font-size: 0.75rem;
+}
+.newword {
+  color: #e5604a;
 }
 </style>

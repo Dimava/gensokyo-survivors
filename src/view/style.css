@@ -145,6 +145,16 @@ button {
   background: transparent;
   border-color: rgba(214, 196, 140, 0.4);
 }
+/* A coloured plaque that cannot be used is grey lacquer with its colour gone (NOTES.md, Button), not its colour half faded. */
+.btn.gold:disabled,
+.btn.primary:disabled {
+  --g1: #29211c;
+  --g2: #29211c;
+  background: linear-gradient(180deg, var(--g1), var(--g2));
+  border-color: rgba(232, 193, 90, 0.2);
+  color: rgba(233, 225, 207, 0.5);
+  opacity: 1;
+}
 .btn.small {
   padding: 0.35em 0.8em;
   font-size: 0.9em;

@@ -51,14 +51,14 @@ const size = computed(() => ({
   w: (bounds.value.maxX - bounds.value.minX + 1) * UNIT,
   h: (bounds.value.maxY - bounds.value.minY + 1) * UNIT,
 }));
-// Fit the whole board on screen (it scrolls only on very small windows).
+// Fit the whole board on screen, its foot clear of the key legend (it scrolls only on very small windows).
 const vh = ref(window.innerHeight);
 const onResize = (): void => {
   vh.value = window.innerHeight;
 };
 onMounted(() => window.addEventListener("resize", onResize));
 onBeforeUnmount(() => window.removeEventListener("resize", onResize));
-const fit = computed(() => Math.max(0.6, Math.min(1, (vh.value - 130) / size.value.h)));
+const fit = computed(() => Math.max(0.6, Math.min(1, (vh.value - 162) / size.value.h)));
 const px = (n: TreeNode): { x: number; y: number } => ({
   x: (n.x - bounds.value.minX + 0.5) * UNIT,
   y: (n.y - bounds.value.minY + 0.5) * UNIT,

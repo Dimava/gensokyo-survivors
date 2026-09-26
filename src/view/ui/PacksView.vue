@@ -69,29 +69,25 @@ function artClick(id: string, e: MouseEvent): void {
         </div>
         <div class="info">
           <h2>{{ p.name }}</h2>
-          <p class="muted">{{ p.blurb }}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Rarity</th>
-                <th>Chance per card</th>
-                <th>Collected</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="o in odds(p.id)" :key="o.r">
-                <td :style="{ color: RARITY_INFO[o.r].css }">
-                  <b>{{ o.r }}</b> {{ RARITY_INFO[o.r].label }}
-                </td>
-                <td>{{ o.pct }}%</td>
-                <td>{{ o.have }} / {{ o.total }}<span v-if="o.maxed" class="muted"> ({{ o.maxed }} maxed)</span></td>
-              </tr>
-            </tbody>
-          </table>
-          <p class="pity">
-            Pity: a {{ RARITY_INFO[p.pity.rarity].label }} or better is guaranteed at least every {{ p.pity.every }} packs.
-            <b>Packs since your last one: {{ gacha.sinceHigh }}</b> (guaranteed within {{ Math.max(1, p.pity.every - gacha.sinceHigh) }}).
-          </p>
+          <p class="blurb">{{ p.blurb }}</p>
+          <!-- The odds per card, one column per rarity: its mark, the chance, how many of its cards you have found. -->
+          <div class="odds">
+            <div v-for="o in odds(p.id)" :key="o.r" class="lot" :style="{ '--rc': RARITY_INFO[o.r].css }">
+              <b class="code">{{ o.r }}</b>
+              <span class="rlabel">{{ RARITY_INFO[o.r].label }}</span>
+              <span class="pct">{{ o.pct }}<small>%</small></span>
+              <span class="have">{{ o.have }} / {{ o.total }} found<template v-if="o.maxed">, {{ o.maxed }} maxed</template></span>
+            </div>
+          </div>
+          <!-- Pity: an omikuji stick lit for each pack since the last Super Rare or better. -->
+          <div
+            class="pity"
+            :title="`A ${RARITY_INFO[p.pity.rarity].label} or better is guaranteed at least every ${p.pity.every} packs. Packs since your last one: ${gacha.sinceHigh}.`"
+          >
+            <span class="plabel">Pity</span>
+            <span class="sticks" aria-hidden="true"><i v-for="n in p.pity.every" :key="n" :class="{ lit: n <= gacha.sinceHigh }"></i></span>
+            <span>A {{ RARITY_INFO[p.pity.rarity].label }} or better within {{ Math.max(1, p.pity.every - gacha.sinceHigh) }} {{ Math.max(1, p.pity.every - gacha.sinceHigh) === 1 ? "pack" : "packs" }}</span>
+          </div>
           <p class="muted small">Cards already at level {{ MAX_CARD_LEVEL }} refund {{ CURRENCY.name }} instead: {{ RARITIES.map((r) => `${r} ${RARITY_INFO[r].refund}`).join(", ") }}.</p>
           <div class="buys">
             <button class="btn gold buy" :disabled="wallet.coins < p.cost || inRun || open" @click="buy(p.id, 1, $event)">Open for {{ CURRENCY.icon }} {{ p.cost }}</button>
@@ -179,9 +175,11 @@ function artClick(id: string, e: MouseEvent): void {
   color: #ffe4d4;
 }
 .count {
-  inset: auto 0 -26px;
+  inset: auto 0 -28px;
   text-align: center;
-  font-weight: 800;
+  font-family: var(--display);
+  font-weight: 700;
+  color: #d6c48c;
 }
 .info {
   flex: 1 1 400px;
@@ -189,27 +187,91 @@ function artClick(id: string, e: MouseEvent): void {
 .info h2 {
   margin: 0 0 6px;
 }
-table {
-  border-collapse: collapse;
-  margin: 10px 0;
-  width: 100%;
+.blurb {
+  margin: 0;
+  font-family: var(--display);
+  font-style: italic;
+  color: #d6c48c;
 }
-th {
-  text-align: left;
+/* The odds: four lots between two gold rules, each in its rarity's colour on the mark only. */
+.odds {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 14px 0 12px;
+  border-block: 1px solid rgba(232, 193, 90, 0.28);
+}
+.lot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 10px 6px 9px;
+}
+.lot + .lot {
+  border-left: 1px solid rgba(232, 193, 90, 0.14);
+}
+.code {
+  font-family: var(--display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--rc);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+.rlabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d6c48c;
+}
+.pct {
+  margin-top: 5px;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #f6f0e1;
+}
+.pct small {
+  margin-left: 1px;
+  font-size: 0.7em;
+  color: #b9ab8a;
+}
+.have {
+  font-size: 0.78rem;
   color: var(--muted);
-  font-weight: 600;
-  font-size: 0.85rem;
-  padding: 4px 0;
-}
-td {
-  padding: 3px 0;
 }
 .pity {
-  padding: 8px 10px;
-  border-radius: 2px;
-  background: rgba(255, 201, 77, 0.08);
-  border: 1px solid rgba(255, 201, 77, 0.3);
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 8px;
+  font-size: 0.92rem;
+  color: #e6dfcd;
+}
+.plabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d6c48c;
+}
+/* Omikuji sticks: dark wood until drawn, then gold. */
+.sticks {
+  display: inline-flex;
+  gap: 3px;
+}
+.sticks i {
+  width: 5px;
+  height: 17px;
+  border-radius: 1px;
+  background: #3a2c20;
+  box-shadow: inset 0 0 0 1px rgba(214, 196, 140, 0.25);
+}
+.sticks i.lit {
+  background: #e8c15a;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
 }
 .small {
   font-size: 0.85rem;

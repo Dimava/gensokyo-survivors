@@ -12,6 +12,9 @@ import { ENEMIES, enemyIndex } from "../../content/enemies.ts";
 import NavHints from "./NavHints.vue";
 import Portrait from "./Portrait.vue";
 import HakureiSeal from "./HakureiSeal.vue";
+import Hanko from "./Hanko.vue";
+import Face from "./Face.vue";
+import type { CharacterId } from "../../content/names.ts";
 import LivePortrait from "./LivePortrait.vue";
 import { livePortrait } from "../art-set.ts";
 import { prefs } from "../prefs.ts";
@@ -88,19 +91,21 @@ function hover(): void {
       <div v-if="picking" v-keynav="{ back: () => (picking = false) }" class="modal-wrap" @click.self="picking = false">
         <div class="panel stagepick">
           <h2>Choose a stage</h2>
+          <!-- A stage: her boss's face, the name in the display face, what waits there; cleared and sealed stages carry a seal. -->
           <div v-for="s in stages" :key="s.id" class="stage" :class="{ locked: locked(s) }">
-            <div>
+            <Face :who="bossDef(s.boss).character as CharacterId" :size="52" class="sface" />
+            <div class="sbody">
               <div class="sname">
-                {{ s.name }} <span v-if="profile.cleared.includes(s.id)" class="clearmark" title="Cleared at least once">✓ cleared</span>
+                {{ s.name }}<span v-if="profile.cleared.includes(s.id)" class="clearmark" title="Cleared at least once"><Hanko ch="済" />cleared</span>
               </div>
-              <div class="muted">{{ s.blurb }}</div>
-              <div class="muted small">
-                Midboss {{ midbossName(s) }}; boss at {{ fmtTime(s.bossAt) }}: {{ bossName(bossDef(s.boss)) }} with {{ bossDef(s.boss).spells.length }} spell cards · spell captures pay {{ CURRENCY.icon }}
-                {{ captures(s) }}
+              <div class="blurb">{{ s.blurb }}</div>
+              <div class="facts">
+                Midboss {{ midbossName(s) }} · {{ bossName(bossDef(s.boss)) }} at {{ fmtTime(s.bossAt) }}, {{ bossDef(s.boss).spells.length }} spell cards · captures pay
+                {{ CURRENCY.icon }} {{ captures(s) }}
               </div>
             </div>
             <button v-if="!locked(s)" class="btn primary" @click="start(s.id)">Go</button>
-            <span v-else class="lockmsg">Clear {{ stageDef(s.requires!).name }} to open</span>
+            <span v-else class="lockmsg"><Hanko ch="封" />Clear {{ stageDef(s.requires!).name }} to open</span>
           </div>
           <button class="btn back" @click="picking = false">Back</button>
         </div>
@@ -261,36 +266,78 @@ function hover(): void {
 }
 .stage {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   align-items: center;
-  justify-content: space-between;
   padding: 14px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 8, 7, 0.4);
   border: 1px solid rgba(214, 196, 140, 0.35);
 }
+.sface {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.sbody {
+  flex: 1;
+  min-width: 0;
+}
+/* A sealed stage: dimmed, its boss in shadow until the seal is broken. */
 .stage.locked {
-  opacity: 0.55;
-  background: rgba(255, 255, 255, 0.03);
   border-color: var(--line);
 }
+.stage.locked .sbody {
+  opacity: 0.5;
+}
+.stage.locked .sface {
+  border-color: rgba(214, 196, 140, 0.35);
+  background: #1d1714;
+}
+.stage.locked .sface :deep(.art) {
+  filter: grayscale(1) brightness(0.45);
+}
 .lockmsg {
-  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  max-width: 120px;
+  font-size: 0.78rem;
   color: var(--muted);
-  text-align: right;
-  max-width: 130px;
+  text-align: center;
+}
+.lockmsg :deep(.hanko) {
+  width: 28px;
+  height: 28px;
 }
 .clearmark {
-  font-size: 0.75rem;
-  color: var(--gold);
-  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 12px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d6c48c;
+  vertical-align: 0.25em;
+}
+.clearmark :deep(.hanko) {
+  width: 18px;
+  height: 18px;
 }
 .sname {
-  font-size: 1.2rem;
+  font-family: var(--display);
+  font-size: 1.25rem;
   font-weight: 700;
+  line-height: 1.3;
 }
-.small {
-  font-size: 0.85rem;
-  margin-top: 4px;
+.blurb {
+  color: #e6dfcd;
+}
+.facts {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 </style>
