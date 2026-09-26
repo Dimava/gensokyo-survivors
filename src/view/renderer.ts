@@ -36,6 +36,8 @@ import { Rig } from "../art-l2d/rig.ts";
 import { partImages, RigView } from "../art-l2d/pixi-model.ts";
 import { Animator } from "../art-l2d/animator.ts";
 import { CHARACTERS } from "../content/names.ts";
+import { Winds } from "./winds.ts";
+import { drawSights, Entries, type EntryGate } from "./telegraph.ts";
 
 /** A character drawn by its live rig (the player and the bosses in the Live2D style). */
 interface LiveSprite {
@@ -173,6 +175,13 @@ export class Playfield {
   private fx: Fx[] = [];
   private sparks: Spark[] = [];
   private floaters: Floater[] = [];
+  /** The boss's winds at her approach (winds.ts). */
+  private winds = new Winds();
+  /** Snipers' sights (telegraph.ts). */
+  private sightG = new Graphics();
+  /** Formations on their way (telegraph.ts), and the stretches of the screen's edge they will come in over, for EntryMarks.vue. */
+  private entries = new Entries();
+  entryMarks: EntryGate[] = [];
   private shakeAmt = 0;
   private flashColor = 0xffffff;
   private flashAlpha = 0;
@@ -262,6 +271,8 @@ export class Playfield {
       this.bossCircle,
       this.enemyPC,
       this.shotPC,
+      this.winds.g,
+      this.sightG,
       this.boss,
       this.bossLive,
       this.player,
@@ -274,7 +285,7 @@ export class Playfield {
       this.floatLayer,
       this.hitDebug,
     );
-    this.app.stage.addChild(this.ground, this.world, this.playerTop, this.screenG);
+    this.app.stage.addChild(this.ground, this.world, this.winds.fog, this.playerTop, this.screenG);
     this.ready = true;
   }
 
@@ -341,7 +352,13 @@ export class Playfield {
     this.floaters.push({ text: t, x, y, age: 0, dur: 0.9 });
   }
 
+  /** A formation was announced (formation:incoming) at action tick `now`: its entry is telegraphed. */
+  incoming(ev: { enemy: string; form: string; side: string; n: number; in: number }, now: number, stage: string): void {
+    this.entries.add(ev, now, stage);
+  }
+
   clearFx(): void {
+    this.entries.clear();
     this.fx = [];
     this.sparks = [];
     for (const f of this.floaters) f.text.destroy();
@@ -483,6 +500,8 @@ export class Playfield {
       this.playerTop.visible = false;
       this.ground.tint = 0xffffff;
       this.enemyMark = null;
+      this.entryMarks = [];
+      this.winds.fog.visible = false;
       this.drawScreen(W, H, fdt, opts.dim ?? 0);
       return;
     }
@@ -626,6 +645,9 @@ export class Playfield {
     const evx = e.col("vx");
     const evy = e.col("vy");
     const ephase = e.col("phase");
+    const euntil = e.col("until");
+    /** The tick the boss's winds caught the swarm (-1: nobody is blown). */
+    let blownAt = -1;
     for (let i = 0; i < e.count; i++) {
       const q = ep[i]!;
       q.x = ex[i]!;
@@ -677,7 +699,21 @@ export class Playfield {
       q.rotation = def.shape === "orb" && !art ? this.time * 2 + euid[i]! : art && def.speed > 0 && ephase[i] !== PHASE.holding ? evx[i]! * MOB_LEAN : 0;
       // Procedural sprites only face left or right; drawn ones look the way they face.
       if (!art && (heading ? evx[i]! < 0 : q.x > p.body.x)) q.scaleX = -q.scaleX;
+      // Caught by the boss's winds: tumbling as it is thrown away, smaller and fainter as it goes.
+      if (ephase[i] === PHASE.blown) {
+        if (blownAt < 0 || euntil[i]! < blownAt) blownAt = euntil[i]!;
+        const tb = Winds.tumble(euid[i]!, t - euntil[i]!);
+        q.rotation = tb.rotation;
+        q.scaleX *= tb.scale;
+        q.scaleY *= tb.scale;
+        q.alpha = tb.alpha;
+      } else q.alpha = 1;
     }
+    const bossChar = CHARACTERS[bossDef(stage.boss).character].color;
+    this.winds.draw(run.phase, t, blownAt, p.body.x, p.body.y, run.stage, bossChar, W, H, fdt);
+    this.sightG.clear();
+    drawSights(this.sightG, { count: e.count, x: ex, y: ey, kind: ek, phase: ephase, fireAt: e.col("fireAt"), volley: e.col("volley"), aim: e.col("aim") }, t, p.body.x, p.body.y);
+    this.entryMarks = run.phase === "swarm" ? this.entries.marks(t, W, H, this.zoom) : [];
 
     // Player shots (computable: evaluated at t).
     const s = v.packed("shots");

@@ -10,6 +10,7 @@ import DialogueView from "./DialogueView.vue";
 import PauseMenu from "./PauseMenu.vue";
 import HintBar from "./HintBar.vue";
 import EnemyMark from "./EnemyMark.vue";
+import EntryMarks from "./EntryMarks.vue";
 
 const h = computed(() => hud.value);
 </script>
@@ -17,6 +18,8 @@ const h = computed(() => hud.value);
 <template>
   <div class="run">
     <SpellCutIn v-if="h" />
+    <!-- The field's light at its edges: under the HUD, which stands in front of the field. -->
+    <EntryMarks v-if="h && h.overlay === 'none' && h.phase === 'swarm' && !state.paused" />
     <HudView v-if="h" />
     <EnemyMark v-if="h && h.overlay === 'none' && h.phase !== 'over' && !state.paused" />
     <!-- The ending's words replace the banners: "Stage clear!" is not said twice. -->
@@ -56,8 +59,10 @@ const h = computed(() => hud.value);
 .banners {
   position: absolute;
   top: 17%;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Across the whole width (a banner sizes to its words and stands centred): pinned at the middle,
+     it could only take half the screen and broke a long warning onto two lines. */
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;

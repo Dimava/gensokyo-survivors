@@ -7,25 +7,7 @@
 // rides on top of it instead of covering a card.
 import { computed } from "vue";
 import { host, state } from "../host.ts";
-
-/** The shelf pieces the tag steps over, with how far above each one's top it rides (the hand's key caps stand proud of the cards). */
-const SHELF: [string, number][] = [
-  [".hud .bottom > .hand", 13],
-  [".hud .bottom > .spirit", 4],
-  [".hud .bottom > .pile", 4],
-];
-
-/** How high the bottom shelf stands under screen x, in px from the screen's foot. */
-function shelf(x: number, H: number): number {
-  let lift = 0;
-  for (const [sel, pad] of SHELF) {
-    const el = document.querySelector<HTMLElement>(sel);
-    if (!el) continue;
-    const r = el.getBoundingClientRect();
-    if (x > r.left - 26 && x < r.right + 26) lift = Math.max(lift, H - r.top + pad);
-  }
-  return lift;
-}
+import { shelfLift } from "./hudEdges.ts";
 
 const mark = computed(() => {
   void state.frame;
@@ -35,7 +17,7 @@ const mark = computed(() => {
   const H = host.field.app.screen.height;
   const off = m.x < 0 ? -1 : m.x > W ? 1 : 0;
   const x = Math.max(30, Math.min(W - 30, m.x));
-  return { x, off, lift: shelf(x, H) };
+  return { x, off, lift: shelfLift(x, H) };
 });
 </script>
 

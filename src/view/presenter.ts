@@ -258,6 +258,10 @@ export class Presenter {
         if (!this.quiet) banner(p.text as string, p.tone as Banner["tone"]);
         if (p.tone === "warn") this.sfx("warning", { vol: 0.6 });
         break;
+      case "formation:incoming":
+        // The field telegraphs it: the stretch of the screen's edge it will come in over lights up (telegraph.ts).
+        if (v) f.incoming(p as { enemy: string; form: string; side: string; n: number; in: number }, v.now("action"), v.derived("state").run.stage);
+        break;
       case "boss:approach":
         this.sfx("warning");
         if (!this.quiet) audio.gust();
