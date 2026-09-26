@@ -174,10 +174,64 @@ const BASE: Record<Voice, number> = { lead: 67, counter: 55, keys: 57, arp: 60, 
 /** Stereo place of each drum. */
 const KIT_PAN: Record<string, number> = { k: 0, s: 0.05, x: -0.1, h: 0.28, f: 0.28, o: 0.28, c: -0.35, r: -0.3, b: -0.3, p: 0.35, n: 0.4, q: -0.35, w: 0, z: 0, t: 0.3, m: 0, l: -0.3 };
 
-/** Seconds scheduled ahead; a hidden tab's timers run about once a second, so it looks further. */
+/**
+ * Seconds scheduled ahead, and how often the scheduler looks. A hidden tab looks further ahead:
+ * the clock's ticks keep coming there (Clock), but a busy or throttled page can still answer late.
+ */
 const LOOK = 0.3;
-const LOOK_HIDDEN = 1.5;
+const LOOK_HIDDEN = 2;
 const TICK_MS = 40;
+
+/**
+ * The scheduler's clock. A hidden tab runs the page's own timers once a second at best (Chrome,
+ * after a few minutes, once a minute), and every note that falls due between two ticks would be
+ * dropped; a worker's timers are not throttled, so the ticks come from a worker where there is one,
+ * from the page's setInterval where there is not.
+ */
+class Clock {
+  private worker: Worker | null | undefined;
+  private id: number | null = null;
+  private on = false;
+
+  constructor(private tick: () => void) {}
+
+  start(ms: number): void {
+    if (this.on) return;
+    this.on = true;
+    const w = this.spawn();
+    if (w) w.postMessage(ms);
+    else this.id = window.setInterval(this.tick, ms);
+  }
+
+  stop(): void {
+    if (!this.on) return;
+    this.on = false;
+    this.worker?.postMessage(0);
+    if (this.id !== null) window.clearInterval(this.id);
+    this.id = null;
+  }
+
+  /** The worker, made once; null where workers cannot be made (it falls back to the page's timer, even mid-song). */
+  private spawn(): Worker | null {
+    if (this.worker !== undefined) return this.worker;
+    this.worker = null;
+    if (typeof Worker === "undefined" || typeof Blob === "undefined") return null;
+    try {
+      const src = "let t = 0; onmessage = (e) => { clearInterval(t); if (e.data > 0) t = setInterval(() => postMessage(0), e.data); };";
+      const w = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+      w.onmessage = () => this.tick();
+      w.onerror = () => {
+        w.terminate();
+        this.worker = null;
+        if (this.on && this.id === null) this.id = window.setInterval(this.tick, TICK_MS);
+      };
+      this.worker = w;
+    } catch {
+      this.worker = null;
+    }
+    return this.worker;
+  }
+}
 
 // ---------- compiling ----------
 
@@ -818,7 +872,7 @@ export class Music {
   private now: Playing | null = null;
   /** Songs fading out: they play on through their fade (a crossfade, the winds' sweep). */
   private leaving: Playing[] = [];
-  private timer: number | null = null;
+  private clock = new Clock(() => this.schedule());
   private noiseAt = 0;
   private level = 0;
   private held: Held[] = [];
@@ -832,6 +886,8 @@ export class Music {
     /** Offline rendering: no timer; pump() schedules. */
     private offline = false,
   ) {
+    // Hidden, the scheduler looks further ahead at once: the next tick may come late.
+    if (!offline && typeof document !== "undefined") document.addEventListener("visibilitychange", () => this.schedule());
     this.sum = ctx.createGain();
     this.tape = ctx.createDelay(1.5);
     this.tape.delayTime.value = 0;
@@ -1069,7 +1125,7 @@ export class Music {
       held: [],
     };
     this.schedule();
-    if (this.timer === null && !this.offline) this.timer = window.setInterval(() => this.schedule(), TICK_MS);
+    if (!this.offline) this.clock.start(TICK_MS);
   }
 
   /**
@@ -1296,10 +1352,7 @@ export class Music {
     for (const q of this.leaving) this.run(q, Math.min(horizon, q.until));
     const p = this.now;
     if (p) this.run(p, horizon);
-    else if (!this.leaving.length && this.timer !== null) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
+    else if (!this.leaving.length) this.clock.stop();
   }
 
   /** Schedules a song's notes up to `horizon`. */
