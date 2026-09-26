@@ -13,7 +13,7 @@ A Touhou-flavoured bullet-hell survivors game. You are Reimu Hakurei. Fairies sw
 - **Beat the boss.** Every stage ends in a Touhou-style boss fight of three named spell cards, each with its own timer. Break them without getting hit to capture them. Cirno waits at the Misty Lake, Rumia in the Forest of Magic.
 - **Grow between runs.** Spend the donations you earn on 23 shrine upgrades, or on card packs that add new skill cards to your deck or level up ones you own.
 
-Every picture is drawn and every sound synthesized in code: Live2D-style rigs, an original soundtrack, and no image or audio files.
+Every picture is drawn in code (Live2D-style rigs, no image files), and the original soundtrack plays on a synthesizer in code with a few recorded instruments (piano, drums, trumpet and strings from the public-domain VSCO 2 Community Edition).
 
 **Controls:** WASD / arrows to move · Shift to focus · 1–4 to play a card · Esc to pause. Menus work with the keyboard or the mouse.
 
@@ -29,6 +29,6 @@ A game by **Dimava**. Code, art, music and sound by **Claude Opus 5.5** (Anthrop
 
 ---
 
-This branch holds only the built game (v1.0.0, build of `372a026`).
+This branch holds only the built game (v2.0.0, build of `2b1be06`).
 
 Gensokyo Survivors is an unofficial fan work of the Touhou Project. It is not affiliated with Team Shanghai Alice. Touhou Project characters and world © ZUN / Team Shanghai Alice.
