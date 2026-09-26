@@ -4,7 +4,7 @@
 
 import { STAT_DEFS } from "../content/stats.ts";
 import { ENEMIES } from "../content/enemies.ts";
-import { passiveDef } from "../content/passives.ts";
+import { passiveBonus, passiveDef } from "../content/passives.ts";
 import { cardDef } from "../content/cards.ts";
 import { weaponDef } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
@@ -136,7 +136,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
       {
         body: { x: 0, y: 0, fx: 1, fy: 0 },
         ctrl: { mx: 0, my: 0, focus: false, focusAt: 0, focusFrom: 0 },
-        life: { hp: maxHp, invulnUntil: 0, revivesUsed: 0, hits: 0 },
+        life: { hp: maxHp, invulnUntil: 0, revivesUsed: 0, hits: 0, wardAt: 0 },
         progress: {
           level: 1,
           xp: 0,
@@ -310,9 +310,18 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   }),
   r.on("player:hurt", (ev, ctx) => {
     const p = ctx.derived("player");
+    const stats = ctx.derived("stats");
+    const t = ctx.now("action");
+    const invulnUntil = t + PLAYER.invuln + sec(stats.invuln);
+    // The Heart Charm's ward takes the hit, then recharges.
+    if (stats.ward > 0 && t >= p.life.wardAt) {
+      Object.assign(ctx.mut(p, "life"), { invulnUntil, wardAt: t + sec(stats.ward) });
+      ctx.emit("ward:block", { player: p.id, x: r1(p.body.x), y: r1(p.body.y) });
+      return;
+    }
     Object.assign(ctx.mut(p, "life"), {
       hp: Math.max(0, p.life.hp - ev.dmg),
-      invulnUntil: ctx.now("action") + PLAYER.invuln,
+      invulnUntil,
       hits: p.life.hits + 1,
     });
     ctx.emit("hitstop:start", { ticks: HITSTOP.hurt });
@@ -408,7 +417,8 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   // ---------- level-up overlay ----------
   r.on("level:up", (_, ctx) => {
     const run = ctx.derived("state").run;
-    if (run.overlay !== "none" || run.phase === "over") return;
+    // While the boss's winds blow (the warning), level-ups wait (pending keeps count) and open before her dialogue.
+    if (run.overlay !== "none" || run.phase === "over" || run.phase === "warning") return;
     openLevelUp(ctx);
   }),
   r.on("levelup:picked", (ev, ctx) => {
@@ -428,8 +438,11 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
         const pa = ctx.derived("passives").find((x) => x.passive.id === choice.id);
         if (pa) ctx.mut(pa, "passive").level = choice.level;
         else ctx.spawn({ passive: { id: choice.id, level: 1 } }, "passive");
+        // More max HP comes filled.
         const def = passiveDef(choice.id);
-        if (def.stat === "maxHp") ctx.mut(p, "life").hp = p.life.hp + def.per;
+        const hp = (level: number) => passiveBonus(def, level).find(([k]) => k === "maxHp")?.[1] ?? 0;
+        const gained = hp(choice.level) - hp(choice.level - 1);
+        if (gained > 0) ctx.mut(p, "life").hp = p.life.hp + gained;
         break;
       }
       case "heal":
@@ -466,9 +479,11 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   }),
   r.on("boss:dialogue", (_, ctx) => {
     const run = ctx.derived("state");
-    // A level-up opened this same tick (the field's experience flies in at the warning): wait for it.
-    // The action clock is paused under an overlay, so the next action tick comes once it closes.
-    if (run.run.overlay !== "none") {
+    // The level-ups held through the winds (the field's experience spiralled in) come first, then the dialogue.
+    // The action clock is paused under an overlay, so the next action tick comes once they close.
+    const held = run.run.overlay === "none" && ctx.derived("player").progress.pending > 0;
+    if (held) openLevelUp(ctx);
+    if (held || run.run.overlay !== "none") {
       ctx.after("action", 1, "boss:dialogue", {});
       return;
     }

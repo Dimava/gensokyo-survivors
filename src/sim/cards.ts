@@ -20,6 +20,25 @@ export function spiritAt(v: View<RS0>, t: number): number {
   return Math.min(stats.spiritMax, spirit.base + rate * (t - spirit.t0));
 }
 
+/** Heal autocast (the host's prefs.autoHeal, the bot's autoHeal) casts below this share of max HP. */
+export const AUTO_HEAL_BELOW = 1 / 3;
+/** Action ticks the autocast waits after a cast, until the card has resolved. */
+export const AUTO_HEAL_WAIT = 30;
+
+/**
+ * The Heal card the heal autocast plays now, or null: in the swarm or the boss
+ * fight, below AUTO_HEAL_BELOW of her HP, a Healing Charm in hand that Spirit can pay for.
+ */
+export function autoHealCard(v: View<RS0>): string | null {
+  const run = v.derived("state").run;
+  if (run.overlay !== "none" || (run.phase !== "swarm" && run.phase !== "boss")) return null;
+  const hp = v.derived("player").life.hp;
+  if (hp <= 0 || hp > v.derived("stats").maxHp * AUTO_HEAL_BELOW) return null;
+  const have = spiritAt(v, v.now("action"));
+  const card = handSlots(v).find((c) => c?.card && cardDef(c.card.id).effect === "heal" && cardDef(c.card.id).cost <= have + 1e-9);
+  return card?.id ?? null;
+}
+
 export function handCards(v: View<RS0>) {
   return v.related("inPile", v.derived("piles").hand);
 }

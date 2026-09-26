@@ -9,7 +9,7 @@ import { cardDef, cardParams } from "../content/cards.ts";
 import { weaponDef } from "../content/weapons.ts";
 import type { DispatchResult } from "gamebones";
 import { activeRun, runView, type Game, type RunPath } from "./game.ts";
-import { spiritAt, handCards } from "./cards.ts";
+import { AUTO_HEAL_WAIT, autoHealCard, spiritAt, handCards } from "./cards.ts";
 import { bossPos } from "./boss.ts";
 import { PHASE, enemyVelocity } from "./swarm.ts";
 import { BOSS, PLAYER, sec } from "./tuning.ts";
@@ -19,6 +19,12 @@ export interface BotOptions {
   dodge?: number;
   /** Play cards when affordable. */
   cards?: boolean;
+  /**
+   * The game's heal autocast (host.ts, prefs.autoHeal): below a third of her HP a
+   * Healing Charm in hand plays itself as soon as Spirit allows, with no latency.
+   * With `cards: false` it is a player who never presses a card key but keeps the autocast on.
+   */
+  autoHeal?: boolean;
   /** Ticks between steering decisions (a human's reaction time; 1 = every tick). */
   reaction?: number;
   /** Hold focus when it helps (botFocus); default true. */
@@ -40,6 +46,8 @@ export interface BotOptions {
   caution?: number;
   /** Ticks of standing still with no danger in sight after which she trusts her real hitbox (a safe spot found). */
   settle?: number;
+  /** While untouchable after a hit, ignore the swarm as well as the bullets (the earlier bot, kept for comparisons). */
+  reckless?: boolean;
 }
 
 /** Reference players: a first-timer and a practised danmaku player for balance, and a person's pace for recordings. */
@@ -72,14 +80,17 @@ const LOOK = [3, 6, 10, 15, 21];
 
 /**
  * What botThink hands botMove: where the committed moves leave her (`from`),
- * a tactic's goal that replaces the usual one, and until when (action time)
- * she is untouchable, a shield card's cover included; botMove reports the
- * best move's look-ahead `danger` back.
+ * a tactic's goal that replaces the usual one, until when (action time) she
+ * is untouchable, and until when a shield card covers a dive; botMove reports
+ * the best move's look-ahead `danger` back.
  */
 export interface BotPlan {
   from: { x: number; y: number };
   goal?: { x: number; y: number };
+  /** Untouchable until then (a hit's recovery, a card's): bullets can't hurt her, but she still keeps off the swarm, which will still be there after. */
   invuln?: number;
+  /** A shield card's cover for a dive (botDive): until then she walks into the crowd as well. */
+  shield?: number;
   danger: number;
   /** She has stood in a safe spot long enough to trust her real hitbox (BotOptions.settle). */
   settled?: boolean;
@@ -222,8 +233,9 @@ export function botMove(
         }
       }
       const w = 1 / (1 + k2 * 0.08);
-      // Untouchable then (a shield's cover): nothing there can hurt her.
-      if (plan?.invuln !== undefined && t + k2 < plan.invuln) continue;
+      // Under a dive's shield nothing there counts; merely untouchable, only the bullets don't.
+      if (plan?.shield !== undefined && t + k2 < plan.shield) continue;
+      const untouchable = plan?.invuln !== undefined && t + k2 < plan.invuln;
       for (let n = 0; n < near.length; n++) {
         // Each enemy keeps doing what it does now (chasing, crossing, holding a post).
         const ox = nearX[n]! + nearVx[n]! * k2 - qx;
@@ -233,7 +245,7 @@ export function botMove(
         if (dd < r + 20) danger += ((r + 20 - dd) / (r + 20)) * 30 * w;
       }
       const at = bAt[li]!;
-      for (let j = 0; j < nb; j++) {
+      for (let j = 0; j < (untouchable ? 0 : nb); j++) {
         if (!at.ok[j]) continue;
         const ox = at.xs[j]! - qx;
         const oy = at.ys[j]! - qy;
@@ -331,6 +343,8 @@ export interface BotInputs {
   dive?: Dive | null;
   /** Until when (action time) a queued shield card keeps her untouchable. */
   shieldUntil?: number;
+  /** Action tick before which the heal autocast waits (BotOptions.autoHeal). */
+  autoHealAt?: number;
 }
 
 /**
@@ -422,8 +436,10 @@ export function botThink(k: Game, path: RunPath, last: BotInputs, opts: BotOptio
   const planned = (last.planned ??= { move: { ...last.move }, focus: v.derived("player").ctrl.focus });
   const from = plannedFrom(k, path, last, lead);
   const tactic = cards ? botDive(k, path, last, from, lead) : null;
-  const invuln = Math.max(v.derived("player").life.invulnUntil, last.shieldUntil ?? 0);
-  const plan: BotPlan = { from, danger: 0, invuln, goal: last.dive ? { x: last.dive.x, y: last.dive.y } : undefined, settled: settled(last, opts) };
+  const invuln = v.derived("player").life.invulnUntil;
+  // Reckless (the old bot): untouchable, she ignored the swarm too, and walked into it.
+  const shield = opts.reckless ? Math.max(invuln, last.shieldUntil ?? 0) : last.shieldUntil;
+  const plan: BotPlan = { from, danger: 0, invuln, shield, goal: last.dive ? { x: last.dive.x, y: last.dive.y } : undefined, settled: settled(last, opts) };
   const m = botMove(k, path, opts, plan);
   last.danger = plan.danger;
   keepStill(last, m, plan.danger, opts);
@@ -621,7 +637,8 @@ export function botCard(k: Game, path: RunPath, last?: BotInputs): string | null
   let spirit = spiritAt(v, t);
   for (const id of queued) spirit -= cardDef(v.req(id, "card").card.id).cost;
   const full = spirit >= stats.spiritMax - 0.05;
-  const emergency = (last?.danger ?? 0) >= EMERGENCY;
+  // Untouchable for a while yet (past a decision's usual lag), the swarm close by is no emergency.
+  const emergency = (last?.danger ?? 0) >= EMERGENCY && t + 30 >= p.life.invulnUntil;
   const px = p.body.x;
   const py = p.body.y;
   const hpFrac = p.life.hp / stats.maxHp;
@@ -765,6 +782,14 @@ export function playRun(
       const res = k.dispatch(`${p}/vn` as "/run:1/vn", "vn:next", {});
       opts.onResult?.(res, i);
     } else {
+      if (opts.autoHeal) {
+        const t = v.now("action");
+        const c = t >= (last.autoHealAt ?? 0) ? autoHealCard(v) : null;
+        if (c) {
+          k.queue(p, "card:play", { card: c });
+          last.autoHealAt = t + AUTO_HEAL_WAIT;
+        }
+      }
       if (opts.latency) {
         botFlush(k, path, last);
         if (i % (opts.reaction ?? 1) === 0) botThink(k, path, last, opts, opts.cards !== false);

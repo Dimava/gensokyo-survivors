@@ -3,15 +3,18 @@
 // by a bot (BOT: a SKILL preset, default "player", the human-like balance
 // reference), one JSON file per run. scripts/balance-report.ts reads them.
 //   bun scripts/balance-log.ts <outdir> [seeds=6]   (ONLY=a,b  TREE=none|mid|full  SHARD=i/n  STAGE=lake  BOT=player|expert)
+// Cards: CARDS=0 plays none (no dives either), AUTOHEAL=1 adds the game's heal
+// autocast (host.ts), DECK=a,b,c makes the run's deck exactly these cards (default: the starter deck).
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fixtureGame } from "../test/helpers.ts";
-import { activeRun } from "../src/sim/game.ts";
+import { activeRun, runView } from "../src/sim/game.ts";
 import { SKILL, type BotOptions } from "../src/sim/bot.ts";
 import { recordRun } from "./lib/runlog.ts";
 import { ENEMIES } from "../src/content/enemies.ts";
 import { STAGES } from "../src/content/stages.ts";
 import { BOSSES } from "../src/content/bosses.ts";
+import { PASSIVES } from "../src/content/passives.ts";
 import { STRATEGIES, TREES } from "./lib/strategies.ts";
 
 const [outDir = "runlogs", nSeeds = "6"] = process.argv.slice(2);
@@ -23,6 +26,10 @@ const bot = (process.env.BOT ?? "player") as keyof typeof SKILL;
 // CAUTION=px, LATENCY=ticks, SETTLE=ticks override the preset's.
 const skill: BotOptions = { ...SKILL[bot] };
 for (const [env, key] of [["CAUTION", "caution"], ["LATENCY", "latency"], ["SETTLE", "settle"]] as const) if (process.env[env]) skill[key] = Number(process.env[env]);
+if (process.env.CARDS) skill.cards = process.env.CARDS !== "0";
+if (process.env.RECKLESS) skill.reckless = process.env.RECKLESS !== "0";
+if (process.env.AUTOHEAL) skill.autoHeal = process.env.AUTOHEAL !== "0";
+const deck = process.env.DECK?.split(",").filter(Boolean);
 const seeds = process.env.SEEDS?.split(",") ?? Array.from({ length: Number(nSeeds) }, (_, i) => `c${i + 1}`);
 // HARD=x multiplies the damage enemies and bullets deal (contact, stage bullets, boss bullets): a difficulty probe.
 const hard = Number(process.env.HARD ?? 1);
@@ -31,6 +38,15 @@ if (hard !== 1) {
   for (const st of STAGES) (st as { bulletDmg: number }).bulletDmg = st.bulletDmg * hard;
   for (const b of BOSSES) Object.assign(b, { dmg: b.dmg * hard, bulletDmg: b.bulletDmg * hard });
 }
+// TUNE="heart.ward=15,12,10;gourd.regen=2,3" sets a passive's totals by level for one stat (its own stat's `levels`, or one of `also`): numbers probed without editing content.
+for (const t of process.env.TUNE?.split(/[\s;]+/).filter(Boolean) ?? []) {
+  const [, id, stat, list] = /^(\w+)\.(\w+)=([\d.,-]+)$/.exec(t) ?? [];
+  const def = PASSIVES.find((p) => p.id === id) as { stat: string; levels?: readonly number[]; also?: Record<string, readonly number[]> } | undefined;
+  if (!def || !stat || !list) throw new Error(`TUNE: bad "${t}"`);
+  const levels = list.split(",").map(Number);
+  if (stat === def.stat) def.levels = levels;
+  else def.also = { ...def.also, [stat]: levels };
+}
 const [shard, shards] = (process.env.SHARD ?? "0/1").split("/").map(Number) as [number, number];
 
 for (const [si, st] of STRATEGIES.entries()) {
@@ -38,12 +54,14 @@ for (const [si, st] of STRATEGIES.entries()) {
   const dir = join(outDir, st.name.replace(/[^\w+-]+/g, "_"));
   mkdirSync(dir, { recursive: true });
   for (const seed of seeds) {
-    const k = fixtureGame(seed, { tree: { ...tree, reroll: 30 } });
+    const k = fixtureGame(seed, { tree: { ...tree, reroll: 30 }, ...(deck ? { cards: deck, onlyDeck: true } : {}) });
     k.dispatch("/", "run:start", { stage });
     if (!activeRun(k)) throw new Error("no run");
+    // card:played names the card's entity: which card each one is.
+    const cards = Object.fromEntries(runView(k, activeRun(k)!).q("card").map((c) => [c.id, c.card.id]));
     const t0 = performance.now();
     const { log, ticks } = recordRun(k, { ...skill, pick: st.make(seed)() });
-    writeFileSync(join(dir, `${seed}.json`), JSON.stringify({ strategy: st.name, seed, stage, tree: treeName, bot, skill, hard, ticks, log }));
+    writeFileSync(join(dir, `${seed}.json`), JSON.stringify({ strategy: st.name, seed, stage, tree: treeName, bot, skill, hard, tune: process.env.TUNE, deck: deck ?? "starter", cards, ticks, log }));
     console.log(`${st.name} ${seed}: ${log.length} entries, ${ticks} ticks, ${((performance.now() - t0) / 1000).toFixed(1)} s`);
   }
 }

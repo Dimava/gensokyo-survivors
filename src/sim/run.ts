@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { columns, defineScope, event, input, ref, relation, type SpecOf } from "gamebones";
 import { STAT_KEYS, baseStats, type StatKey, type Stats } from "../content/stats.ts";
-import { passiveDef } from "../content/passives.ts";
+import { passiveBonus, passiveDef } from "../content/passives.ts";
 import { BulletStore } from "./bullets.ts";
 import { BOSS, CAP } from "./tuning.ts";
 import { LevelUp } from "./levelup.ts";
@@ -51,7 +51,7 @@ const RunDecl = defineScope("run", {
      * Focus eases in and out (weapons.ts `focusAmount`): the action tick it last changed and how far in it was then (0..1).
      */
     ctrl: z.strictObject({ mx: int, my: int, focus: z.boolean(), focusAt: int, focusFrom: num }),
-    life: z.strictObject({ hp: num, invulnUntil: int, revivesUsed: int, hits: int }),
+    life: z.strictObject({ hp: num, invulnUntil: int, revivesUsed: int, hits: int, wardAt: int }),
     progress: z.strictObject({
       level: int,
       xp: num,
@@ -126,6 +126,8 @@ const RunDecl = defineScope("run", {
     "player:hurt": event({ player: ref(), dmg: num, cause: z.enum(["enemy", "bullet", "boss"]) }, { subject: "player" }),
     "player:downed": event({ player: ref() }, { subject: "player" }),
     "player:revived": event({ player: ref() }),
+    /** The Heart Charm's ward took a hit (no damage); it recharges for stats.ward seconds. */
+    "ward:block": event({ player: ref(), x: num, y: num }, { subject: "player" }),
     graze: event({ player: ref(), n: int, x: num, y: num }, { subject: "player" }),
     "bullets:erase": event({ x: num, y: num, radius: num, gems: z.boolean() }),
     "drops:collected": event({ xp: num, coins: num, hearts: int, n: int }),
@@ -208,7 +210,7 @@ function upgradedStats(bonuses: Partial<Record<StatKey, number>>, passives: read
   for (const k of STAT_KEYS) s[k] += (bonuses[k] ?? 0) * share;
   for (const p of passives) {
     const def = passiveDef(p.passive.id);
-    s[def.stat] += def.per * p.passive.level * (share < 1 ? (def.bossMulti ?? share) : 1);
+    for (const [k, v] of passiveBonus(def, p.passive.level)) s[k] += v * (share < 1 ? (def.bossMulti ?? share) : 1);
   }
   s.cooldown = Math.max(0.35, s.cooldown);
   return s;

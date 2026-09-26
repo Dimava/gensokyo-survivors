@@ -10,7 +10,7 @@ import { bossDef, bossName } from "../content/bosses.ts";
 import { cardDef, cardText } from "../content/cards.ts";
 import { CHARACTERS, type CharacterId } from "../content/names.ts";
 import { destination } from "../content/expeditions.ts";
-import { passiveDef } from "../content/passives.ts";
+import { passiveDef, passiveGains } from "../content/passives.ts";
 import { formatBonus } from "../content/stats.ts";
 import { stageDef } from "../content/stages.ts";
 import { TREE } from "../content/tree.ts";
@@ -237,7 +237,7 @@ export function renderLevelUp(k: Game, path: RunPath): string {
     }
     if (c.kind === "passive") {
       const def = passiveDef(c.id);
-      return { key: i + 1, kind: "item", name: def.name, level: c.level, does: [formatBonus(def.stat, def.per)] };
+      return { key: i + 1, kind: "item", name: def.name, level: c.level, does: passiveGains(def, c.level) };
     }
     if (c.kind === "heal") return { key: i + 1, kind: "heal", name: "Onigiri", level: 0, does: [`restore ${HEAL_FRACTION * 100}% HP`] };
     return { key: i + 1, kind: "coins", name: "Offering", level: 0, does: [`+${COIN_OFFER} donations`] };

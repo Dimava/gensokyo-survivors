@@ -40,8 +40,40 @@ const random = (seed: string) => (): Pick => {
   };
 };
 
+/** `base`, except that `id` is taken whenever offered until it reaches level `upTo` (a beginner's one or two levels of it). */
+const dabble = (id: string, upTo: number, base: (seed: string) => () => Pick) => (seed: string) => (): Pick => {
+  const inner = base(seed)();
+  return (k, path) => {
+    const i = offerOf(k, path).findIndex((c) => c.id === id && c.level <= upTo);
+    return i >= 0 ? i : inner(k, path);
+  };
+};
+
 export interface Strategy { name: string; make: (seed: string) => () => Pick }
 const S = (name: string, ids: string[], lucky = false): Strategy => ({ name, make: () => priority(ids, lucky) });
+const dflt = () => () => botPick;
+/** The defensive passives (Q28). */
+const DEFENSIVE = ["heart", "gourd", "geta"];
+/** `base`, never taking a defensive passive: its pick if that is none, else the first offer that is none. */
+const clean = (base: (seed: string) => () => Pick) => (seed: string) => (): Pick => {
+  const inner = base(seed)();
+  return (k, path) => {
+    const o = offerOf(k, path);
+    const i = inner(k, path);
+    if (!DEFENSIVE.includes(o[i]?.id ?? "")) return i;
+    const j = o.findIndex((c) => !DEFENSIVE.includes(c.id));
+    return j >= 0 ? j : i;
+  };
+};
+/** Each defensive passive dabbled in (two levels) on top of the default and random picks that otherwise never take one. */
+const DABBLED = [
+  { name: "clean", make: clean(dflt) },
+  { name: "rclean", make: clean(random) },
+  ...DEFENSIVE.flatMap((id) => [
+    { name: `clean+${id}2`, make: dabble(id, 2, clean(dflt)) },
+    { name: `rclean+${id}2`, make: dabble(id, 2, clean(random)) },
+  ]),
+];
 export const STRATEGIES: Strategy[] = [
   { name: "default", make: () => () => botPick },
   { name: "random", make: random },
@@ -55,6 +87,7 @@ export const STRATEGIES: Strategy[] = [
   S("amulet+tome+clock", ["amulet", "tome", "clock"]),
   S("amulet+tome+clock (lucky)", ["amulet", "tome", "clock"], true),
   S("amulet+power+tome", ["amulet", "power", "tome"]),
+  ...DABBLED,
 ];
 
 /** Shrine trees bought for a sweep (TREE=none|mid|full; full: every node at its last level). Rerolls come on top. */
