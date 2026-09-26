@@ -4,7 +4,7 @@
 import { watch } from "vue";
 import { loadSamples, Music, type Song } from "./music.ts";
 import { prefs } from "./prefs.ts";
-import { cirnoSong, clearSong, forestSong, lakeClearSong, lakeSong, menuSong, overSong, rumiaSong, shopSong, TRACKS } from "./songs.ts";
+import { cirnoSong, clearSong, forestSong, lakeClearSong, lakeSong, lakeWaitSong, menuSong, overSong, rumiaSong, shopSong, TRACKS } from "./songs.ts";
 import { LEGACY_TRACKS } from "./songs-legacy.ts";
 
 /** Every track the music room can play: the soundtrack and its earlier versions. */
@@ -320,7 +320,7 @@ class Synth {
       if (oneShot && !(this.songs?.done ?? false)) return;
       track = "shop";
     }
-    const key = track && (track === "stage" || track === "boss" || track === "clear" ? `${track}:${stage}` : track);
+    const key = track && (track === "stage" || track === "boss" || track === "clear" || track === "hush" ? `${track}:${stage}` : track);
     if (key === this.track) {
       if (part !== this.part) {
         this.part = part;
@@ -341,15 +341,20 @@ class Synth {
 
   /**
    * The boss's winds (boss:approach, the tick they blow the swarm away): they
-   * break the stage theme off, and the hush holds until her dialogue. The
-   * host's next music() finds the hush already playing.
+   * break the stage theme off, and the hush holds until her dialogue: the
+   * stage's frost before the boss comes in behind them once they have swept
+   * the theme away (2.45 s), or silence where a stage has none. The host's
+   * next music() finds the hush already playing.
    */
   gust(): void {
     if (!this.track?.startsWith("stage:")) return;
-    this.track = "hush";
+    const stage = this.track.slice("stage:".length);
+    this.track = `hush:${stage}`;
     this.part = "";
-    this.song = null;
-    if (!this.previewing) this.songs?.blowAway();
+    this.song = songFor("hush", stage);
+    if (this.previewing) return;
+    this.songs?.blowAway();
+    if (this.song) this.songs?.play(this.song, { delay: 2.45, adaptive: true });
   }
 
   /** How hard the run is going (0..1): extra layers (a busier drum kit) come in above a song's thresholds. */
@@ -391,10 +396,12 @@ class Synth {
     } else this.songs?.part(part);
   }
 
-  /** Music room: the boss's winds, over the track playing. */
-  winds(): void {
+  /** Music room: the boss's winds over the track playing, and the stage's hush after them (the frost before Cirno). */
+  winds(stage = "lake"): void {
+    this.previewing = true;
     this.songs?.blowAway();
-    this.preview = null;
+    this.preview = songFor("hush", stage);
+    if (this.preview) this.songs?.play(this.preview, { delay: 2.45, adaptive: true });
   }
 
   /** The section playing (music room). */
@@ -423,6 +430,7 @@ const SONGS: Record<string, Song> = {
   shop: shopSong,
   clear: clearSong,
   "clear:lake": lakeClearSong,
+  "hush:lake": lakeWaitSong,
   over: overSong,
   "stage:lake": lakeSong,
   "boss:lake": cirnoSong,
@@ -431,7 +439,9 @@ const SONGS: Record<string, Song> = {
 };
 
 function songFor(track: Track, stage: string): Song | null {
-  if (!track || track === "hush") return null;
+  if (!track) return null;
+  // A hush is the stage's own (the frost before Cirno) or silence: never another stage's.
+  if (track === "hush") return SONGS[`hush:${stage}`] ?? null;
   return SONGS[`${track}:${stage}`] ?? SONGS[track] ?? SONGS[`${track}:lake`] ?? null;
 }
 

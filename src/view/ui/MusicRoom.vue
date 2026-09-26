@@ -5,11 +5,13 @@
 // previous, current and next chords as cards, and a piano roll of the whole
 // track (coloured per voice) with a playhead; clicking the roll seeks. Songs
 // carry their own chords (music.ts compileSong), so nothing is analysed. The
-// list scrolls in its own column; the roll fills the space beside it.
+// list scrolls in its own column; the roll fills the space beside it. A track
+// that answers a run (a midboss, the boss's winds, her spell cards) lists
+// those moments, and plays them the way the run does.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { audio } from "../audio.ts";
 import { compileSong, songLength, type Voice } from "../music.ts";
-import { TRACKS, type TrackInfo } from "../songs.ts";
+import { TRACKS, type Moment, type TrackInfo } from "../songs.ts";
 import { LEGACY_TRACKS } from "../songs-legacy.ts";
 
 const ALL: readonly TrackInfo[] = [...TRACKS, ...LEGACY_TRACKS];
@@ -45,16 +47,30 @@ function mmss(s: number): string {
 
 const lengths = new Map(ALL.map((t) => [t.id, mmss(songLength(t.song).total)]));
 
+/** The run's moment the track was moved to (Moment.part), while it plays that way. */
+const moment = ref<string | null>(null);
+
 function play(id: string): void {
   audio.unlock();
   audio.listen(id);
   playing.value = id;
   selId.value = id;
+  moment.value = null;
 }
 
 function stop(): void {
   audio.listen("");
   playing.value = null;
+  moment.value = null;
+}
+
+/** Plays the selected track as a run does, moved to one of its moments (the winds blow whatever plays away). */
+function rehearse(m: Moment): void {
+  audio.unlock();
+  if (m.part === "winds") audio.winds();
+  else audio.rehearse(sel.value.id, m.part);
+  playing.value = sel.value.id;
+  moment.value = m.part;
 }
 
 /** Clicking the roll plays the track from there (by the roll's displayed width). */
@@ -232,6 +248,18 @@ onBeforeUnmount(() => {
         <div class="chord cur">{{ now.cur || "·" }}</div>
         <div class="chord dim">{{ now.next || "·" }}</div>
       </div>
+      <div v-if="sel.moments" class="moments">
+        <span class="muted small">In a run</span>
+        <button
+          v-for="m in sel.moments"
+          :key="m.label"
+          class="moment"
+          :class="{ on: playing === sel.id && moment === m.part }"
+          @click="rehearse(m)"
+        >
+          {{ m.label }}
+        </button>
+      </div>
       <div ref="rollBox" class="roll-box">
         <canvas ref="roll" class="roll" @click="seek"></canvas>
       </div>
@@ -369,6 +397,30 @@ onBeforeUnmount(() => {
 }
 .chord.cur {
   border-color: #e8c15a;
+}
+.moments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -2px 0 10px;
+}
+.moment {
+  padding: 3px 10px;
+  border: 1px solid rgba(232, 193, 90, 0.22);
+  border-radius: 2px;
+  background: rgba(10, 8, 7, 0.35);
+  color: inherit;
+  font: inherit;
+  font-size: 0.85em;
+  cursor: pointer;
+}
+.moment:hover {
+  background: rgba(46, 35, 28, 0.9);
+}
+.moment.on {
+  border-color: #e8c15a;
+  background: rgba(232, 193, 90, 0.12);
 }
 .roll-box {
   position: relative;

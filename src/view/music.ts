@@ -38,7 +38,10 @@
 // "spell0", "last") and the song moves to that part's section on the next
 // barline (or beat), through a fill if the part names one. A `vamp` section
 // repeats until a part moves the song on; sections outside the form are only
-// reached that way. The music room plays the form straight through.
+// reached that way. A part can instead leave the song where it is and change
+// its mix: the voices' levels glide to the part's (a boss's spell cards bring
+// layers in over the same music, as in Celeste, rather than jumping it to
+// another section). The music room plays the form straight through.
 
 import { FAMILIES, MARK, type Family, type SampleNote } from "./instruments/index.ts";
 
@@ -116,8 +119,8 @@ export interface Section {
 
 /** Where a part of the game takes the song. */
 export interface Part {
-  /** The section it moves to (in the form, or one kept outside it). */
-  to: string;
+  /** The section it moves to (in the form, or one kept outside it); none: the song plays on where it is. */
+  to?: string;
   /** A section played on the way (a fill into it). */
   via?: string;
   /** When the move may happen: the next beat, half bar, bar (default), or every n bars from the section's start. */
@@ -126,6 +129,10 @@ export interface Part {
   advance?: boolean;
   /** When the game leaves this part, the song moves here (a vamp's way out). */
   then?: string;
+  /** The voices' levels in this part (1: the song's mix; unlisted voices 1), glided to over `glide` seconds. */
+  mix?: Partial<Record<Voice, number>>;
+  /** Seconds the mix takes to get most of the way there (default 2). */
+  glide?: number;
 }
 
 export interface Song {
@@ -575,6 +582,31 @@ export function compileSong(song: Song): Compiled {
   return out;
 }
 
+/**
+ * The section a part starts the song at: its own `to`, else (a part that only
+ * changes the mix) that of the last part before it, in the order Song.parts
+ * lists them, that has one.
+ */
+export function partSection(song: Song, name: string): string | undefined {
+  let to: string | undefined;
+  for (const [n, def] of Object.entries(song.parts ?? {})) {
+    if (def.to) to = def.to;
+    if (n === name) return to;
+  }
+  return undefined;
+}
+
+/** The voices' levels in a part: its mix, else that of the last part before it with one; 1 for everything else. */
+export function partMix(song: Song, name: string): Record<Voice, number> {
+  let mix: Partial<Record<Voice, number>> = {};
+  for (const [n, def] of Object.entries(song.parts ?? {})) {
+    if (def.mix) mix = def.mix;
+    if (n === name) break;
+  }
+  if (!song.parts?.[name]) mix = {};
+  return Object.fromEntries(VOICES.map((v) => [v, mix[v] ?? 1])) as Record<Voice, number>;
+}
+
 /** A song's length in seconds (to its end, and the looping part). */
 export function songLength(song: Song): { total: number; loop: number } {
   const c = compileSong(song);
@@ -802,6 +834,8 @@ interface Playing {
   song: Song;
   c: Compiled;
   buses: Record<Voice, GainNode>;
+  /** The part's mix on each bus (Part.mix). */
+  vary: Record<Voice, GainNode>;
   /** Intensity gates, for the voices Song.layers lists. */
   gates: Partial<Record<Voice, GainNode>>;
   /** Everything else built for this song, disconnected when it retires. */
@@ -1041,6 +1075,8 @@ export class Music {
     if (!song) return;
     const c = compileSong(song);
     const buses = {} as Record<Voice, GainNode>;
+    const vary = {} as Record<Voice, GainNode>;
+    const mix = partMix(song, opts.part ?? "");
     const gates: Partial<Record<Voice, GainNode>> = {};
     const nodes: AudioNode[] = [];
     const level = { ...MIX, ...song.mix };
@@ -1050,7 +1086,7 @@ export class Music {
     const start = at + (opts.delay ?? 0);
     // Where it starts: a bar asked for, else the part's section (straight in, no fill), else the top.
     const part = opts.part ?? "";
-    const target = song.parts?.[part]?.to;
+    const target = partSection(song, part);
     const partPlace = target ? c.places.findIndex((pl) => pl.name === target) : -1;
     const from = opts.from ?? (partPlace >= 0 ? c.places[partPlace]!.from : 0);
     const place = Math.max(0, c.places.findIndex((pl) => from >= pl.from - 1e-6 && from < pl.to));
@@ -1059,12 +1095,17 @@ export class Music {
       const g = ctx.createGain();
       g.gain.setValueAtTime(0, start);
       g.gain.linearRampToValueAtTime(level[v], steady);
-      let tail: AudioNode = g;
+      const m = ctx.createGain();
+      m.gain.value = mix[v];
+      g.connect(m);
+      vary[v] = m;
+      nodes.push(m);
+      let tail: AudioNode = m;
       const th = layers[v];
       if (th !== undefined) {
         const gate = ctx.createGain();
         gate.gain.value = this.level >= th ? 1 : 0;
-        g.connect(gate);
+        tail.connect(gate);
         gates[v] = gate;
         nodes.push(gate);
         tail = gate;
@@ -1106,6 +1147,7 @@ export class Music {
       song,
       c,
       buses,
+      vary,
       gates,
       nodes,
       kit,
@@ -1131,21 +1173,30 @@ export class Music {
   /**
    * The game's moment: moves the song to the part's section on its next
    * boundary (a vamp holds until then). Leaving a part with a way out
-   * (`then`) moves the song there.
+   * (`then`) moves the song there, and a part's mix glides in. A song the
+   * music room plays straight through follows the run from then on.
    */
   part(name: string): void {
     const p = this.now;
     if (!p || name === p.part) return;
     const prev = p.part;
     p.part = name;
-    if (!p.adaptive) return;
+    p.adaptive = true;
     const parts = p.song.parts ?? {};
     const out = parts[prev]?.then;
     const def: Part | undefined = parts[name] ?? (out ? { to: out, q: parts[prev]!.q } : undefined);
-    if (def) this.move(p, def);
+    if (!def) return;
+    // A part that stays where the song is still moves it out of a vamp (the dialogue's, if the game skipped a part).
+    const to = def.to ?? (p.c.places[p.place]!.vamp ? partSection(p.song, name) : undefined);
+    if (to) this.move(p, { ...def, to });
+    if (parts[name]) {
+      const mix = partMix(p.song, name);
+      const at = this.ctx.currentTime;
+      for (const v of VOICES) p.vary[v].gain.setTargetAtTime(mix[v], at, (def.glide ?? 2) / 3);
+    }
   }
 
-  private move(p: Playing, def: Part): void {
+  private move(p: Playing, def: Part & { to: string }): void {
     const c = p.c;
     const target = c.places.findIndex((pl) => pl.name === def.to);
     if (target < 0) return;
@@ -1539,7 +1590,8 @@ export class Music {
     const lvl = Math.pow(vel, 1.4) * n.gain * (inst.sampleGain ?? 1) * (inst.gain ?? 1);
     const g = amp.gain;
     g.setValueAtTime(0, t);
-    g.linearRampToValueAtTime(lvl, t + Math.max(0.002, Math.min(inst.a, 0.03)));
+    // The recording's own attack, under the instrument's (a bow's slow swell; a struck note's is instant).
+    g.linearRampToValueAtTime(lvl, t + Math.max(0.002, inst.a));
     g.setTargetAtTime(0, end, inst.r / 4);
     this.held.push({ gain: amp, end, r: inst.r });
     const nodes: AudioNode[] = [src, amp];

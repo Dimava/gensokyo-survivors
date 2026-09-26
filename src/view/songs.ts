@@ -188,7 +188,7 @@ const grandSoft: Inst = { ...grand, sampleGain: 0.66, tone: { cut: 1300, kt: 1.6
 const brass: Inst = { ...trumpet, sample: "trumpet", sampleGain: 1.4, tone: { cut: 2800, kt: 1.2, env: 7000, fd: 0.25 }, scoop: 35, vib: { depth: 14, delay: 0.24 } };
 /** The trumpet darkened, for the midboss. */
 const darkBrass: Inst = { ...brass, tone: { cut: 1300, kt: 0.9, env: 2200, fd: 0.3 }, vib: { depth: 18, delay: 0.3 } };
-/** A string section: four saws spread across the stereo field, bowed in slowly. */
+/** A synth string section: four saws spread across the stereo field, bowed in slowly (the recorded section stands on it while it loads). */
 const ensemble: Inst = {
   osc: [
     ["sawtooth", 0, -13, 0.28, -0.75],
@@ -205,7 +205,6 @@ const ensemble: Inst = {
   q: 0.4,
   vib: { depth: 7, delay: 0.4 },
 };
-const quickEnsemble: Inst = { ...ensemble, a: 0.05, r: 0.3, cut: 1600, kt: 0.8 };
 /** The picked bass without its sub-octave: the kick keeps the lowest octave to itself. */
 const pickBass: Inst = {
   ...bass,
@@ -215,9 +214,29 @@ const pickBass: Inst = {
     ["sine", 0, 0, 0.25],
   ],
 };
-const darkEnsemble: Inst = { ...ensemble, cut: 700, kt: 0.35 };
+/**
+ * A string section, recorded (VSCO 2 CE's violins, and violas below G3): bowed in, singing with the
+ * players' own vibrato, darker when soft. The synth ensemble plays until it has loaded.
+ */
+const section: Inst = {
+  osc: ensemble.osc,
+  a: 0.25,
+  d: 1.6,
+  s: 0.85,
+  r: 0.6,
+  cut: 1150,
+  kt: 0.55,
+  q: 0.4,
+  sample: "strings",
+  sampleGain: 0.8,
+  tone: { cut: 4000, kt: 1.5, env: 3000, fd: 0.5 },
+};
+/** The section muted and far off: the midboss, and the dialogue before the boss. */
+const darkSection: Inst = { ...section, tone: { cut: 1100, kt: 0.6, env: 800, fd: 0.6 } };
+/** The section taking a line of its own, bowed in quicker. */
+const quickSection: Inst = { ...section, a: 0.05, r: 0.3 };
 /** The strings as a quiet line under a verse (lent to the counter voice, which is louder than the pad). */
-const climbStrings: Inst = { ...ensemble, gain: 0.6 };
+const climbSection: Inst = { ...section, gain: 0.6 };
 /** A second trumpet in harmony under the lead, lent to the keys voice (quieter than the lead): it keeps a section's weight. */
 const secondBrass: Inst = { ...brass, gain: 2.4, tone: { cut: 2200, kt: 1, env: 5000, fd: 0.25 }, scoop: 25 };
 
@@ -481,7 +500,7 @@ export const lakeSong: Song = {
   bpm: 156,
   key: "A minor",
   voiceLead: true,
-  inst: { lead: grand, counter: bell, keys: epiano, arp: glass, bass: pickBass, pad: ensemble },
+  inst: { lead: grand, counter: bell, keys: epiano, arp: glass, bass: pickBass, pad: section },
   mix: { lead: 0.2, counter: 0.1, keys: 0.045, arp: 0.055, bass: 0.19, pad: 0.045, drums: 0.24, perc: 0.2 },
   pan: { counter: -0.15, keys: 0.2 },
   layers: { perc: 0.4, keys: 0.25 },
@@ -559,7 +578,7 @@ export const lakeSong: Song = {
       drums: LAKE_BEAT_B,
       perc: LAKE_PERC,
       fill: LAKE_FILL,
-      inst: { counter: climbStrings },
+      inst: { counter: climbSection },
     },
     B2: {
       chords: "Dm7 | Em7 | Fmaj7 | G | Am7 | Bm7b5 | Cmaj7 D | E7 F#7",
@@ -609,7 +628,7 @@ export const lakeSong: Song = {
       perc: ". h h . . h h . . h h . . h h .",
       fill: "k . m . s . m k s s m m l l l! l!",
       vamp: true,
-      inst: { lead: darkBrass, counter: darkEnsemble, arp: pluck },
+      inst: { lead: darkBrass, counter: darkSection, arp: pluck },
     },
   },
   form: ["intro", "A", "B", "C", "D", "A2", "B2", "C2", "turn"],
@@ -629,8 +648,8 @@ export const lakeSong: Song = {
 // trumpet takes the harmony under the tune and the bells ring it an octave up.
 //
 // In the fight the dialogue vamps on the intro; her first card lands the riff on the next beat,
-// the second lifts into the chorus, and the last one into the key change (always: even when the
-// song has already come round to it).
+// and from there the song plays on through its form while her later cards turn the band up round
+// it (the parts' mixes below).
 
 const CIRNO_RIFF = `f#5' b5' f#5' c#6' f#5' d6 _ e6 | f#6 _ _ e6 d6 _ b5 _ | e5' a5' e5' b5' e5' c#6 _ d6 | e6 _ _ d6 c#6 _ a#5 _ |
   f#5' b5' f#5' c#6' f#5' d6' f#5' e6' | f#6 _ _ _ [e6 f#6] [e6 d6] [c#6 d6] [b5 c#6] | d6' _ b5' _ g5' _ e5' _ | a#5 _ c#6 _ e6 _ f#6! _`;
@@ -682,7 +701,7 @@ export const cirnoSong: Song = {
   bpm: 176,
   key: "B minor",
   voiceLead: true,
-  inst: { lead: grand, counter: bell, keys: epiano, arp: glass, bass: pickBass, pad: ensemble },
+  inst: { lead: grand, counter: bell, keys: epiano, arp: glass, bass: pickBass, pad: section },
   mix: { lead: 0.2, counter: 0.1, keys: 0.045, arp: 0.06, bass: 0.19, pad: 0.045, drums: 0.24, perc: 0.2 },
   pan: { counter: -0.15, keys: 0.2 },
   layers: { perc: 0.45 },
@@ -698,7 +717,7 @@ export const cirnoSong: Song = {
       crash: false,
       vamp: true,
       dyn: [0.62, 0.72],
-      inst: { pad: darkEnsemble },
+      inst: { pad: darkSection },
     },
     launch: {
       chords: CIRNO_CH_RIFF,
@@ -759,7 +778,7 @@ export const cirnoSong: Song = {
       fill: CIRNO_BUILD,
       crash: false,
       dyn: [0.72, 1],
-      inst: { lead: grandSoft, counter: quickEnsemble },
+      inst: { lead: grandSoft, counter: quickSection },
     },
     C2: {
       chords: CIRNO_CH_C,
@@ -784,37 +803,50 @@ export const cirnoSong: Song = {
       drums: `${CIRNO_BEAT} | s . s s t t t t m m m m l l s! s!`,
       crash: false,
     },
-    // Her second spell card: a bar's lift into the chorus.
-    lift1: {
-      chords: "A7",
-      lead: "e5 _ _ _ . . [e5 f#5] [g5 g#5]",
-      arp: ARP16,
-      bass: "0 _ 0 _ 0 0 0 0",
-      drums: CIRNO_BUILD,
-      crash: false,
-      inst: { lead: brass },
-    },
-    // Her last spell card: two bars' climb into the key change.
-    lift2: {
-      chords: "F#m7 G#m7 | Amaj7 B7",
-      lead: "a4 _ _ _ b4 _ _ _ | c#5 _ _ _ d#5 _ [f#5 g#5] [a5 a#5]",
-      counter: "f#5 _ _ _ g#5 _ _ _ | a5 _ _ _ b5 _ _ _",
-      arp: ARP16,
-      bass: `${OCTAVES} | ${OCTAVES}`,
-      drums: `k . s . k . s . k s k s s s s s | ${CIRNO_BUILD}`,
-      crash: false,
-      inst: { lead: brass, counter: quickEnsemble },
-    },
   },
   form: ["intro", "launch", "A", "B", "C", "D", "C2", "turn"],
   loop: 1,
+  // Her first spell card launches the song out of the dialogue; after that it never jumps: each card
+  // brings more of the band in over whatever is playing (as Celeste's boss themes do), so a card
+  // declared mid-phrase lifts the phrase instead of cutting it off. The first card is the band alone
+  // (piano, bass and a lighter kit; the bells, stabs, arp and strings held far back, no shaker);
+  // the second, everyone; the last, the strings and the bells up front and the kit harder.
   parts: {
     intro: { to: "intro" },
-    spell0: { to: "launch", q: "beat" },
-    spell1: { to: "C", via: "lift1", q: "bar", advance: true },
-    // The key change is the last card's, even if the chorus came round to it before.
-    last: { to: "C2", via: "lift2", q: "bar" },
+    spell0: { to: "launch", q: "beat", mix: { counter: 0.25, keys: 0.3, arp: 0.3, pad: 0.5, drums: 0.8, perc: 0 }, glide: 0.3 },
+    spell1: { mix: {} },
+    last: { mix: { lead: 1.1, counter: 1.6, keys: 1.3, arp: 1.4, pad: 3, drums: 1.15, perc: 1.4 } },
   },
+};
+
+// ---------- the lake's hush: after the boss's winds, until Cirno speaks ----------
+//
+// The winds have blown the lake's theme away; frost gathers on F#, the dominant of her B minor,
+// so that her dialogue's first chord is the one it was waiting for. Muted strings hold F# with the
+// fourth hanging over it (it falls to A#, the leading note, in the fourth bar), a soft F# in the
+// bass, and ice forms high up in the bells. A bowed cymbal breathes in with each round and a
+// mallet roll swells back into it.
+
+export const lakeWaitSong: Song = {
+  bpm: 176,
+  key: "B minor",
+  inst: { lead: bell, counter: bell, keys: epiano, arp: glass, bass: { ...softBass, gate: 1 }, pad: darkSection },
+  mix: { counter: 0.11, bass: 0.06, pad: 0.12, drums: 0.24 },
+  pan: { counter: 0.25 },
+  fadeIn: 1.5,
+  sections: {
+    frost: {
+      chords: "F#sus4 | F#sus4 | F#sus4 | F#",
+      counter: ". . . . c#7? . . . | . . f#6? . . . b6? . | . . . . . . e7? . | . c#7? . . a#6? . . .",
+      bass: "0 _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _ | _ _ _ _ _ _ _ _",
+      drums: "z . . . . . . . | . | . | w . . . . . . .",
+      crash: false,
+      vamp: true,
+      dyn: [0.55, 0.72],
+    },
+  },
+  form: ["frost"],
+  loop: 0,
 };
 
 // ---------- Forest of Magic: "Mushrooms under the Canopy" (E dorian, lilting) ----------
@@ -1008,7 +1040,7 @@ export const lakeClearSong: Song = {
   bpm: 150,
   key: "D major",
   voiceLead: true,
-  inst: { lead: brass, counter: grand, keys: epiano, arp: glass, bass: pickBass, pad: ensemble },
+  inst: { lead: brass, counter: grand, keys: epiano, arp: glass, bass: pickBass, pad: section },
   mix: { counter: 0.12, bass: 0.19, drums: 0.24 },
   sections: {
     fanfare: {
@@ -1056,6 +1088,14 @@ export interface TrackInfo {
   /** Who wrote it (an arrangement credits the original). */
   credit: string;
   song: Song;
+  /** The run's moments the track answers, for the music room to play: a part (Song.parts; "" leaves one), or "winds". */
+  moments?: readonly Moment[];
+}
+
+/** A moment of a run that moves the music: its name in the music room, and the part the game names then. */
+export interface Moment {
+  label: string;
+  part: string;
 }
 
 const ORIGINAL = "Original composition for Gensokyo Survivors";
@@ -1080,16 +1120,27 @@ export const TRACKS: readonly TrackInfo[] = ([
     title: "Fairies Dancing in the Morning Mist",
     where: "Misty Lake",
     comment:
-      "The stage 1 theme. The piano plays the hook alone in the first bar: up a fourth from the fifth and on up to the minor third, off the beat, then a fall from the seventh. The verse sinks over a lament bass, the trumpet climbs a whole scale a tenth above the bass, and the chorus breaks into C major on a deceptive cadence. The last chorus is a step up, with a second trumpet under the first. In a run it thickens with the swarm, Daiyousei gets the hook in D minor over toms, and the boss's winds blow it away.",
+      "The stage 1 theme. The piano plays the hook alone in the first bar: up a fourth from the fifth and on up to the minor third, off the beat, then a fall from the seventh. The verse sinks over a lament bass, the trumpet climbs a whole scale a tenth above the bass, and the chorus breaks into C major on a deceptive cadence. The last chorus is a step up, with a second trumpet under the first. In a run it thickens with the swarm, Daiyousei gets the hook in D minor over toms, and the boss's winds blow it away: frost gathers on F# until Cirno speaks.",
     song: lakeSong,
+    moments: [
+      { label: "Daiyousei", part: "midboss" },
+      { label: "She leaves", part: "" },
+      { label: "The winds", part: "winds" },
+    ],
   },
   {
     id: "cirno",
     title: "The Strongest Frozen Tomboy",
     where: "Cirno's theme",
     comment:
-      "Her riff is the lake's hook frozen: the same climb a step higher, chipped into staccato over a repeated F#. The dialogue waits on it in the bells, her first spell card drops the band in, the second lifts into the chorus in D major and the last into the key change, a second trumpet under the tune. The bridge remembers the lake.",
+      "Her riff is the lake's hook frozen: the same climb a step higher, chipped into staccato over a repeated F#. The dialogue waits on it in the bells, her first spell card drops the band in, and each card after it brings more of it in over the same music. The chorus goes to D major, the last one a step up with a second trumpet under the tune. The bridge remembers the lake.",
     song: cirnoSong,
+    moments: [
+      { label: "Her dialogue", part: "intro" },
+      { label: "First spell card", part: "spell0" },
+      { label: "Second spell card", part: "spell1" },
+      { label: "Last spell card", part: "last" },
+    ],
   },
   {
     id: "forest",

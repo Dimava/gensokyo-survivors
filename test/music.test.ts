@@ -7,8 +7,8 @@
 
 import { describe, expect, test } from "bun:test";
 import { FAMILIES } from "../src/view/instruments/index.ts";
-import { compileSong, findMark, moveBar, songLength, transposeName, voiceChord, type Inst, type Melodic, type Song } from "../src/view/music.ts";
-import { TRACKS } from "../src/view/songs.ts";
+import { compileSong, findMark, moveBar, partMix, partSection, songLength, transposeName, voiceChord, type Inst, type Melodic, type Song } from "../src/view/music.ts";
+import { cirnoSong, lakeWaitSong, TRACKS } from "../src/view/songs.ts";
 import { LEGACY_TRACKS } from "../src/view/songs-legacy.ts";
 
 const sine: Inst = { osc: [["sine", 0, 0, 1]], a: 0.01, d: 0.1, s: 0.5, r: 0.1 };
@@ -19,8 +19,8 @@ function song(sections: Song["sections"], extra: Partial<Song> = {}): Song {
 }
 
 describe("music", () => {
-  test("every track (and every earlier version) compiles, with every part filling whole bars", () => {
-    for (const t of [...TRACKS, ...LEGACY_TRACKS]) {
+  test("every track (every earlier version, and the hush before a boss) compiles, with every part filling whole bars", () => {
+    for (const t of [...TRACKS, ...LEGACY_TRACKS, { id: "hush:lake", song: lakeWaitSong }]) {
       const c = compileSong(t.song);
       expect(c.events.length).toBeGreaterThan(0);
       for (const [name, sec] of Object.entries(t.song.sections)) {
@@ -112,6 +112,27 @@ describe("music", () => {
     expect(moveBar("bar", 1.3, a)).toBe(2);
     expect(moveBar(2, 1.3, a)).toBe(3);
     expect(moveBar("bar", 2.9, a)).toBe(3);
+  });
+
+  test("a part that only changes the mix starts where the part before it does, and keeps its mix until another names one", () => {
+    const s = song(
+      { intro: { chords: "C", vamp: true, pad: false }, A: { chords: "C | G", pad: false } },
+      { parts: { intro: { to: "intro" }, one: { to: "A", mix: { perc: 0, keys: 0.5 } }, two: {}, three: { mix: { lead: 1.2 } } } },
+    );
+    expect([partSection(s, "intro"), partSection(s, "one"), partSection(s, "two"), partSection(s, "three"), partSection(s, "")]).toEqual(["intro", "A", "A", "A", undefined]);
+    expect(partMix(s, "intro").perc).toBe(1);
+    expect([partMix(s, "one").perc, partMix(s, "one").keys, partMix(s, "one").lead]).toEqual([0, 0.5, 1]);
+    expect(partMix(s, "two").perc).toBe(0);
+    expect([partMix(s, "three").perc, partMix(s, "three").lead]).toEqual([1, 1.2]);
+    expect(partMix(s, "gone").perc).toBe(1);
+  });
+
+  test("Cirno's later spell cards never jump her theme: they only change its mix", () => {
+    const parts = cirnoSong.parts!;
+    expect(parts.spell0!.to).toBe("launch");
+    for (const name of ["spell1", "last"]) expect({ name, to: parts[name]!.to, mix: !!parts[name]!.mix }).toEqual({ name, to: undefined, mix: true });
+    // Every part's section exists.
+    for (const def of Object.values(parts)) if (def.to) expect(cirnoSong.sections[def.to]).toBeDefined();
   });
 
   test("every sampled note lies inside its file, in order, its loop inside it", () => {
