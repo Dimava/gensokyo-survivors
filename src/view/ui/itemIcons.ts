@@ -3,12 +3,20 @@
 // on a 24x24 grid in `currentColor` so the HUD tints it with the item's
 // colour. Cut-out details use `var(--hole)`, the slot's dark background, the
 // same way cardIcons.ts cuts its glyphs.
+//
+// The sets are kept side by side (prefs.itemIcons picks one): the first, and
+// the second, where no icon is a bare frame shape (a filled disc, a rounded
+// square) that reads as the slot's own frame, and every one holds up at the
+// HUD's 17 px.
+
+import { prefs } from "../prefs.ts";
 
 const HOLE = `style="fill:var(--hole, #0a0e1e)"`;
 const HOLE_LINE = `fill="none" style="stroke:var(--hole, #0a0e1e)" stroke-linecap="round"`;
 const LINE = `fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"`;
 
-export const ITEM_ICONS: Readonly<Record<string, string>> = {
+/** The first set. */
+export const ITEM_ICONS_V1: Readonly<Record<string, string>> = {
   // Weapons.
   // An ofuda: a paper strip with a seal mark.
   amulet:
@@ -96,24 +104,107 @@ export const ITEM_ICONS: Readonly<Record<string, string>> = {
     `<rect x="9.3" y="9.3" width="5.4" height="5.4" ${HOLE}/>`,
 };
 
+/**
+ * The second set: the frame-shaped icons (the power item's rounded square,
+ * the clock's and the coin's discs, the border's outlined square, the
+ * grimoire's slab) redrawn as objects with a silhouette of their own, and the
+ * ones that did not read at HUD size drawn again: the Tengu Geta (a blank
+ * rounded bar from above) and the Oni's Gourd and Duplex Tome, whose cut marks
+ * crossed into a "+".
+ */
+export const ITEM_ICONS_V2: Readonly<Record<string, string>> = {
+  ...ITEM_ICONS_V1,
+  // The Hakurei border: two barrier squares crossed into an eight-point seal round a bright core.
+  border:
+    `<rect x="5.2" y="5.2" width="13.6" height="13.6" ${LINE} stroke-width="2.2"/>` +
+    `<path d="M12 2.4 21.6 12 12 21.6 2.4 12z" ${LINE} stroke-width="2.2"/>` +
+    `<circle cx="12" cy="12" r="2.6"/>`,
+  // The power item tumbling, a spark beside it.
+  power:
+    `<g transform="rotate(-14 11 13)"><rect x="3.6" y="5.6" width="14.8" height="14.8" rx="2.6"/>` +
+    `<path d="M9 17.2V8.8h3.4a2.7 2.7 0 0 1 0 5.4H9" ${HOLE_LINE} stroke-width="2.3" stroke-linejoin="round"/></g>` +
+    `<path d="M19.6 1.2l.9 2.5 2.5.9-2.5.9-.9 2.5-.9-2.5-2.5-.9 2.5-.9z"/>`,
+  // A tengu's one-toothed geta from the side, stepping: the board, its single tall tooth, the red thong low over the front, speed lines behind.
+  geta:
+    `<g transform="rotate(-10 12 12)">` +
+    `<path d="M2.4 9.4h19c.9 0 1.4.9 1 1.7l-1 2H3.2l-1.3-2.2c-.4-.6 0-1.5.5-1.5z"/>` +
+    `<path d="M10 13h5l-.8 9.4h-3.4z"/>` +
+    `<path d="M5 9.4C5.4 6.6 7.6 5.2 9.6 5.6 11.4 6 12.4 7.6 12.6 9.4" fill="none" stroke="#d8363f" stroke-width="2.3" stroke-linecap="round"/></g>` +
+    `<path d="M0.8 17.4h5.4M2.2 20.8h4.4" ${LINE} stroke-width="1.5" opacity="0.7"/>`,
+  // The lunar clock: a watch in the hollow of a crescent moon, its crown on top.
+  clock:
+    `<path d="M10.3 3.5A9.5 9.5 0 1 0 19.9 16.3 8 8 0 0 1 10.3 3.5z"/>` +
+    `<circle cx="15.4" cy="9.6" r="5.9"/>` +
+    `<rect x="14" y="1.2" width="2.8" height="2.6" rx="0.7"/>` +
+    `<path d="M15.4 9.6V6.2M15.4 9.6l2.6 1.5" ${HOLE_LINE} stroke-width="1.7"/>`,
+  // A grimoire tipped on its corner: the cover with its star, a clasp, and the cream page block showing under it.
+  grimoire:
+    `<g transform="rotate(-11 12 12)">` +
+    `<rect x="5.6" y="17" width="13.4" height="4.4" rx="0.8" fill="#eadfc4"/>` +
+    `<path d="M7 18.4h11M7 20h11" stroke="#b9a883" stroke-width="0.7"/>` +
+    `<rect x="4.4" y="2" width="15" height="16.4" rx="1.6"/>` +
+    `<rect x="4.4" y="2" width="2.6" height="16.4" rx="1" opacity="0.6" ${HOLE}/>` +
+    `<path d="M12.6 5.4l1.5 3.1 3.3.4-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.4z" ${HOLE}/>` +
+    `<rect x="18.2" y="8.6" width="3.6" height="3.8" rx="0.8"/></g>`,
+  // The Ibuki gourd leaning, a narrow waist between its bulbs, the cord tied round it and its tassel hanging free.
+  gourd:
+    `<g transform="rotate(14 12 12)">` +
+    `<path d="M12 3.4c2.5 0 4.2 1.9 4.2 4.1 0 1.5-.8 2.5-1.5 3.3 3.1 1 5.3 3.4 5.3 6.2 0 3.6-3.6 5.6-8 5.6s-8-2-8-5.6c0-2.8 2.2-5.2 5.3-6.2-.7-.8-1.5-1.8-1.5-3.3 0-2.2 1.7-4.1 4.2-4.1z"/>` +
+    `<rect x="10.6" y="0.8" width="2.8" height="3.4" rx="0.8"/>` +
+    `<path d="M9.4 11.2h5.2" ${HOLE_LINE} stroke-width="1.6"/>` +
+    `<path d="M7.2 15.8a5 4.6 0 0 1 3-3" ${HOLE_LINE} stroke-width="1.5"/></g>` +
+    `<path d="M15.6 11.6c2.2.4 3.8 1.6 4.4 3.4" ${LINE} stroke-width="1.4"/>` +
+    `<path d="M20 14.6l1.4 3.6h-2.8z"/>`,
+  // The duplex tome: the same two books, a spine line and a title plate on the front one instead of a cross.
+  tome:
+    `<rect x="2.5" y="5" width="12" height="16" rx="1.2" opacity="0.6"/>` +
+    `<rect x="9" y="2.5" width="12.5" height="17" rx="1.2"/>` +
+    `<path d="M11.4 3.8v14.4" ${HOLE_LINE} stroke-width="1"/>` +
+    `<rect x="13.2" y="6" width="6.4" height="3.2" rx="0.4" ${HOLE}/>`,
+  // An offering: two mon coins, one behind the other, the front one's square hole and stamped rim.
+  offering:
+    `<circle cx="9" cy="9" r="7" opacity="0.6"/>` +
+    `<circle cx="14.2" cy="14.2" r="8.2"/>` +
+    `<circle cx="14.2" cy="14.2" r="6.1" ${HOLE_LINE} stroke-width="1.2"/>` +
+    `<rect x="12" y="12" width="4.4" height="4.4" ${HOLE}/>`,
+};
+
+export type ItemIconSet = "v1" | "v2";
+/** Every set, newest first (the gallery can switch between them; prefs.itemIcons holds the pick). */
+export const ITEM_ICON_SETS: readonly { id: ItemIconSet; label: string; icons: Readonly<Record<string, string>> }[] = [
+  { id: "v2", label: "Objects", icons: ITEM_ICONS_V2 },
+  { id: "v1", label: "First", icons: ITEM_ICONS_V1 },
+];
+
+/** The set to draw with: the one asked for, else the preference's. */
+function currentSet(set?: ItemIconSet): ItemIconSet {
+  return set ?? (prefs.itemIcons === "v1" ? "v1" : "v2");
+}
+
 /** The inner SVG markup (24x24 viewBox) of an item's icon, or a plain dot for an item without one. */
-export function itemIcon(id: string): string {
-  return ITEM_ICONS[id] ?? `<circle cx="12" cy="12" r="7"/>`;
+export function itemIcon(id: string, set?: ItemIconSet): string {
+  const icons = currentSet(set) === "v1" ? ITEM_ICONS_V1 : ITEM_ICONS_V2;
+  return icons[id] ?? `<circle cx="12" cy="12" r="7"/>`;
 }
 
 /** The Duplex Tome with `copies` books, each further copy behind and down-left of the last, fainter. */
-function tomeStack(copies: number): string {
-  if (copies <= 2) return ITEM_ICONS.tome!;
+function tomeStack(copies: number, set: ItemIconSet): string {
+  if (copies <= 2) return itemIcon("tome", set);
   // Three books: the same diagonal as the pair, stepped tighter to fit the 24-unit box.
+  const mark =
+    set === "v1"
+      ? `<path d="M16.7 7.5v7M13.2 11h7" ${HOLE_LINE} stroke-width="2"/>`
+      : `<path d="M12.9 3.8v14.4" ${HOLE_LINE} stroke-width="1"/><rect x="14.6" y="6" width="6.4" height="3.2" rx="0.4" ${HOLE}/>`;
   return (
     `<rect x="1" y="7.5" width="11.5" height="15" rx="1.2" opacity="0.35"/>` +
     `<rect x="5.5" y="5" width="12" height="16" rx="1.2" opacity="0.6"/>` +
     `<rect x="10.5" y="2.5" width="12.5" height="17" rx="1.2"/>` +
-    `<path d="M16.7 7.5v7M13.2 11h7" ${HOLE_LINE} stroke-width="2"/>`
+    mark
   );
 }
 
 /** An item's icon at a level: the Duplex Tome shows one more copy per level (a pair at 1, three at 2); the rest are the same at every level. */
-export function itemIconAt(id: string, level: number): string {
-  return id === "tome" ? tomeStack(level + 1) : itemIcon(id);
+export function itemIconAt(id: string, level: number, set?: ItemIconSet): string {
+  const s = currentSet(set);
+  return id === "tome" ? tomeStack(level + 1, s) : itemIcon(id, s);
 }

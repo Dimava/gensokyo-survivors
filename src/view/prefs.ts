@@ -28,11 +28,13 @@ export interface Prefs {
   itemArt: ItemArt;
   /** The player picked the item look (in the gallery); until then it follows the default. */
   itemArtPicked: boolean;
+  /** Which set of item icons the HUD and the cards draw (ui/itemIcons.ts ITEM_ICON_SETS): the first, or the newest (the default). */
+  itemIcons: "v1" | "v2";
 }
 
 const KEY = "gensokyo-survivors/prefs";
 
-const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false, artStyle: "live2d", itemArt: "iconfx", itemArtPicked: false };
+const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false, artStyle: "live2d", itemArt: "iconfx", itemArtPicked: false, itemIcons: "v2" };
 
 function load(): Prefs {
   try {
@@ -42,7 +44,8 @@ function load(): Prefs {
     // A stored choice stands; no (or an unknown) choice gets the default.
     const artStyle: ArtStyle = data.artStyle === "drawn" || data.artStyle === "live2d" ? data.artStyle : DEFAULTS.artStyle;
     const itemArt: ItemArt = data.itemArtPicked && ITEM_ARTS.includes(data.itemArt as ItemArt) ? (data.itemArt as ItemArt) : DEFAULTS.itemArt;
-    return { ...DEFAULTS, ...data, artStyle, itemArt, seen: Array.isArray(data.seen) ? data.seen.filter((s) => typeof s === "string") : [] };
+    const itemIcons = data.itemIcons === "v1" ? "v1" : DEFAULTS.itemIcons;
+    return { ...DEFAULTS, ...data, artStyle, itemArt, itemIcons, seen: Array.isArray(data.seen) ? data.seen.filter((s) => typeof s === "string") : [] };
   } catch {
     return { ...DEFAULTS, seen: [] };
   }
