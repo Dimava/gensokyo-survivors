@@ -65,22 +65,14 @@ function pause(): void {
 
 <template>
   <div class="hud">
-    <!-- Experience -->
-    <div
-      class="xp"
-      title="Experience: collect point items to fill it; a full bar is a level-up."
-    >
-      <div class="xpfill" :style="{ width: xpPct + '%' }"></div>
-      <span class="xplabel"
-        ><b>Lv {{ h.level }}</b> · EXP {{ Math.floor(h.xp) }} /
-        {{ h.next }}</span
-      >
-    </div>
-
-    <!-- Left: Reimu's face, her life and her charms, and her kit: weapons as square plaques,
-         items as round medallions, a pip under each per level; a full one is framed in gold. -->
+    <!-- Left: Reimu's corner. Her face in a gold ring with her level on a tab at its foot; her life,
+         her charms and her experience (point-item blue) beside it; under them her kit: weapons as
+         square plaques, items as round medallions, a pip under each per level, a full one framed in gold. -->
     <div class="tl">
-      <Face :who="PLAYER_CHARACTER" :size="48" class="lface" :class="{ hurt: hpPct < 30 }" />
+      <div class="facewrap">
+        <Face :who="PLAYER_CHARACTER" :size="48" class="lface" :class="{ hurt: hpPct < 30 }" />
+        <span class="lv" :title="`Level ${h.level}`"><small>Lv</small>{{ h.level }}</span>
+      </div>
       <div class="lcol">
         <div class="liferow">
           <div class="hp" :title="`Health: ${Math.ceil(h.hp)} of ${h.maxHp}. At 0 the run ends.`">
@@ -98,6 +90,9 @@ function pause(): void {
               <path d="M6 3V0.8M4.6 1.6L6 3L7.4 1.6" stroke="#e8c15a" stroke-width="0.9" fill="none" />
             </svg>
           </span>
+        </div>
+        <div class="xp" :title="`Experience ${Math.floor(h.xp)} of ${h.next}: point items fill it, and a full bar is a level-up.`">
+          <div class="xpfill" :style="{ width: xpPct + '%' }"></div>
         </div>
         <div class="kit">
           <div
@@ -205,9 +200,10 @@ function pause(): void {
 
     <!-- Bottom: Spirit, the hand, the draw pile with the graze meter -->
     <div class="bottom" :class="{ away: state.paused }">
+      <!-- A card just played: its name rises from the hand. Not under a level-up or a dialogue, where it would hang frozen between the tablets. -->
       <Transition name="cast">
         <div
-          v-if="cast"
+          v-if="cast && h.overlay === 'none'"
           :key="cast.id"
           class="cast"
           :style="{ '--kc': cast.kc }"
@@ -319,36 +315,54 @@ function pause(): void {
 .hud [title] {
   pointer-events: auto;
 }
-.xp {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 18px;
-  background: rgba(23, 17, 14, 0.9);
-  border-bottom: 1px solid rgba(232, 193, 90, 0.45);
-}
-.xpfill {
-  height: 100%;
-  background: #3f8fe0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
-  transition: width calc(0.2s * var(--anim));
-}
-.xplabel {
-  position: absolute;
-  inset: 0;
-  text-align: center;
-  font-size: 12px;
-  line-height: 18px;
-  text-shadow: 0 1px 2px #000;
-}
 .tl {
   position: absolute;
-  top: 26px;
+  top: 12px;
   left: 12px;
   display: flex;
   align-items: flex-start;
   gap: 8px;
+}
+.facewrap {
+  position: relative;
+  flex: none;
+}
+/* Her level on a small lacquer tab hung from the ring's foot. */
+.lv {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  translate: -50% 0;
+  padding: 0 5px;
+  border: 1px solid #e8c15a;
+  border-radius: 1px;
+  background: #17110e;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+  color: #f6f0e1;
+  font: 700 12px/15px var(--display);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lv small {
+  margin-right: 2px;
+  font-size: 9px;
+  color: #d6c48c;
+}
+/* Experience: a thin trough under her life, filled in the blue of the point items that fill it. */
+.xp {
+  width: 230px;
+  height: 5px;
+  margin-top: -2px;
+  background: rgba(8, 6, 5, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(232, 193, 90, 0.3),
+    0 2px 0 1px rgba(0, 0, 0, 0.4);
+}
+.xpfill {
+  height: 100%;
+  background: #4d8fe8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: width calc(0.2s * var(--anim));
 }
 /* Her face in a gold ring; low on life, the ring turns vermilion. */
 .lface {
@@ -474,7 +488,7 @@ function pause(): void {
 }
 .tc {
   position: absolute;
-  top: 24px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
@@ -494,7 +508,7 @@ function pause(): void {
 }
 .boss {
   position: absolute;
-  top: 24px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   width: min(560px, 60vw);
@@ -563,7 +577,7 @@ function pause(): void {
 }
 .tr {
   position: absolute;
-  top: 26px;
+  top: 12px;
   right: 12px;
   display: flex;
   flex-direction: column;

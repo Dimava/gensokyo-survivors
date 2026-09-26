@@ -35,7 +35,7 @@ const HINTS: Hint[] = [
   { id: "auto", text: "Your weapons fire on their own: focus on moving and staying out of reach.", when: () => (hud.value?.seconds ?? 0) > 4, seconds: 7 },
   {
     id: "gems",
-    text: "Defeated enemies drop blue point items (experience). Walk close and they fly to you. A full EXP bar at the top is a level-up.",
+    text: "Defeated enemies drop blue point items (experience). Walk close and they fly to you. When the blue bar under your life fills, you level up.",
     when: () => (hud.value?.kills ?? 0) > 0,
     done: () => (hud.value?.level ?? 1) > 1,
     seconds: 16,

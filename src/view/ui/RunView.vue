@@ -52,9 +52,10 @@ const h = computed(() => hud.value);
 .run > :deep(.hud) {
   pointer-events: none;
 }
+/* High in the field, under the boss's bars: two or three stacked never reach Reimu, who stands at its centre. */
 .banners {
   position: absolute;
-  top: 34%;
+  top: 17%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
