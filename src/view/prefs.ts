@@ -30,11 +30,13 @@ export interface Prefs {
   itemArtPicked: boolean;
   /** Which set of item icons the HUD and the cards draw (ui/itemIcons.ts ITEM_ICON_SETS): the first, or the newest (the default). */
   itemIcons: "v1" | "v2";
+  /** Heal cards play themselves when HP runs low (host.ts autoHeal). */
+  autoHeal: boolean;
 }
 
 const KEY = "gensokyo-survivors/prefs";
 
-const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false, artStyle: "live2d", itemArt: "iconfx", itemArtPicked: false, itemIcons: "v2" };
+const DEFAULTS: Prefs = { master: 0.8, sfx: 0.8, music: 0.5, animSpeed: 1, shake: 1, hints: true, seen: [], fps: false, artStyle: "live2d", itemArt: "iconfx", itemArtPicked: false, itemIcons: "v2", autoHeal: true };
 
 function load(): Prefs {
   try {

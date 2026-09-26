@@ -72,6 +72,10 @@ function erase(): void {
         <span>Show tutorial hints during runs</span>
       </label>
       <label class="check">
+        <input v-model="prefs.autoHeal" type="checkbox" />
+        <span>Heal cards cast themselves below a third of your HP</span>
+      </label>
+      <label class="check">
         <input v-model="prefs.fps" type="checkbox" />
         <span>Show frame rate and simulation cost</span>
       </label>
