@@ -15,8 +15,8 @@ import type { Ctx } from "gamebones";
 import { LevelUp } from "./levelup.ts";
 import { Vn } from "./vn.ts";
 import { Meta } from "./meta.ts";
-import { blowAway, collectDead, contactDamage, enemyFire, migrateGemValue, migrateSalvoAim, migrateToFormations, rebuildGrid, stepEnemies } from "./swarm.ts";
-import { applyVolley, bossFactor, damageArea, damageLine, fireWeapons, focusAmount, migrateFocus, stepOrbits, stepShots } from "./weapons.ts";
+import { blowAway, collectDead, contactDamage, enemyFire, rebuildGrid, stepEnemies } from "./swarm.ts";
+import { applyVolley, bossFactor, damageArea, damageLine, fireWeapons, focusAmount, stepOrbits, stepShots } from "./weapons.ts";
 import { eraseBullets, stepBullets } from "./danmaku.ts";
 import { DROP, HEART_HEAL, addDrop, cyclone, pullAll, stepDrops } from "./drops.ts";
 import { cardRules, handSize } from "./cards.ts";
@@ -615,7 +615,7 @@ export const Run: typeof RunBase = RunBase.rules((r) => [
   r.on("run:finish", (_, ctx) => ctx.send("/", Meta, "run:ended", summary(ctx))),
 
   ...cardRules(r),
-]).migrations([migrateToFormations, migrateSalvoAim, migrateFocus, migrateGemValue]);
+]);
 
 function r1(v: number): number {
   return Math.round(v * 10) / 10;

@@ -2,7 +2,7 @@
 // shared by weapons and cards: player shots are computable too (straight
 // lines from their spawn parameters), checked against the spatial grid.
 
-import type { Ctx, EntityOf, ScopeData } from "gamebones";
+import type { Ctx, EntityOf } from "gamebones";
 import { ENEMIES } from "../content/enemies.ts";
 import { WEAPONS, WEAPON_INDEX, weaponDef, type WeaponStats } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
@@ -356,9 +356,3 @@ export function damageLine(ctx: C, x: number, y: number, dx: number, dy: number,
 }
 
 export { WEAPONS };
-
-/** Run save v2 -> v3 (focus): the player's `ctrl` gains `focus` and its ease, off until the next `focus` input. */
-export function migrateFocus(data: ScopeData): ScopeData {
-  const entities = data.entities.map((e) => (e.ctrl ? { ...e, ctrl: { focus: false, focusAt: 0, focusFrom: 0, ...(e.ctrl as object) } } : e));
-  return { ...data, entities };
-}

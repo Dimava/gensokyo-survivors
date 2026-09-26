@@ -5,7 +5,7 @@
 import { describe, expect, test } from "bun:test";
 import { harness } from "gamebones";
 import { WEAPON_INDEX, weaponDef } from "../src/content/weapons.ts";
-import { activeRun, loadGame, runView, type Game, type RunPath } from "../src/sim/game.ts";
+import { activeRun, runView, type Game, type RunPath } from "../src/sim/game.ts";
 import { FOCUS } from "../src/sim/tuning.ts";
 import { focusAmount, orbitRadius, weaponStats } from "../src/sim/weapons.ts";
 import { fixtureGame, render } from "./helpers.ts";
@@ -157,29 +157,5 @@ describe("focus", () => {
     expect(weaponStats("border", 1).knock).toBeGreaterThan(0);
     expect(FOCUS.auraKnock).toBeGreaterThanOrEqual(2);
     expect(Object.keys(FOCUS).filter((key) => key.startsWith("aura"))).toEqual(["auraKnock"]);
-  });
-
-  test("a mid-run save from before focus loads with focus off", () => {
-    const k = fixtureGame("focus-save", { tree: TREE });
-    k.dispatch("/", "run:start", { stage: "lake" });
-    const path = activeRun(k)! as RunPath;
-    const p = path as "/run:1";
-    for (let i = 0; i < 120; i++) k.tick(p, "fixed");
-    const save = JSON.parse(JSON.stringify(k.save()));
-    const scope = save.scopes[path];
-    // Make it a version-2 save: the player's ctrl without `focus`.
-    const player = scope.entities.find((e: { ctrl?: object }) => e.ctrl);
-    expect(player).toBeDefined();
-    delete player.ctrl.focus;
-    delete player.ctrl.focusAt;
-    delete player.ctrl.focusFrom;
-    scope.version = 2;
-
-    const k2 = loadGame(save);
-    const v2 = runView(k2, path);
-    expect(v2.derived("player").ctrl.focus).toBe(false);
-    k2.queue(p, "focus", { on: true });
-    for (let i = 0; i < 60; i++) k2.tick(p, "fixed");
-    expect(v2.derived("player").ctrl.focus).toBe(true);
   });
 });

@@ -7,7 +7,7 @@ import { describe, expect, test } from "bun:test";
 import { harness, type TraceNode } from "gamebones";
 import { ENEMIES, enemyIndex } from "../src/content/enemies.ts";
 import { stageDef } from "../src/content/stages.ts";
-import { activeRun, loadGame, runView, type Game, type RunPath } from "../src/sim/game.ts";
+import { activeRun, runView, type Game, type RunPath } from "../src/sim/game.ts";
 import { botCard, botSteer, botPick, SKILL, type BotInputs } from "../src/sim/bot.ts";
 import { PHASE } from "../src/sim/swarm.ts";
 import { FORMATION } from "../src/sim/tuning.ts";
@@ -188,35 +188,5 @@ ${renderField(k, path)}`);
     const announced = seen.filter((s) => s.ev === "formation:incoming");
     expect(announced.length).toBeGreaterThan(0);
     expect(announced[0]!.p).toMatchObject({ enemy: first.enemy, form: first.form });
-  });
-
-  test("a mid-run save from before formations loads: old fairies fly off and the script resumes", () => {
-    const k = fixtureGame("m6-save", { tree: TREE });
-    k.dispatch("/", "run:start", { stage: "lake" });
-    const path = activeRun(k)! as RunPath;
-    advance(k, path, 30 * 60);
-    const save = JSON.parse(JSON.stringify(k.save()));
-    const scope = save.scopes[path];
-
-    // Make it a version-0 save: enemy rows without the job columns, the director in its old state.
-    const bytes = Uint8Array.from(atob(scope.packed.enemies), (c) => c.charCodeAt(0));
-    const n = new DataView(bytes.buffer).getUint32(0, true);
-    const cut = bytes.slice(0, 8 + n * 8 * 11);
-    scope.packed.enemies = btoa(String.fromCharCode(...cut));
-    scope.version = 0;
-    const director = scope.sys.procs.find((p: { type: string }) => p.type === "director");
-    director.state = "swarm";
-    director.locals = { piece: 1 };
-
-    const k2 = loadGame(save);
-    const v2 = runView(k2, path);
-    const e = v2.packed("enemies");
-    for (let i = 0; i < e.count; i++) {
-      const def = ENEMIES[e.col("kind")[i]!]!;
-      expect(e.col("phase")[i]).toBe(def.move.kind === "chase" ? PHASE.active : PHASE.leaving);
-    }
-    const before = v2.derived("state").run.nextUid;
-    advance(k2, path, 10 * 60);
-    expect(v2.derived("state").run.nextUid).toBeGreaterThan(before);
   });
 });

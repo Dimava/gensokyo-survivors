@@ -11,7 +11,7 @@ import { CHARACTERS, PLAYER_CHARACTER } from "../content/names.ts";
 import { CARDS, MAX_CARD_LEVEL, RARITIES, RARITY_INFO, STARTER_CARDS, cardDef, type Rarity } from "../content/cards.ts";
 import { DECK_MAX, DECK_MIN, PACKS, packDef } from "../content/gacha.ts";
 import { STAGES, stageDef } from "../content/stages.ts";
-import { OLD_TREE_COSTS, TREE, treeNode } from "../content/tree.ts";
+import { TREE, treeNode } from "../content/tree.ts";
 import { RunSummary } from "./schemas.ts";
 import { Run } from "./rules.ts";
 import { Pack } from "./pack.ts";
@@ -367,29 +367,6 @@ export const Meta: typeof MetaBase = MetaBase.rules((r) => [
   r.on("cards:seen", (_, ctx) => {
     for (const o of ctx.derived("owned")) if (o.owned.fresh) ctx.mut(o, "owned").fresh = false;
   }),
-]).migrations([
-  // v0 -> v1: per-stage clears (stage 2 opens after stage 1). Old saves only had the one stage.
-  (data) => ({
-    ...data,
-    entities: data.entities.map((e) => {
-      const p = e.profile as { clears?: number } | undefined;
-      return p ? { ...e, profile: { ...p, cleared: (p.clears ?? 0) > 0 ? ["lake"] : [] } } : e;
-    }),
-  }),
-  // v1 -> v2: the shrine tree was rebuilt (flat bonuses, head starts): everything spent on the old one is refunded.
-  (data) => {
-    const tree = data.entities.find((e) => e.tree) as { tree: { levels: Record<string, number> } } | undefined;
-    let refund = 0;
-    for (const [id, lvl] of Object.entries(tree?.tree.levels ?? {})) refund += (OLD_TREE_COSTS[id] ?? []).slice(0, lvl).reduce((a, b) => a + b, 0);
-    return {
-      ...data,
-      entities: data.entities.map((e) => {
-        if (e.tree) return { ...e, tree: { levels: {} } };
-        const w = e.wallet as { coins: number } | undefined;
-        return w ? { ...e, wallet: { ...w, coins: w.coins + refund } } : e;
-      }),
-    };
-  },
 ]);
 
 /** The fixture for a new profile. */

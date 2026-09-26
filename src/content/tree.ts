@@ -59,33 +59,6 @@ export const TREE: readonly TreeNode[] = [
   { id: "hand1", name: "Deep Sleeves", x: 0, y: 4, requires: ["knives"], clears: 2, costs: [300], effect: { kind: "stat", stat: "hand", per: 1 }, flavour: "Room for one more card." },
 ];
 
-/** Costs of the first tree's nodes (profile save v1), refunded when it was rebuilt (meta.ts). */
-export const OLD_TREE_COSTS: Readonly<Record<string, readonly number[]>> = {
-  core: [20, 45, 90],
-  might1: [30, 60, 110, 180],
-  cooldown1: [50, 100, 170],
-  area1: [50, 100, 170],
-  spark: [160],
-  amount1: [400],
-  might2: [180, 300, 450],
-  hp1: [30, 60, 110, 180],
-  armor1: [60, 120, 200],
-  regen1: [50, 100, 170],
-  revive: [350],
-  hp2: [200, 320, 480],
-  magnet1: [25, 50, 90],
-  greed1: [40, 80, 140, 220],
-  growth1: [40, 80, 140],
-  speed1: [60, 120, 200],
-  reroll: [120, 220, 350],
-  spirit1: [30, 60, 110],
-  graze1: [40, 80, 140],
-  hand1: [120, 260],
-  knives: [160],
-  spiritMax: [150, 300],
-  duration1: [100, 200, 320],
-};
-
 export const NODE_BY_ID: Readonly<Record<string, TreeNode>> = Object.fromEntries(TREE.map((n) => [n.id, n]));
 
 export function treeNode(id: string): TreeNode {

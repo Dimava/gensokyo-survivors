@@ -7,7 +7,7 @@
 // `enemies:died` event with the positions, so drops and effects are rules,
 // not bulk code.
 
-import { fromBase64, toBase64, type Columns, type Ctx, type ScopeData } from "gamebones";
+import type { Columns, Ctx } from "gamebones";
 import { ENEMIES, type EnemyDef } from "../content/enemies.ts";
 import type { Beat, Side } from "../content/stages.ts";
 import type { RS0 } from "./run.ts";
@@ -42,9 +42,9 @@ export const ENEMY_FIELDS = [
   "ay",
   "phase",
   "until",
-  // Last, for the v1 -> v2 save migration: the direction a salvo locked on its first volley.
+  // The direction a salvo locked on its first volley.
   "aim",
-  // After it, for the v3 -> v4 migration: the gem's value, fixed at spawn.
+  // The gem's value, fixed at spawn.
   "xp",
 ] as const;
 export type EnemyCols = Columns<(typeof ENEMY_FIELDS)[number]>;
@@ -576,93 +576,4 @@ export function enemyFire(ctx: C): void {
 
 function round1(v: number): number {
   return Math.round(v * 10) / 10;
-}
-
-const OLD_ENEMY_FIELDS = 11;
-/** Enemy columns in run save v1 (before `aim`), and v2 (before `xp`). */
-const V1_ENEMY_FIELDS = 17;
-const V2_ENEMY_FIELDS = 18;
-
-/**
- * Run save v0 -> v1 (formations): enemy rows gain the job columns, and the
- * director's states are renamed. Enemies that no longer chase were saved as
- * chasers, so they are sent away (leaving, heading out from the player); the
- * director resumes at the first beat after the saved time.
- */
-export function migrateToFormations(data: ScopeData): ScopeData {
-  const player = data.entities.find((e) => e.body) as { body: { x: number; y: number } } | undefined;
-  const px = player?.body.x ?? 0;
-  const py = player?.body.y ?? 0;
-  const packed = { ...data.packed };
-  const old = fromBase64(packed.enemies!);
-  const n = new DataView(old.buffer, old.byteOffset, old.byteLength).getUint32(0, true);
-  const oldCols = new Float64Array(old.slice(8).buffer);
-  const F = V1_ENEMY_FIELDS;
-  const bytes = new Uint8Array(8 + n * 8 * F);
-  new DataView(bytes.buffer).setUint32(0, n, true);
-  const cols = new Float64Array(bytes.buffer, 8, n * F);
-  cols.set(oldCols.subarray(0, n * OLD_ENEMY_FIELDS));
-  const col = (f: (typeof ENEMY_FIELDS)[number]): number => ENEMY_FIELDS.indexOf(f) * n;
-  for (let i = 0; i < n; i++) {
-    const def = ENEMIES[cols[col("kind") + i]!];
-    if (!def || def.move.kind === "chase") continue;
-    let dx = cols[col("x") + i]! - px;
-    let dy = cols[col("y") + i]! - py;
-    const d = Math.sqrt(dx * dx + dy * dy) || 1;
-    dx /= d;
-    dy /= d;
-    cols[col("vx") + i] = dx;
-    cols[col("vy") + i] = dy;
-    cols[col("phase") + i] = PHASE.leaving;
-  }
-  packed.enemies = toBase64(bytes);
-  const sys = data.sys as unknown as { clocks: Record<string, { now: number }>; procs: { type: string; state: string; locals: unknown }[] };
-  const run = data.entities.find((e) => e.run) as { run: { stage: string } } | undefined;
-  const now = sys.clocks.action?.now ?? 0;
-  const script = run ? stageDef(run.run.stage).script : [];
-  let beat = script.findIndex((b) => b.at * 60 > now);
-  if (beat < 0) beat = script.length;
-  const procs = sys.procs
-    .filter((p) => !(p.type === "director" && p.state === "boss"))
-    .map((p) => (p.type === "director" && p.state === "swarm" ? { ...p, state: "script", locals: { beat, held: 0, heldFrom: 0, waveAt: 0 } } : p));
-  return { ...data, packed, sys: { ...sys, procs } as unknown as ScopeData["sys"] };
-}
-
-/** Run save v1 -> v2 (salvos): enemy rows gain `aim`, the locked direction of a salvo (0 until the next salvo sets it). */
-export function migrateSalvoAim(data: ScopeData): ScopeData {
-  const old = fromBase64(data.packed.enemies!);
-  const n = new DataView(old.buffer, old.byteOffset, old.byteLength).getUint32(0, true);
-  const bytes = new Uint8Array(8 + n * 8 * V2_ENEMY_FIELDS);
-  new DataView(bytes.buffer).setUint32(0, n, true);
-  // Columns are stored one after another, so the new last column is zeros past the old ones.
-  new Float64Array(bytes.buffer, 8, n * V2_ENEMY_FIELDS).set(new Float64Array(old.slice(8).buffer, 0, n * V1_ENEMY_FIELDS));
-  return { ...data, packed: { ...data.packed, enemies: toBase64(bytes) } };
-}
-
-/**
- * Run save v3 -> v4 (gems worth HP): enemy rows gain `xp`, their gem's value, at
- * their kind's base HP (their spawn time is not saved); the stage clear bonus
- * (`coinClear`) gives way to the tick the boss fight began, if it has.
- */
-export function migrateGemValue(data: ScopeData): ScopeData {
-  const old = fromBase64(data.packed.enemies!);
-  const n = new DataView(old.buffer, old.byteOffset, old.byteLength).getUint32(0, true);
-  const F = ENEMY_FIELDS.length;
-  const bytes = new Uint8Array(8 + n * 8 * F);
-  new DataView(bytes.buffer).setUint32(0, n, true);
-  const cols = new Float64Array(bytes.buffer, 8, n * F);
-  cols.set(new Float64Array(old.slice(8).buffer, 0, n * V2_ENEMY_FIELDS));
-  const kind = ENEMY_FIELDS.indexOf("kind") * n;
-  const xp = ENEMY_FIELDS.indexOf("xp") * n;
-  for (let i = 0; i < n; i++) {
-    const def = ENEMIES[cols[kind + i]!];
-    if (def) cols[xp + i] = gemValue(def, def.hp);
-  }
-  const boss = data.entities.find((e) => e.boss) as { boss: { spellStart: number } } | undefined;
-  const entities = data.entities.map((e) => {
-    if (!e.progress) return e;
-    const { coinClear: _, ...progress } = e.progress as Record<string, unknown>;
-    return { ...e, progress: { ...progress, bossFrom: boss?.boss.spellStart ?? 0 } };
-  });
-  return { ...data, entities, packed: { ...data.packed, enemies: toBase64(bytes) } };
 }
