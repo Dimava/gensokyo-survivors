@@ -13,9 +13,10 @@ import { Rig, type Model, type Params } from "./rig.ts";
 import { RATE } from "./tempo.ts";
 import { reimuV1 } from "./reimu.ts";
 import { cirnoV1 } from "./cirno.ts";
+import { kedamaV1 } from "./mobs.ts";
 
 /** Earlier looks of the portraits, to compare in the lab (bun scripts/l2d-lab.ts reimu.v1,reimu). */
-const EARLIER: Record<string, Model> = { "reimu.v1": reimuV1, "cirno.v1": cirnoV1 };
+const EARLIER: Record<string, Model> = { "reimu.v1": reimuV1, "cirno.v1": cirnoV1, "kedama.v1": kedamaV1 };
 
 export interface LabPose {
   look?: Look;

@@ -82,7 +82,8 @@ function beadEyes(fill: string, shine: string, rx = 7, ry = 10): Part[] {
 /** Squash and stretch with the bob (about the bottom), for soft bodies. */
 const squash = warp("squash", "bob", { x: 0, y: 0, w: CW, h: CH }, 2, 2, [["Bob", [-1, 0, 1]]], (x, y, [b = 0]) => [100 + (x - 100) * (1 + 0.09 * b), 176 + (y - 176) * (1 - 0.09 * b)]);
 
-export const kedamaRig: Model = (() => {
+/** The first kedama (a plain star of fur with bead eyes), kept to compare in the lab ("kedama.v1"). */
+export const kedamaV1: Model = (() => {
   const n = 30;
   const pts = Array.from({ length: n }, (_, i) => {
     const a = (i / n) * Math.PI * 2;
@@ -100,6 +101,70 @@ export const kedamaRig: Model = (() => {
       { id: "fur", parent: "fur", order: 10, rect: { x: 20, y: 26, w: 160, h: 160 }, mesh: grid(4, 4), svg: fur },
       { id: "cheeks", parent: "feat", order: 31, rect: { x: 54, y: 102, w: 92, h: 20 }, mesh: grid(2, 1), svg: cheeks },
       ...beadEyes("#2a1a3a", "#ffffff"),
+    ],
+    {},
+    [squash, spin],
+  );
+})();
+
+/**
+ * A ring of fur tufts round (cx, cy) as one closed path: `n` curls between
+ * the valley radius `r0` and tips at `r1` (each tip's length and lean varied
+ * by a fixed pattern, so the fur is ragged but always the same), the tips
+ * swept clockwise like fur stroked round the ball.
+ */
+function tufts(cx: number, cy: number, n: number, r0: number, r1: number, sweep: number, seed: number, from = 0, to = Math.PI * 2): string {
+  const at = (a: number, r: number) => `${(cx + Math.cos(a) * r).toFixed(1)} ${(cy + Math.sin(a) * r).toFixed(1)}`;
+  const step = (to - from) / n;
+  const parts = [`M${at(from, r0)}`];
+  for (let i = 0; i < n; i++) {
+    const a0 = from + i * step;
+    const j = Math.sin((i + 1) * 12.9898 + seed * 78.233) * 43758.5453;
+    const k = j - Math.floor(j);
+    const tip = r0 + (r1 - r0) * (0.7 + 0.5 * k);
+    const ta = a0 + step * (0.5 + sweep * (0.6 + 0.4 * k));
+    parts.push(`Q${at(a0 + step * 0.1, tip * 0.98)} ${at(ta, tip)}`);
+    parts.push(`Q${at(a0 + step * 0.75, r0 + (tip - r0) * 0.45)} ${at(a0 + step, r0)}`);
+  }
+  return parts.join(" ") + (to - from >= Math.PI * 2 - 1e-6 ? " Z" : "");
+}
+
+/** The kedama's colours: white fur shaded lavender, a plum outline. */
+const KF = { light: "#ffffff", base: "#f6effd", shade: "#dccbf2", deep: "#b69ae0", line: "#7a58b0", eye: "#3a1e5a", blush: "#ffa6c0" };
+
+/**
+ * A kedama with a character of her own: a ragged ball of curled fur, a sprout
+ * curling up off the top, a fringe hanging into her eyes (they peer out from
+ * under it, big and shining), a cat mouth, and a tuft each side like a stubby
+ * paw that sways as she bobs.
+ */
+export const kedamaRig: Model = (() => {
+  const back = `<path d="${tufts(100, 110, 22, 60, 80, 0.35, 1)}" fill="${KF.shade}" ${ln(KF.line, LW)}/>`;
+  const fur = `<defs><radialGradient id="kg2" cx="0.42" cy="0.36" r="0.72"><stop offset="0" stop-color="${KF.light}"/><stop offset="0.65" stop-color="${KF.base}"/><stop offset="1" stop-color="${KF.shade}"/></radialGradient></defs>
+<path d="${tufts(100, 110, 18, 54, 68, 0.3, 2)}" fill="url(#kg2)" ${ln(KF.deep, 2.4)}/>
+<path d="M58 140 C70 162 130 162 142 140 C130 154 70 154 58 140 Z" fill="${KF.shade}" opacity="0.8"/>
+<path d="M66 72 Q72 64 80 62 M122 62 Q130 64 136 72" fill="none" ${ln(KF.light, 3)} opacity="0.9"/>`;
+  // The fringe: tufts hanging down over the brow to the tops of her eyes.
+  const fringe = `<path d="M50 84 C52 58 72 44 100 44 C128 44 148 58 150 84 Q144 74 138 80 Q134 70 124 82 Q120 70 112 80 Q106 68 100 80 Q94 68 88 80 Q80 70 76 82 Q66 70 62 80 Q56 74 50 84 Z" fill="#fbf7fe"/>
+<path d="M50 84 Q56 74 62 80 Q66 70 76 82 Q80 70 88 80 Q94 68 100 80 Q106 68 112 80 Q120 70 124 82 Q134 70 138 80 Q144 74 150 84" fill="none" ${ln(KF.deep, 2.4)}/>
+<path d="M62 62 Q78 52 96 52" fill="none" ${ln(KF.light, 3.4)} opacity="0.9"/>`;
+  const sprout = `<path d="M100 48 C96 36 98 24 108 18 C118 12 128 18 126 26 C124 32 116 32 114 26 C120 28 122 22 116 20 C108 20 104 30 106 48 Z" fill="${KF.base}" ${ln(KF.line, LW)}/>`;
+  const pawL = `<path d="${tufts(40, 130, 3, 12, 22, -0.2, 3, Math.PI * 0.55, Math.PI * 1.45)} L40 130 Z" fill="${KF.base}" ${ln(KF.line, LW)}/>`;
+  const eyes = `<defs><linearGradient id="ke" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c0a30"/><stop offset="1" stop-color="#6a3aa0"/></linearGradient></defs>
+<ellipse cx="84" cy="90" rx="9" ry="12.5" fill="url(#ke)"/><ellipse cx="81" cy="85" rx="3.6" ry="4.4" fill="#fff"/><circle cx="87.5" cy="95.5" r="1.8" fill="#fff" opacity="0.85"/>`;
+  const face = `<ellipse cx="66" cy="112" rx="10" ry="5.5" fill="${KF.blush}" opacity="0.6"/><ellipse cx="134" cy="112" rx="10" ry="5.5" fill="${KF.blush}" opacity="0.6"/>
+<path d="M92 108 Q96 114 100 109 Q104 114 108 108" fill="none" ${ln(KF.eye, 2.6)}/>`;
+  const spin = rotation("fur", "squash", [100, 110], [["Flap", [-1, 0, 1]]], ([f = 0]) => ({ angle: f * 5 }));
+  return chibiModel(
+    "kedama",
+    [
+      { id: "back", parent: "fur", order: 8, rect: { x: 12, y: 22, w: 176, h: 176 }, mesh: grid(4, 4), svg: back },
+      ...pair({ id: "pawL", parent: "sleeves", order: 9, rect: { x: 12, y: 104, w: 40, h: 52 }, mesh: grid(2, 2), svg: pawL }),
+      { id: "fur", parent: "fur", order: 10, rect: { x: 26, y: 36, w: 148, h: 148 }, mesh: grid(4, 4), svg: fur },
+      { id: "sprout", parent: "bow", order: 11, rect: { x: 92, y: 10, w: 40, h: 42 }, mesh: grid(2, 2), svg: sprout },
+      { id: "face", parent: "feat", order: 31, rect: { x: 52, y: 100, w: 96, h: 20 }, mesh: grid(2, 1), svg: face },
+      ...pair({ id: "beadL", parent: "eyeL", order: 40, rect: { x: 72, y: 76, w: 26, h: 28 }, mesh: grid(1, 2), svg: eyes }),
+      { id: "fringe", parent: "bangs", order: 45, rect: { x: 46, y: 40, w: 108, h: 48 }, mesh: grid(4, 2), svg: fringe },
     ],
     {},
     [squash, spin],
