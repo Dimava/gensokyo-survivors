@@ -76,11 +76,9 @@ const speakers = computed(() => {
     <div class="portraits">
       <div class="portrait left" :class="{ dim: !speakers.left }">
         <Portrait :who="cast.left" :look="TO_RIGHT" :talking="!!speakers.left && typing" />
-        <div class="pname">{{ CHARACTERS[cast.left].short }}</div>
       </div>
       <div class="portrait right" :class="{ dim: !speakers.right }">
         <Portrait :who="cast.right" flip :look="TO_LEFT" :talking="!!speakers.right && typing" />
-        <div class="pname">{{ CHARACTERS[cast.right].short }}</div>
       </div>
     </div>
     <div class="box panel">
@@ -100,26 +98,30 @@ const speakers = computed(() => {
 .vn {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(4, 8, 20, 0.2), rgba(4, 8, 20, 0.85));
+  background: linear-gradient(180deg, rgba(10, 7, 6, 0.15), rgba(10, 7, 6, 0.82));
   cursor: pointer;
   animation: fadein calc(0.4s * var(--anim)) both;
 }
+/* The two stand at either side with their feet behind the text box (it names the speaker, so they carry no tags). */
 .portraits {
   position: absolute;
-  inset: 0 0 180px;
+  inset: 0 0 138px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   padding: 0 6vw;
   pointer-events: none;
 }
+/* A bust fades out below the waist, where it passes behind the box, instead of stopping at a ruled edge. */
 .portrait {
+  mask-image: linear-gradient(180deg, #000 76%, transparent 97%);
   transition:
-    opacity calc(0.25s * var(--anim)),
+    filter calc(0.25s * var(--anim)),
     transform calc(0.25s * var(--anim));
 }
+/* The one not speaking steps back into shade, as in the games; see-through would make her a ghost over the field. */
 .portrait.dim {
-  opacity: 0.35;
+  filter: brightness(0.42) saturate(0.75);
   transform: scale(0.95) translateY(10px);
 }
 .sil {
@@ -128,15 +130,6 @@ const speakers = computed(() => {
   border-radius: 110px 110px 20px 20px;
   background: radial-gradient(circle at 50% 22%, #ffe2cc 0 16%, transparent 17%), linear-gradient(180deg, transparent 0 30%, var(--c) 30%);
   border: 3px solid rgba(255, 255, 255, 0.5);
-}
-.pname {
-  text-align: center;
-  font-family: var(--display);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #d6c48c;
-  margin-top: 6px;
-  text-shadow: 0 2px 0 #000;
 }
 .box {
   position: absolute;
