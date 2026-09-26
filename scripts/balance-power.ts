@@ -4,7 +4,7 @@
 // every 5 s of action time: level, XP collected, damage dealt to the swarm
 // (raw, and effective: only up to what the target had left), kills, damage to
 // the boss, and the same damage split by source (weapon or card id), all from
-// DAMAGE_PROBE's per-hit hook. HITLOG=file.csv writes every hit of the first
+// the sim's "hit" probe (ctx.probe, heard through k.listen). HITLOG=file.csv writes every hit of the first
 // run (tick, source, target, damage, effective). "(lucky)" strategies reroll the first four offers (a profile with
 // 30 rerolls) until one brings a piece of the build not yet owned, so the
 // build is complete by level 5. Written as JSON for scripts/balance-chart.ts.
@@ -14,7 +14,7 @@ import { fixtureGame } from "../test/helpers.ts";
 import { activeRun, runView } from "../src/sim/game.ts";
 import { playRun, SKILL } from "../src/sim/bot.ts";
 import { XP } from "../src/sim/tuning.ts";
-import { DAMAGE_PROBE } from "../src/sim/swarm.ts";
+import type { Probes } from "../src/sim/swarm.ts";
 import { STRATEGIES, TREES } from "./lib/strategies.ts";
 
 const [out = "power.json", nSeeds = "6"] = process.argv.slice(2);
@@ -52,25 +52,29 @@ for (const [si, st] of STRATEGIES.entries()) {
       writeFileSync(log, "tick,source,target,dmg,eff\n");
       logged = true;
     }
-    DAMAGE_PROBE.on = (src, target, dmg, eff, t) => {
-      const b = (by[src] ??= [0, 0, 0]);
-      if (target === "boss") {
-        tally.boss += dmg;
-        b[2] += dmg;
-      } else {
-        tally.raw += dmg;
-        tally.eff += eff;
-        b[0] += dmg;
-        b[1] += eff;
-      }
-      if (log) {
-        lines.push(`${t},${src},${target},${+dmg.toFixed(2)},${+eff.toFixed(2)}`);
-        if (lines.length >= 5000) {
-          appendFileSync(log, lines.join("\n") + "\n");
-          lines = [];
+    const stop = k.listen({
+      probe: ({ name, payload }) => {
+        if (name !== "hit") return;
+        const { src, boss, dmg, eff, t } = payload as Probes["hit"];
+        const b = (by[src] ??= [0, 0, 0]);
+        if (boss) {
+          tally.boss += dmg;
+          b[2] += dmg;
+        } else {
+          tally.raw += dmg;
+          tally.eff += eff;
+          b[0] += dmg;
+          b[1] += eff;
         }
-      }
-    };
+        if (log) {
+          lines.push(`${t},${src},${boss ? "boss" : "swarm"},${+dmg.toFixed(2)},${+eff.toFixed(2)}`);
+          if (lines.length >= 5000) {
+            appendFileSync(log, lines.join("\n") + "\n");
+            lines = [];
+          }
+        }
+      },
+    });
     const run: Run = { samples: [], outcome: "", bossAt: -1, end: 0, build: "" };
     let last = -1;
     playRun(k, {
@@ -91,7 +95,7 @@ for (const [si, st] of STRATEGIES.entries()) {
         ].join(" ");
       },
     });
-    DAMAGE_PROBE.on = null;
+    stop();
     if (log && lines.length) appendFileSync(log, lines.join("\n") + "\n");
     const summary = k.view().q("lastRun")[0]!.lastRun.summary;
     run.outcome = summary.outcome;

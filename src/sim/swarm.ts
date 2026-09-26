@@ -88,7 +88,7 @@ export function spawnEnemy(ctx: C, kind: number, x: number, y: number, job: Job 
   const scale = def.midboss ? 1 : 1 + stageDef(run.run.stage).hpPerMinute * (t / 3600);
   const first = def.shoots?.[0];
   const hp = Math.round(def.hp * scale);
-  if (SPAWN_PROBE.on) SPAWN_PROBE.on(kind, hp, gemValue(def, hp), t);
+  ctx.probe("spawn", { kind, hp, xp: gemValue(def, hp) } satisfies Probes["spawn"]);
   return e.add({
     x,
     y,
@@ -458,19 +458,20 @@ function stepJob(ctx: C, e: EnemyCols, i: number, def: EnemyDef, t: number, px: 
 }
 
 /**
- * Every hit, for balance scripts (scripts/balance-power.ts): `src` is the weapon or card id, `eff`
- * the part of `dmg` the target had HP left for (the boss: all of it), `t` the action tick. Outside
- * the kernel's state and never read by the sim; null in the game.
+ * What the sim probes (ctx.probe) for balance scripts; never read by the sim:
+ * - "spawn": every enemy spawned, its kind, HP and gem value.
+ * - "hit": every hit, `src` the weapon or card id, `eff` the part of `dmg` the target had HP left for
+ *   (the boss: all of it), `t` the action tick.
  */
-export const DAMAGE_PROBE: { on: ((src: string, target: "swarm" | "boss", dmg: number, eff: number, t: number) => void) | null } = { on: null };
-
-/** Every enemy spawned, for balance scripts: its kind, HP, gem value and action tick. Null in the game. */
-export const SPAWN_PROBE: { on: ((kind: number, hp: number, xp: number, t: number) => void) | null } = { on: null };
+export interface Probes {
+  spawn: { kind: number; hp: number; xp: number };
+  hit: { src: string; boss: boolean; dmg: number; eff: number; t: number };
+}
 
 /** Damage to one enemy row from `src` (a weapon or card id); knockback away from (sx, sy). */
-export function hurtEnemy(e: EnemyCols, i: number, dmg: number, sx: number, sy: number, knock: number, t: number, src: string): void {
+export function hurtEnemy(ctx: C, e: EnemyCols, i: number, dmg: number, sx: number, sy: number, knock: number, t: number, src: string): void {
   const hp = e.col("hp");
-  if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(src, "swarm", dmg, Math.min(dmg, Math.max(0, hp[i]!)), t);
+  ctx.probe("hit", { src, boss: false, dmg, eff: Math.min(dmg, Math.max(0, hp[i]!)), t } satisfies Probes["hit"]);
   hp[i] = hp[i]! - dmg;
   e.col("hitAt")[i] = t;
   if (knock > 0) {

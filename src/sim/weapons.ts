@@ -7,7 +7,7 @@ import { ENEMIES } from "../content/enemies.ts";
 import { WEAPONS, WEAPON_INDEX, weaponDef, type WeaponStats } from "../content/weapons.ts";
 import { bossDef } from "../content/bosses.ts";
 import type { RS0 } from "./run.ts";
-import { DAMAGE_PROBE, enemyGrid, hurtEnemy, rebuildGrid } from "./swarm.ts";
+import { enemyGrid, hurtEnemy, rebuildGrid, type Probes } from "./swarm.ts";
 import { bossPos, bossVulnerable } from "./boss.ts";
 import { BOSS, FOCUS } from "./tuning.ts";
 
@@ -213,7 +213,7 @@ export function stepShots(ctx: C): ShotResult {
       if (ddx * ddx + ddy * ddy < rr * rr) {
         const d = dmg[s]! * factors![weapon[s]!]!;
         res.bossDmg += d;
-        if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(WEAPONS[weapon[s]!]!.id, "boss", d, d, t);
+        ctx.probe("hit", { src: WEAPONS[weapon[s]!]!.id, boss: true, dmg: d, eff: d, t } satisfies Probes["hit"]);
         if (res.struckX.length < 24) {
           res.struckX.push(sx);
           res.struckY.push(sy);
@@ -231,7 +231,7 @@ export function stepShots(ctx: C): ShotResult {
       const ddy = ey[i]! - sy;
       const rr = ENEMIES[ekind[i]!]!.radius + r;
       if (ddx * ddx + ddy * ddy >= rr * rr) continue;
-      hurtEnemy(e, i, dmg[s]!, sx - vx[s]!, sy - vy[s]!, knock[s]!, t, WEAPONS[weapon[s]!]!.id);
+      hurtEnemy(ctx, e, i, dmg[s]!, sx - vx[s]!, sy - vy[s]!, knock[s]!, t, WEAPONS[weapon[s]!]!.id);
       if (res.struckX.length < 24) {
         res.struckX.push(sx);
         res.struckY.push(sy);
@@ -280,7 +280,7 @@ export function stepOrbits(ctx: C): number {
         const rr = ENEMIES[e.col("kind")[i]!]!.radius + size;
         if (ddx * ddx + ddy * ddy >= rr * rr) continue;
         orbAt[i] = t;
-        hurtEnemy(e, i, w.weapon.armed, body.x, body.y, s.knock ?? 5, t, w.weapon.id);
+        hurtEnemy(ctx, e, i, w.weapon.armed, body.x, body.y, s.knock ?? 5, t, w.weapon.id);
       }
       if (bossOn && boss && t - boss.boss.orbAt >= s.cooldown) {
         const ddx = bp.x - ox;
@@ -289,7 +289,7 @@ export function stepOrbits(ctx: C): number {
         if (ddx * ddx + ddy * ddy < rr * rr) {
           const d = w.weapon.armed * bossFactor(ctx, w.weapon.id, w.weapon.level);
           bossDmg += d;
-          if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(w.weapon.id, "boss", d, d, t);
+          ctx.probe("hit", { src: w.weapon.id, boss: true, dmg: d, eff: d, t } satisfies Probes["hit"]);
           ctx.mut(boss, "boss").orbAt = t;
         }
       }
@@ -310,7 +310,7 @@ export function damageArea(ctx: C, x: number, y: number, r: number, dmg: number,
     const ddx = e.col("x")[i]! - x;
     const ddy = e.col("y")[i]! - y;
     const rr = r + ENEMIES[e.col("kind")[i]!]!.radius;
-    if (ddx * ddx + ddy * ddy < rr * rr) hurtEnemy(e, i, dmg, x, y, knock, t, src);
+    if (ddx * ddx + ddy * ddy < rr * rr) hurtEnemy(ctx, e, i, dmg, x, y, knock, t, src);
   }
   const boss = ctx.derived("boss");
   if (boss && bossVulnerable(boss, t)) {
@@ -319,7 +319,7 @@ export function damageArea(ctx: C, x: number, y: number, r: number, dmg: number,
     const ddy = bp.y - y;
     const rr = r + bossDef(boss.boss.id).radius;
     if (ddx * ddx + ddy * ddy < rr * rr) {
-      if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(src, "boss", bossDmg, bossDmg, t);
+      ctx.probe("hit", { src, boss: true, dmg: bossDmg, eff: bossDmg, t } satisfies Probes["hit"]);
       ctx.emit("boss:hit", { dmg: bossDmg });
     }
   }
@@ -342,14 +342,14 @@ export function damageLine(ctx: C, x: number, y: number, dx: number, dy: number,
   for (let i = 0; i < e.count; i++) {
     if (hp[i]! <= 0) continue;
     if (hitsLine(e.col("x")[i]!, e.col("y")[i]!, ENEMIES[e.col("kind")[i]!]!.radius)) {
-      hurtEnemy(e, i, dmg, e.col("x")[i]! - dx, e.col("y")[i]! - dy, knock, t, src);
+      hurtEnemy(ctx, e, i, dmg, e.col("x")[i]! - dx, e.col("y")[i]! - dy, knock, t, src);
     }
   }
   const boss = ctx.derived("boss");
   if (boss && bossVulnerable(boss, t)) {
     bossPos(boss, t, bp);
     if (hitsLine(bp.x, bp.y, bossDef(boss.boss.id).radius)) {
-      if (DAMAGE_PROBE.on) DAMAGE_PROBE.on(src, "boss", bossDmg, bossDmg, t);
+      ctx.probe("hit", { src, boss: true, dmg: bossDmg, eff: bossDmg, t } satisfies Probes["hit"]);
       ctx.emit("boss:hit", { dmg: bossDmg });
     }
   }

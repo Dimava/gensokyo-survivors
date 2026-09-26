@@ -1,15 +1,15 @@
 // The full, filtered event log of one bot run, to post-process rather than
-// sample: every kernel event named in `keep` (read from the dispatch and tick
-// traces), every enemy spawned (SPAWN_PROBE), and every tick's hits summed by
-// source (DAMAGE_PROBE). Each entry carries the fixed tick of the bot's loop
-// and the action tick it happened on.
-import type { DispatchResult, TraceNode } from "gamebones";
+// sample: every kernel event named in `keep`, every enemy spawned (the sim's
+// "spawn" probe), and each tick's hits summed by source (its "hit" probe),
+// recorded by gamebones/std's `record`. Each entry carries the run's fixed
+// tick and the action tick it happened on.
+import { record } from "gamebones/std";
 import { activeRun, runView, type Game } from "../../src/sim/game.ts";
 import { playRun } from "../../src/sim/bot.ts";
-import { DAMAGE_PROBE, SPAWN_PROBE } from "../../src/sim/swarm.ts";
+import type { Probes } from "../../src/sim/swarm.ts";
 
 export interface Entry {
-  /** The bot loop's fixed tick. */
+  /** The run's fixed tick. */
   tick: number;
   /** Action tick (the run's clock: paused under overlays, stopped by hitstop). */
   at: number;
@@ -43,39 +43,25 @@ export type Hits = Record<string, [number, number, number]>;
 
 export function recordRun(k: Game, opts: Parameters<typeof playRun>[1] = {}, keep: readonly string[] = KEEP): { log: Entry[]; ticks: number } {
   const path = activeRun(k)!;
-  const want = new Set(keep);
-  const log: Entry[] = [];
-  let tick = 0;
-  let hits: Hits = {};
-  const at = (): number => (activeRun(k) === path ? runView(k, path).now("action") : -1);
-  const walk = (n: TraceNode, t: number): void => {
-    if (want.has(n.event)) log.push({ tick, at: t, ev: n.event, ...(n.payload && Object.keys(n.payload).length ? { p: n.payload } : {}) });
-    for (const c of n.children) walk(c, t);
-  };
-  const onResult = (res: DispatchResult, i: number): void => {
-    tick = i;
-    const t = at();
-    for (const r of res.inputs ?? []) walk(r.trace, t);
-    walk(res.trace, t);
-    if (Object.keys(hits).length) {
-      log.push({ tick, at: t, ev: "hits", p: hits });
-      hits = {};
-    }
-  };
-  SPAWN_PROBE.on = (kind, hp, xp, t) => log.push({ tick, at: t, ev: "spawn", p: { kind, hp, xp } });
-  DAMAGE_PROBE.on = (src, target, dmg, eff, _t) => {
-    const h = (hits[src] ??= [0, 0, 0]);
-    if (target === "boss") h[2] += dmg;
-    else {
-      h[0] += dmg;
-      h[1] += eff;
-    }
-  };
+  const clock = (c: "fixed" | "action"): number => (activeRun(k) === path ? runView(k, path).now(c) : -1);
+  const rec = record(k, {
+    keep,
+    probes: ["spawn"],
+    sum: { hit: (p: Probes["hit"]) => [p.src, p.boss ? 0 : p.dmg, p.boss ? 0 : p.eff, p.boss ? p.dmg : 0] },
+    stamp: () => ({ tick: clock("fixed"), at: clock("action") }),
+  });
   try {
-    const res = playRun(k, { ...opts, onResult: (r, i) => (onResult(r, i), opts.onResult?.(r, i)) });
+    const res = playRun(k, opts);
+    const log = rec.entries.map((e): Entry => {
+      const { tick, at } = e as unknown as { tick: number; at: number };
+      if (e.event !== "hit") return { tick, at, ev: e.event, ...(e.payload === undefined ? {} : { p: e.payload }) };
+      // Sums come as [count, ...sums]; the log keeps the sums.
+      const hits: Hits = {};
+      for (const [src, [, raw, eff, boss]] of Object.entries(e.payload as Record<string, number[]>)) hits[src] = [raw!, eff!, boss!];
+      return { tick, at, ev: "hits", p: hits };
+    });
     return { log, ticks: res.ticks };
   } finally {
-    SPAWN_PROBE.on = null;
-    DAMAGE_PROBE.on = null;
+    rec.stop();
   }
 }

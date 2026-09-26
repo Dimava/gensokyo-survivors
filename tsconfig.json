@@ -13,6 +13,7 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["bun"],
     "paths": {
+      "gamebones/std": ["../gamebones/src/std/index.ts"],
       "gamebones": ["../gamebones/src/index.ts"],
       "zod": ["../gamebones/node_modules/zod"]
     }

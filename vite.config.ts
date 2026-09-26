@@ -27,6 +27,8 @@ export default defineConfig({
   define: { __BUILD__: JSON.stringify(BUILD) },
   resolve: {
     alias: {
+      // Before "gamebones": aliases match by prefix, in order.
+      "gamebones/std": fileURLToPath(new URL("../gamebones/src/std/index.ts", import.meta.url)),
       gamebones: fileURLToPath(new URL("../gamebones/src/index.ts", import.meta.url)),
       // One zod for kernel and game: two copies make every schema type incompatible (NOTES.md).
       zod: fileURLToPath(new URL("../gamebones/node_modules/zod/index.js", import.meta.url)),
