@@ -113,6 +113,8 @@ function flight(index: number, c: Choice): { x: number; y: number } | undefined 
 // copy of the old cards, so the view never holds the game paused.
 const offerKey = computed(() => (offer.value ? `${offer.value.level}|${offer.value.rerolls}|${choices.value.map((c) => c.name).join(",")}` : ""));
 const ghosts = ref<Layer[]>([]);
+/** How the live tablets came in: dealt (a new offer, a reroll), or turned up off the piles after a pick. */
+const liveFrom = ref<"deal" | "pile">("deal");
 let current: Omit<Layer, "id" | "mode" | "picked" | "chained"> | null = null;
 let seenPick = ui.levelPick?.id ?? 0;
 let nextGhost = 0;
@@ -127,6 +129,7 @@ watch(
     const ev = ui.levelPick && ui.levelPick.id > seenPick ? ui.levelPick : null;
     if (ev) seenPick = ev.id;
     const mode = !ev ? "fade" : ev.index === null ? "reroll" : "pick";
+    liveFrom.value = mode === "pick" && key ? "pile" : "deal";
     const choice = ev && ev.index !== null ? prev.choices[ev.index] : undefined;
     const fly = choice && ev && ev.index !== null ? flight(ev.index, choice) : undefined;
     const ghost: Layer = { ...prev, id: `g${nextGhost++}`, mode, picked: ev?.index ?? -1, chained: !!key, fly };
@@ -143,6 +146,30 @@ watch(
   { immediate: true },
 );
 onBeforeUnmount(() => timers.forEach((t) => clearTimeout(t)));
+
+/**
+ * The levels still waiting under this one, as a pile under each tablet: a sliver each, up to PILE,
+ * a little askew, the way tablets stack by hand (the same skew for a depth in every pile but turned
+ * by the pile, so no two piles look copied).
+ */
+const PILE = 5;
+const SKEW: [number, number][] = [
+  [1.2, 0.5],
+  [-1.6, -0.7],
+  [1.8, 0.9],
+  [-1, -0.4],
+  [0.6, 0.8],
+];
+function pileOf(L: Layer, slot: number): { k: number; dx: string; dr: string }[] {
+  const n = L.mode === "live" ? Math.min(PILE, L.pending - 1) : 0;
+  const out = [];
+  // Deepest first, so each lies under the one before it.
+  for (let k = n; k >= 1; k--) {
+    const [dx, dr] = SKEW[(k + slot * 2) % SKEW.length]!;
+    out.push({ k, dx: `${dx}px`, dr: `${dr}deg` });
+  }
+  return out;
+}
 
 const layers = computed<Layer[]>(() => {
   const live: Layer[] = props.open && offer.value ? [{ id: "live", level: offer.value.level, pending: pending.value, rerolls: offer.value.rerolls, choices: choices.value, mode: "live", picked: -1, chained: false }] : [];
@@ -175,15 +202,19 @@ function hover(): void {
     <div class="head">
       <h2>Level {{ L.level }}!</h2>
       <p class="muted">
-        Choose one upgrade<span v-if="L.pending > 1"> ({{ L.pending }} level-ups waiting)</span>
+        Choose one upgrade<span v-if="L.pending > 1" class="more">{{ L.pending - 1 }} more to come</span>
       </p>
     </div>
     <div class="choices">
+      <!-- A slot holds a tablet on the pile of the levels still waiting; it outlives its tablets, so the pile stays put while they come and go. -->
+      <div v-for="(c, i) in L.choices" :key="i" class="slot" :style="{ '--i': i }">
+        <span v-if="L.mode === 'live' && L.pending > 1" class="pile" aria-hidden="true">
+          <i v-for="s in pileOf(L, i)" :key="s.k" :style="{ '--k': s.k, '--dx': s.dx, '--dr': s.dr }" />
+        </span>
       <button
-        v-for="(c, i) in L.choices"
         :key="L.level + '-' + i + c.name"
         class="choice"
-        :class="{ picked: i === L.picked, flies: i === L.picked && !!L.fly }"
+        :class="{ picked: i === L.picked, flies: i === L.picked && !!L.fly, frompile: L.mode === 'live' && liveFrom === 'pile' }"
         :style="{
           '--c': c.color,
           '--i': i,
@@ -209,6 +240,7 @@ function hover(): void {
         </ul>
         <span class="from muted">{{ c.from }}</span>
       </button>
+      </div>
     </div>
     <div class="foot">
       <button v-if="L.rerolls > 0" class="btn" :tabindex="L.mode === 'live' ? undefined : -1" @click="L.mode === 'live' && host.reroll()">Reroll ({{ L.rerolls }} left) <Keys for="Action:reroll" /></button>
@@ -290,14 +322,49 @@ h2 {
 .head p {
   margin: 6px 0 0;
 }
+.more {
+  margin-left: 0.6em;
+  padding-left: 0.75em;
+  border-left: 1px solid rgba(214, 196, 140, 0.35);
+  color: #d6c48c;
+}
 .choices {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
   justify-content: safe center;
+  /* Room under the tablets for their piles, whether or not there are any, so nothing moves as they go. */
+  padding-bottom: 12px;
+}
+.slot {
+  position: relative;
+  display: flex;
+}
+/* The levels waiting under this one: tablets seen from their backs, each a few px lower and a little
+   askew, darker the deeper they lie; only their feet show under the top tablet. */
+.pile {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: deal calc(0.35s * var(--anim)) cubic-bezier(0.2, 1.3, 0.4, 1) calc(var(--i) * 0.07s * var(--anim)) both;
+}
+.pile i {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  border: 1px solid rgba(232, 193, 90, calc(0.46 - var(--k) * 0.05));
+  background: color-mix(in srgb, #17110e, #000 calc(var(--k) * 9%));
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  transform: translate(var(--dx), calc(var(--k) * 4px)) rotate(var(--dr));
+}
+.pile i:first-child {
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    0 14px 30px rgba(0, 0, 0, 0.45);
 }
 .choice {
   position: relative;
+  flex: 1;
   --sel-inset: -8px;
   width: 230px;
   min-height: 250px;
@@ -319,7 +386,7 @@ h2 {
 }
 /* The chosen tablet rises: the keyboard's selection, or the one under the pointer while the keys hold none. */
 .choice[data-nav-sel],
-.choices:not(:has(> [data-nav-sel])) > .choice:hover {
+.choices:not(:has([data-nav-sel])) .choice:hover {
   transform: translateY(-6px) scale(1.03);
 }
 .num {
@@ -380,6 +447,28 @@ ul {
   from {
     opacity: 0;
     transform: translateY(40px) rotate(-4deg);
+  }
+}
+/* The next level's tablet is the top of the pile turned face up: it lifts off where the top sliver lay,
+   its band taking its colour, and its face shows as it rises. */
+.lvl.live .choice.frompile {
+  animation-name: frompile;
+  animation-duration: calc(0.3s * var(--anim));
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.lvl.live .choice.frompile > * {
+  animation: faceup calc(0.22s * var(--anim)) ease-out calc((var(--i) * 0.07s + 0.24s) * var(--anim)) both;
+}
+@keyframes frompile {
+  from {
+    transform: translate(1px, 4px) rotate(0.5deg);
+    border-top-color: rgba(232, 193, 90, 0.41);
+    background: #15100d;
+  }
+}
+@keyframes faceup {
+  from {
+    opacity: 0;
   }
 }
 @keyframes drop {
