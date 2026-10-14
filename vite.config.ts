@@ -18,8 +18,7 @@ const BUILD = {
   date: new Date().toLocaleDateString("sv"),
 };
 
-// The kernel is consumed as source through an alias (bun's `file:` install copies the
-// kernel's .git folder and fails with EPERM on Windows; see NOTES.md, Kernel friction).
+// Use the vendored kernel source; its revision is recorded in vendor/gamebones/UPSTREAM.md.
 export default defineConfig({
   // Relative asset URLs: the build is served both from a domain root and under a path prefix.
   base: "./",
@@ -28,10 +27,10 @@ export default defineConfig({
   resolve: {
     alias: {
       // Before "gamebones": aliases match by prefix, in order.
-      "gamebones/std": fileURLToPath(new URL("../gamebones/src/std/index.ts", import.meta.url)),
-      gamebones: fileURLToPath(new URL("../gamebones/src/index.ts", import.meta.url)),
+      "gamebones/std": fileURLToPath(new URL("./vendor/gamebones/src/std/index.ts", import.meta.url)),
+      gamebones: fileURLToPath(new URL("./vendor/gamebones/src/index.ts", import.meta.url)),
       // One zod for kernel and game: two copies make every schema type incompatible (NOTES.md).
-      zod: fileURLToPath(new URL("../gamebones/node_modules/zod/index.js", import.meta.url)),
+      zod: fileURLToPath(new URL("./node_modules/zod/index.js", import.meta.url)),
     },
   },
   server: { port: 5190, strictPort: false, fs: { allow: [".."] }, watch: { ignored: ["**/.tmp/**", "**/.shots/**", "**/test/**", "**/scripts/**"] } },

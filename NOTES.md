@@ -17,6 +17,14 @@ owner's manual check.
 
 ## Kernel friction
 
+### Vendored kernel (2026-10-14)
+
+The game now includes its matching gamebones source in `vendor/gamebones`.
+`vendor/gamebones/UPSTREAM.md` records the revision, source-tree identity,
+license and packaging changes. The earlier sibling-folder workarounds below
+are historical: installation, TypeScript and Vite now use files within this
+repository, with Zod pinned to the previously used 4.4.3.
+
 Most important first. "Workaround" is what this repo does; nothing in the
 kernel was modified.
 

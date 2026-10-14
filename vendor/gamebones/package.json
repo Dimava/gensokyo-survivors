@@ -1,0 +1,32 @@
+{
+  "name": "@dimava/gamebones",
+  "version": "0.1.0",
+  "description": "Deterministic TypeScript game kernel: scopes, stores, indexes, clocks, events, rules, processes, derived values and the trace.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./std": "./src/std/index.ts",
+    "./kds": "./src/kds/index.ts",
+    "./std/sweep": "./src/std/sweep.ts",
+    "./kds/vue": "./src/kds/vue.ts"
+  },
+  "dependencies": {
+    "fflate": "0.8.3",
+    "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "vue": "^3.4"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
+  "license": "MIT",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "UPSTREAM.md"
+  ]
+}
